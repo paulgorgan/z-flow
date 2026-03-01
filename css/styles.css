@@ -467,6 +467,22 @@ input, select, button {
   100% { background-position: 1000px 0; }
 }
 
+@keyframes empty-state-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes empty-state-fade-in {
+  from { 
+    opacity: 0; 
+    transform: translateY(20px) scale(0.95); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0) scale(1); 
+  }
+}
+
 .skeleton-loader {
   background: linear-gradient(90deg, #e2e8f0 0%, #f1f5f9 50%, #e2e8f0 100%);
   background-size: 1000px 100%;
@@ -476,6 +492,192 @@ input, select, button {
 
 .animate-pulse {
   animation: pulse-red 1.5s ease-in-out infinite !important;
+}
+
+/* ============================================
+   SWIPE ACTIONS - MOBILE GESTURES (#34 TODO)
+   ============================================ */
+.swipeable-card {
+  position: relative;
+  overflow: hidden;
+  touch-action: pan-y;
+}
+
+.swipe-content {
+  position: relative;
+  z-index: 2;
+  background: white;
+  transition: transform 0.3s ease;
+  will-change: transform;
+}
+
+.swipe-actions {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100px;
+  z-index: 1;
+}
+
+.swipe-action-left {
+  right: 0;
+  background: linear-gradient(90deg, #fecaca 0%, #ef4444 100%);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.swipe-action-right {
+  left: 0;
+  background: linear-gradient(90deg, #10b981 0%, #d1fae5 100%);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.swipe-action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: white;
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 12px;
+  width: 100%;
+  height: 100%;
+}
+
+.swipe-action-btn svg {
+  width: 24px;
+  height: 24px;
+}
+
+.swipe-action-btn span {
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.swipeable-card.swiped-left .swipe-action-left,
+.swipeable-card.swiped-right .swipe-action-right {
+  opacity: 1;
+}
+
+/* Hint vizual pentru swipe (doar pe mobil) */
+@media (max-width: 768px) {
+  .swipeable-card::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 30px;
+    background: #e2e8f0;
+    border-radius: 2px;
+    opacity: 0.5;
+    transition: opacity 0.3s;
+    pointer-events: none;
+  }
+  
+  .swipeable-card::after {
+    right: 6px;
+  }
+  
+  .swipeable-card:active::after,
+  .swipeable-card.swiped-left::after,
+  .swipeable-card.swiped-right::after {
+    opacity: 0;
+  }
+}
+
+/* Pe desktop, ascundem acțiunile de swipe */
+@media (min-width: 769px) {
+  .swipe-actions {
+    display: none;
+  }
+}
+
+/* ============================================
+   SKELETON LOADING STATES (#17 TODO)
+   ============================================ */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Skeleton Card - similar cu card client/factură */
+.skeleton-card {
+  background: white;
+  border-radius: 20px;
+  padding: 16px 20px;
+  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e2e8f0;
+  margin-bottom: 12px;
+}
+
+.skeleton-text {
+  height: 12px;
+  border-radius: 6px;
+}
+
+.skeleton-text.sm { height: 8px; }
+.skeleton-text.md { height: 14px; }
+.skeleton-text.lg { height: 18px; }
+.skeleton-text.xl { height: 24px; }
+
+.skeleton-circle {
+  border-radius: 50%;
+}
+
+.skeleton-button {
+  height: 44px;
+  border-radius: 12px;
+}
+
+.skeleton-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+}
+
+/* Fade in pentru conținut real după loading */
+.skeleton-loaded {
+  animation: skeleton-fade-in 0.3s ease-out;
+}
+
+@keyframes skeleton-fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================
+   EMPTY STATES
+   ============================================ */
+.empty-search-state,
+#lista-firme-global > div:only-child,
+#rezultat-analiza > div:only-child,
+#lista-facturi-detaliu > div:only-child {
+  animation: empty-state-fade-in 0.4s ease-out;
+}
+
+.empty-search-state svg,
+#lista-firme-global > div:only-child svg,
+#rezultat-analiza > div:only-child svg {
+  animation: empty-state-float 3s ease-in-out infinite;
 }
 
 /* ============================================
@@ -816,6 +1018,228 @@ input, select, button {
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+}
+
+/* ============================================
+   RESPONSIVE - SMALL MOBILE (< 380px)
+   ============================================ */
+@media (max-width: 379px) {
+  body { font-size: 10px; }
+  
+  .glass-header {
+    padding: 12px 10px;
+  }
+  
+  .glass-header h1 { font-size: 11px !important; }
+  .glass-header p { font-size: 7px !important; }
+  
+  .pill-nav {
+    padding: 4px;
+    gap: 4px;
+  }
+  
+  .pill-btn {
+    padding: 10px 8px;
+    font-size: 9px !important;
+    gap: 4px;
+  }
+  
+  .pill-btn svg {
+    width: 12px;
+    height: 12px;
+  }
+  
+  /* KPI grid pe 2 coloane pentru ecrane foarte mici */
+  .grid.grid-cols-4 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  
+  /* Card principal mai compact */
+  #view-firme > .bg-blue-900 {
+    padding: 16px !important;
+    border-radius: 24px !important;
+  }
+  
+  #total-general {
+    font-size: 1.5rem !important;
+  }
+  
+  /* Input-uri mai mici */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  select {
+    padding: 12px !important;
+    font-size: 13px !important;
+  }
+  
+  /* Butoane de acțiune în carduri facturi */
+  .card-factura-client .grid-cols-6 {
+    gap: 2px !important;
+  }
+  
+  .card-factura-client .grid-cols-6 button {
+    height: 38px !important;
+  }
+  
+  /* Navigator bottom mai compact */
+  .bottom-nav {
+    padding: 8px 0 16px 0;
+  }
+  
+  .nav-item svg {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .nav-item span {
+    font-size: 8px !important;
+  }
+}
+
+/* ============================================
+   RESPONSIVE - TABLET (641px - 1023px)
+   ============================================ */
+@media (min-width: 641px) and (max-width: 1023px) {
+  main {
+    max-width: 720px !important;
+    padding: 16px 24px;
+  }
+  
+  /* Grid 2 coloane pentru lista clienți */
+  #lista-firme-global {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 16px !important;
+  }
+  
+  /* Grid 2 coloane pentru facturi */
+  #lista-facturi-content {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+  
+  /* Card principal centrat */
+  #view-firme > .bg-blue-900 {
+    max-width: 500px;
+    margin: 0 auto;
+  }
+  
+  /* Export buttons în linie */
+  .export-group .grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+  
+  /* Modal sheets mai mari */
+  .sheet-content {
+    max-width: 450px;
+  }
+  
+  /* Bottom nav centrată */
+  .bottom-nav {
+    max-width: 480px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 16px 16px 0 0;
+  }
+}
+
+/* ============================================
+   SAFE AREA (NOTCH DEVICES)
+   ============================================ */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .bottom-nav {
+    padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  }
+  
+  .modal-sheet .sheet-content {
+    padding-bottom: calc(24px + env(safe-area-inset-bottom));
+  }
+  
+  .tab-content {
+    padding-bottom: calc(120px + env(safe-area-inset-bottom));
+  }
+}
+
+/* ============================================
+   TOUCH & SCROLL ENHANCEMENTS
+   ============================================ */
+.custom-scroll {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+.custom-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scroll::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+/* Prevent text selection on interactive elements */
+button,
+.pill-btn,
+.nav-item,
+.card-flow {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Touch feedback for buttons */
+button:active,
+.pill-btn:active,
+.nav-item:active {
+  transform: scale(0.97);
+}
+
+/* Smooth transitions for better UX */
+.card-flow,
+.card-factura-client,
+button,
+input {
+  transition: all 0.2s ease;
+}
+
+/* ============================================
+   LANDSCAPE ORIENTATION (MOBILE)
+   ============================================ */
+@media (max-height: 500px) and (orientation: landscape) {
+  .glass-header {
+    padding: 8px 16px;
+  }
+  
+  .bottom-nav {
+    padding: 8px 0 12px 0;
+  }
+  
+  .nav-item svg {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .nav-item span {
+    display: none;
+  }
+  
+  .tab-content {
+    padding-bottom: 80px;
+  }
+  
+  /* Modal mai compact */
+  .sheet-content {
+    max-height: 85vh;
+    overflow-y: auto;
+  }
 }
 
 /* ============================================

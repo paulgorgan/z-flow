@@ -20,6 +20,17 @@ const ZFlowStore = Vue.reactive({
     biPageSize: 50,
     biCurrentPage: 1,
     
+    // Lazy Loading Facturi (#6 TODO)
+    facturiPerPage: 20,
+    facturiLoadedCount: 0,
+    facturiTotalCount: 0,
+    hasMoreFacturi: true,
+    facturiSortateClient: [], // Referință la facturile sortate pentru Load More
+    
+    // Bulk Actions (#14 TODO)
+    bulkSelectedFacturi: [], // Array cu ID-urile facturilor selectate
+    bulkMode: false, // Mod selecție multiplă activ
+    
     // Chart
     chartInstance: null,
     

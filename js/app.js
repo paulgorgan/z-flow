@@ -6,6 +6,64 @@
 // Timer debounce pentru căutări
 let debounceSearchTimer = null;
 
+// ==========================================
+// RATE LIMITING LOGIN - Blocare după 5 încercări
+// ==========================================
+const LOGIN_RATE_LIMIT = {
+    maxAttempts: 5,
+    lockoutDuration: 5 * 60 * 1000, // 5 minute în ms
+    attempts: 0,
+    lockedUntil: null
+};
+
+/**
+ * Verifică dacă utilizatorul este blocat din cauza încercărilor eșuate
+ * @returns {boolean} true dacă e blocat, false dacă poate încerca
+ */
+function isLoginBlocked() {
+    if (!LOGIN_RATE_LIMIT.lockedUntil) return false;
+    
+    const now = Date.now();
+    if (now >= LOGIN_RATE_LIMIT.lockedUntil) {
+        // Timpul de blocare a expirat, resetăm
+        LOGIN_RATE_LIMIT.attempts = 0;
+        LOGIN_RATE_LIMIT.lockedUntil = null;
+        return false;
+    }
+    return true;
+}
+
+/**
+ * Returnează timpul rămas până la deblocare (în secunde)
+ */
+function getLoginLockoutRemaining() {
+    if (!LOGIN_RATE_LIMIT.lockedUntil) return 0;
+    const remaining = Math.ceil((LOGIN_RATE_LIMIT.lockedUntil - Date.now()) / 1000);
+    return remaining > 0 ? remaining : 0;
+}
+
+/**
+ * Înregistrează o încercare de login eșuată
+ */
+function recordFailedLoginAttempt() {
+    LOGIN_RATE_LIMIT.attempts++;
+    console.log(`⚠️ Încercare eșuată: ${LOGIN_RATE_LIMIT.attempts}/${LOGIN_RATE_LIMIT.maxAttempts}`);
+    
+    if (LOGIN_RATE_LIMIT.attempts >= LOGIN_RATE_LIMIT.maxAttempts) {
+        LOGIN_RATE_LIMIT.lockedUntil = Date.now() + LOGIN_RATE_LIMIT.lockoutDuration;
+        const minutes = Math.ceil(LOGIN_RATE_LIMIT.lockoutDuration / 60000);
+        console.log(`🔒 Cont blocat pentru ${minutes} minute`);
+    }
+}
+
+/**
+ * Resetează contorul de încercări la login reușit
+ */
+function resetLoginAttempts() {
+    LOGIN_RATE_LIMIT.attempts = 0;
+    LOGIN_RATE_LIMIT.lockedUntil = null;
+}
+
 /**
  * Funcție utilHelper: debounce
  */
@@ -58,38 +116,196 @@ function showNotification(message, type = "info", duration = 3500) {
 }
 
 /**
- * Afișează mesaj "niciun rezultat"
+ * Afișează mesaj "niciun rezultat" cu ilustrații SVG contextuale
+ * @param {HTMLElement} container - Containerul unde se afișează
+ * @param {string} title - Titlul mesajului
+ * @param {string} text - Descrierea detaliată
+ * @param {string} type - Tipul: 'clients' | 'invoices' | 'search' | 'period' | 'default'
  */
-function showEmptyState(container, title = "Niciun rezultat", text = "Nicio dată disponibilă în perioada selectată") {
-    container.innerHTML = `<div class="text-center py-10 text-slate-400">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto opacity-30 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-        </svg>
-        <p class="font-bold text-sm uppercase tracking-wider">${title}</p>
-        <p class="text-xs mt-2 opacity-60">${text}</p>
-    </div>`;
+function showEmptyState(container, title = "Niciun rezultat", text = "Nicio dată disponibilă", type = "default") {
+    const illustrations = {
+        // Niciun client - ilustrație cu persoane/firme
+        clients: `
+            <svg class="w-24 h-24 mx-auto mb-4" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="60" cy="60" r="56" stroke="#e2e8f0" stroke-width="2" stroke-dasharray="8 4"/>
+                <rect x="35" y="45" width="50" height="35" rx="4" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="2"/>
+                <rect x="40" y="50" width="20" height="3" rx="1.5" fill="#cbd5e1"/>
+                <rect x="40" y="56" width="35" height="2" rx="1" fill="#e2e8f0"/>
+                <rect x="40" y="61" width="28" height="2" rx="1" fill="#e2e8f0"/>
+                <circle cx="75" cy="38" r="8" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="2"/>
+                <path d="M75 35v6M72 38h6" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/>
+                <path d="M45 75v8M55 75v8M65 75v8" stroke="#e2e8f0" stroke-width="2" stroke-linecap="round"/>
+            </svg>`,
+        
+        // Nicio factură - ilustrație cu documente
+        invoices: `
+            <svg class="w-24 h-24 mx-auto mb-4" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="60" cy="60" r="56" stroke="#e2e8f0" stroke-width="2" stroke-dasharray="8 4"/>
+                <rect x="38" y="28" width="44" height="56" rx="4" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="2"/>
+                <path d="M70 28v12a4 4 0 004 4h12" stroke="#cbd5e1" stroke-width="2" fill="none"/>
+                <rect x="46" y="50" width="28" height="3" rx="1.5" fill="#cbd5e1"/>
+                <rect x="46" y="58" width="20" height="2" rx="1" fill="#e2e8f0"/>
+                <rect x="46" y="64" width="24" height="2" rx="1" fill="#e2e8f0"/>
+                <rect x="46" y="70" width="16" height="2" rx="1" fill="#e2e8f0"/>
+                <circle cx="82" cy="78" r="12" fill="white" stroke="#cbd5e1" stroke-width="2"/>
+                <path d="M79 78h6M82 75v6" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/>
+            </svg>`,
+        
+        // Căutare fără rezultate - ilustrație cu lupă
+        search: `
+            <svg class="w-24 h-24 mx-auto mb-4" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="60" cy="60" r="56" stroke="#e2e8f0" stroke-width="2" stroke-dasharray="8 4"/>
+                <circle cx="52" cy="52" r="20" stroke="#cbd5e1" stroke-width="3" fill="#f8fafc"/>
+                <path d="M66 66l16 16" stroke="#cbd5e1" stroke-width="4" stroke-linecap="round"/>
+                <path d="M45 52h14M52 45v14" stroke="#e2e8f0" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+                <circle cx="85" cy="35" r="6" fill="#fef3c7" stroke="#fcd34d" stroke-width="1.5"/>
+                <text x="85" y="38" text-anchor="middle" font-size="9" fill="#d97706" font-weight="bold">?</text>
+            </svg>`,
+        
+        // Fără date în perioadă - ilustrație cu calendar
+        period: `
+            <svg class="w-24 h-24 mx-auto mb-4" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="60" cy="60" r="56" stroke="#e2e8f0" stroke-width="2" stroke-dasharray="8 4"/>
+                <rect x="32" y="35" width="56" height="50" rx="6" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="2"/>
+                <rect x="32" y="35" width="56" height="14" rx="6" fill="#cbd5e1"/>
+                <rect x="32" y="43" width="56" height="6" fill="#cbd5e1"/>
+                <circle cx="44" cy="42" r="3" fill="#f1f5f9"/>
+                <circle cx="76" cy="42" r="3" fill="#f1f5f9"/>
+                <rect x="40" y="58" width="8" height="8" rx="2" fill="#e2e8f0"/>
+                <rect x="56" y="58" width="8" height="8" rx="2" fill="#e2e8f0"/>
+                <rect x="72" y="58" width="8" height="8" rx="2" fill="#e2e8f0"/>
+                <rect x="40" y="72" width="8" height="8" rx="2" fill="#e2e8f0"/>
+                <rect x="56" y="72" width="8" height="8" rx="2" fill="#e2e8f0"/>
+                <path d="M70 72l12 12M82 72l-12 12" stroke="#f87171" stroke-width="2" stroke-linecap="round"/>
+            </svg>`,
+        
+        // Default - ilustrație generică inbox gol
+        default: `
+            <svg class="w-24 h-24 mx-auto mb-4" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="60" cy="60" r="56" stroke="#e2e8f0" stroke-width="2" stroke-dasharray="8 4"/>
+                <path d="M30 55l30 20 30-20" stroke="#cbd5e1" stroke-width="2" fill="none"/>
+                <rect x="30" y="55" width="60" height="35" rx="4" stroke="#cbd5e1" stroke-width="2" fill="#f8fafc"/>
+                <path d="M30 55l30 18 30-18" fill="#f1f5f9"/>
+                <circle cx="60" cy="70" r="8" fill="#f1f5f9" stroke="#e2e8f0" stroke-width="2"/>
+                <path d="M57 70h6M60 67v6" stroke="#cbd5e1" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>`
+    };
+    
+    const illustration = illustrations[type] || illustrations.default;
+    
+    container.innerHTML = `
+        <div class="flex flex-col items-center justify-center py-16 px-8">
+            ${illustration}
+            <p class="font-bold text-slate-500 text-sm uppercase tracking-wider mb-2">${title}</p>
+            <p class="text-xs text-slate-400 text-center max-w-xs leading-relaxed">${text}</p>
+        </div>`;
 }
 
 /**
- * Skeleton Loader pentru încărcare
+ * Skeleton Loader pentru încărcare - #17 TODO
  */
-function showSkeletonLoader(container, count = 5) {
+function showSkeletonLoader(container, count = 5, type = "client") {
     if (!container) return;
     container.innerHTML = "";
 
+    const skeletonTypes = {
+        // Skeleton pentru carduri clienți
+        client: `
+            <div class="skeleton-card">
+                <div class="flex items-center gap-4 mb-3">
+                    <div class="skeleton skeleton-avatar"></div>
+                    <div class="flex-1">
+                        <div class="skeleton skeleton-text lg w-3/4 mb-2"></div>
+                        <div class="skeleton skeleton-text sm w-1/2"></div>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center">
+                    <div class="skeleton skeleton-text md w-1/3"></div>
+                    <div class="skeleton skeleton-text xl w-1/4"></div>
+                </div>
+            </div>`,
+        
+        // Skeleton pentru carduri facturi
+        factura: `
+            <div class="skeleton-card">
+                <div class="grid grid-cols-2 gap-2 mb-3">
+                    <div class="skeleton skeleton-text sm w-full h-8 rounded-xl"></div>
+                    <div class="skeleton skeleton-text sm w-full h-8 rounded-xl"></div>
+                </div>
+                <div class="flex justify-between items-center mb-3">
+                    <div class="flex flex-col gap-1">
+                        <div class="skeleton skeleton-text md w-20"></div>
+                        <div class="skeleton skeleton-text sm w-16"></div>
+                    </div>
+                    <div class="flex flex-col items-end gap-1">
+                        <div class="skeleton skeleton-text xl w-24"></div>
+                        <div class="skeleton skeleton-text sm w-20"></div>
+                    </div>
+                </div>
+                <div class="skeleton skeleton-button w-full mb-2"></div>
+                <div class="grid grid-cols-6 gap-1.5">
+                    <div class="skeleton h-11 rounded-xl"></div>
+                    <div class="skeleton h-11 rounded-xl"></div>
+                    <div class="skeleton h-11 rounded-xl"></div>
+                    <div class="skeleton h-11 rounded-xl"></div>
+                    <div class="skeleton h-11 rounded-xl"></div>
+                    <div class="skeleton h-11 rounded-xl"></div>
+                </div>
+            </div>`,
+        
+        // Skeleton pentru KPI cards
+        kpi: `
+            <div class="skeleton-card p-5">
+                <div class="skeleton skeleton-text sm w-24 mb-3"></div>
+                <div class="skeleton skeleton-text xl w-32 mb-2"></div>
+                <div class="skeleton skeleton-text sm w-20"></div>
+            </div>`,
+        
+        // Skeleton pentru istoric plăți
+        istoric: `
+            <div class="skeleton-card">
+                <div class="flex items-center gap-2 mb-4">
+                    <div class="skeleton w-4 h-4 rounded"></div>
+                    <div class="skeleton skeleton-text md w-24"></div>
+                </div>
+                <div class="grid grid-cols-3 gap-2 mb-4">
+                    <div class="skeleton h-16 rounded-xl"></div>
+                    <div class="skeleton h-16 rounded-xl"></div>
+                    <div class="skeleton h-16 rounded-xl"></div>
+                </div>
+                <div class="skeleton h-2 rounded-full w-full mb-4"></div>
+                <div class="space-y-3">
+                    <div class="flex items-center gap-3">
+                        <div class="skeleton w-8 h-8 rounded-full"></div>
+                        <div class="flex-1"><div class="skeleton skeleton-text md w-full"></div></div>
+                        <div class="skeleton skeleton-text md w-16"></div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="skeleton w-8 h-8 rounded-full"></div>
+                        <div class="flex-1"><div class="skeleton skeleton-text md w-full"></div></div>
+                        <div class="skeleton skeleton-text md w-16"></div>
+                    </div>
+                </div>
+            </div>`
+    };
+    
+    const template = skeletonTypes[type] || skeletonTypes.client;
+
     for (let i = 0; i < count; i++) {
-        const skeletonCard = document.createElement("div");
-        skeletonCard.className = "bg-white dark:bg-slate-800 rounded-xl shadow-md p-4 mb-3 animate-pulse";
-        skeletonCard.innerHTML = `
-            <div class="skeleton-loader h-6 w-3/4 mb-4" style="border-radius: 6px;"></div>
-            <div class="skeleton-loader h-4 w-1/2 mb-3" style="border-radius: 4px;"></div>
-            <div class="flex justify-between">
-                <div class="skeleton-loader h-5 w-1/3" style="border-radius: 6px;"></div>
-                <div class="skeleton-loader h-5 w-1/4" style="border-radius: 6px;"></div>
-            </div>
-        `;
-        container.appendChild(skeletonCard);
+        const wrapper = document.createElement("div");
+        wrapper.innerHTML = template;
+        container.appendChild(wrapper.firstElementChild);
     }
+}
+
+/**
+ * Ascunde skeleton și afișează conținut real cu animație
+ */
+function hideSkeletonLoader(container) {
+    if (!container) return;
+    container.querySelectorAll('.skeleton-card').forEach(el => el.remove());
+    container.classList.add('skeleton-loaded');
+    setTimeout(() => container.classList.remove('skeleton-loaded'), 300);
 }
 
 /**
@@ -286,6 +502,14 @@ function updateDashboardKPI() {
  * Verifică autentificarea și inițializează (Supabase Auth + Demo fallback)
  */
 async function verificaAuth() {
+    // Rate limiting check - blocare după 5 încercări eșuate
+    if (isLoginBlocked()) {
+        const remainingSec = getLoginLockoutRemaining();
+        const remainingMin = Math.ceil(remainingSec / 60);
+        showNotification(`Cont blocat temporar. Încearcă din nou în ${remainingMin} min.`, "warning");
+        return;
+    }
+    
     const email = document.getElementById("auth-username").value.trim();
     const pass = document.getElementById("auth-password").value;
 
@@ -314,6 +538,7 @@ async function verificaAuth() {
         if (bottomNav) bottomNav.style.display = '';
         if (fabMenu) fabMenu.style.display = '';
         
+        resetLoginAttempts(); // Reset rate limit la succes
         showNotification(`✅ Bun venit, ${email}! (${role === 'admin' ? 'Admin' : 'User'})`, "success");
         setLoader(false);
         init();
@@ -338,19 +563,21 @@ async function verificaAuth() {
         if (bottomNav) bottomNav.style.display = '';
         if (fabMenu) fabMenu.style.display = '';
         
+        resetLoginAttempts(); // Reset rate limit la succes
         showNotification(`✅ Bun venit, ${user.email}!`, "success");
         init();
     } catch (error) {
         console.error("Auth error:", error);
+        recordFailedLoginAttempt(); // Înregistrează încercare eșuată
         
         // Mesaje de eroare prietenoase
-        let errorMsg = "❌ Eroare la autentificare";
+        let errorMsg = "Eroare la autentificare";
         if (error.message.includes("Invalid login")) {
-            errorMsg = "❌ Email sau parolă incorectă";
+            errorMsg = "Email sau parolă incorectă";
         } else if (error.message.includes("Email not confirmed")) {
-            errorMsg = "⚠️ Confirmă email-ul înainte de autentificare";
+            errorMsg = "Confirmă email-ul înainte de autentificare";
         } else if (error.message.includes("Too many requests")) {
-            errorMsg = "⚠️ Prea multe încercări. Așteaptă puțin.";
+            errorMsg = "Prea multe încercări. Așteaptă puțin.";
         }
         
         showNotification(errorMsg, "error");
@@ -642,7 +869,7 @@ function renderMain(lista = null) {
     if (!container) return;
 
     if (sursa.length === 0) {
-        showEmptyState(container, "Niciun client", "Niciun client adăugat în sistem");
+        showEmptyState(container, "Niciun client", "Adaugă clienți pentru a-ți gestiona facturile și încasările", "clients");
         return;
     }
 
@@ -727,14 +954,23 @@ function renderMain(lista = null) {
 
 // Debounce pentru căutarea clienți
 const filtreazaListaFirmeDebounced = debounce(function () {
-    const q = document.getElementById("search-firme").value.toLowerCase();
-    renderMain(
-        ZFlowStore.dateLocal.filter(
-            (f) =>
-                (f.nume_firma || "").toLowerCase().includes(q) ||
-                f.cui.includes(q)
-        )
+    const q = document.getElementById("search-firme").value.toLowerCase().trim();
+    const filtrate = ZFlowStore.dateLocal.filter(
+        (f) =>
+            (f.nume_firma || "").toLowerCase().includes(q) ||
+            f.cui.includes(q)
     );
+    
+    // Dacă există căutare activă și nu s-a găsit nimic, afișăm empty state de tip search
+    if (q && filtrate.length === 0) {
+        const container = document.getElementById("lista-firme-global");
+        if (container) {
+            showEmptyState(container, "Niciun rezultat", `Nu am găsit clienți pentru "${q}". Verifică termenul de căutare.`, "search");
+        }
+        return;
+    }
+    
+    renderMain(filtrate);
 }, 300);
 
 function filtreazaListaFirme() {
@@ -744,6 +980,123 @@ function filtreazaListaFirme() {
 // ==========================================
 // DETALII CLIENT & FACTURI
 // ==========================================
+
+/**
+ * Generează HTML pentru un card de factură (cu suport swipe pe mobile)
+ * @param {Object} fac - Obiectul facturii
+ * @param {Object} client - Obiectul clientului
+ * @param {Date} azi - Data curentă (pentru comparații scadență)
+ * @returns {string} HTML-ul cardului
+ */
+function genereazaCardFactura(fac, client, azi) {
+    const isIncasat = fac.status_plata === "Incasat";
+    const dScad = fac.data_scadenta ? new Date(fac.data_scadenta) : null;
+    if (dScad) dScad.setHours(0, 0, 0, 0);
+    const esteScadenta = !isIncasat && dScad && dScad < azi;
+    
+    const f = client; // alias pentru compatibilitate cu codul vechi
+
+    const uitHtml = fac.numar_auto ? `
+        <div onclick="event.stopPropagation(); schimbaTab('logistic', document.querySelectorAll('.nav-item')[1])"
+             class="flex items-center justify-center gap-2 bg-blue-50 border border-blue-100 px-3 py-2 rounded-xl cursor-pointer hover:bg-blue-600 group transition-all">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-blue-900 group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1" />
+            </svg>
+            <span class="text-[10px] font-black text-blue-900 group-hover:text-white uppercase">${fac.numar_auto}</span>
+        </div>` : `
+        <div class="flex items-center justify-center bg-slate-50 border border-dashed border-slate-200 px-3 py-2 rounded-xl opacity-40">
+            <span class="text-[9px] font-bold text-slate-400 uppercase italic">FĂRĂ TRP</span>
+        </div>`;
+
+    return `
+    <div class="card-factura-client swipeable-card rounded-2xl shadow-sm mb-3 relative overflow-hidden" data-nr="${fac.numar_factura}" data-factura-id="${fac.id}" data-status="${fac.status_plata}">
+        <!-- Swipe Action Left (Delete) -->
+        <div class="swipe-actions swipe-action-left">
+            <button class="swipe-action-btn" onclick="swipeStergeFactura('${fac.id}')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                <span>Șterge</span>
+            </button>
+        </div>
+        <!-- Swipe Action Right (Toggle Payment) -->
+        <div class="swipe-actions swipe-action-right">
+            <button class="swipe-action-btn" onclick="swipeToggleIncasare('${fac.id}', '${fac.status_plata}')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <span>${isIncasat ? 'Anulează' : 'Încasare'}</span>
+            </button>
+        </div>
+        <!-- Card Content -->
+        <div class="swipe-content card-flow flex flex-col gap-3 p-4 bg-white border border-slate-100 rounded-2xl">
+            <div class="grid grid-cols-2 gap-2">
+                <div class="flex items-center gap-2 bg-slate-50 border border-slate-100 px-2 py-2 rounded-xl">
+                    <span class="flex h-2 w-2 relative">
+                        <span class="relative inline-flex rounded-full h-2 w-2 ${fac.status_anaf === 'validated' ? 'bg-emerald-500' : 'bg-amber-400'}"></span>
+                    </span>
+                    <span class="text-[9px] font-black uppercase tracking-tighter ${fac.status_anaf === 'validated' ? 'text-emerald-700' : 'text-amber-700'}">
+                        ${fac.status_anaf === 'validated' ? 'SPV VALIDAT' : 'SPV AȘTEPTARE'}
+                    </span>
+                </div>
+                ${uitHtml}
+            </div>
+
+            <div class="flex justify-between items-center py-1">
+                <div>
+                    <h4 class="font-black text-slate-800 text-[15px]">#${fac.numar_factura || 'N/A'}</h4>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase">Emis: ${formateazaDataZFlow(fac.data_emiterii)}</p>
+                </div>
+                <div class="text-right">
+                    <p class="font-black ${esteScadenta ? 'text-red-600 animate-pulse' : 'text-blue-900'} text-[18px] leading-none tracking-tighter">
+                        ${Number(fac.valoare || 0).toLocaleString()} lei
+                    </p>
+                    <p class="text-[9px] font-black text-slate-300 uppercase mt-1">Scadență: ${formateazaDataZFlow(fac.data_scadenta)}</p>
+                </div>
+            </div>
+
+            ${fac.note ? `
+            <div class="flex items-start gap-2 p-2.5 bg-amber-50 border border-amber-100 rounded-xl">
+                <svg class="w-3.5 h-3.5 text-amber-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z"/></svg>
+                <p class="text-[10px] font-medium text-amber-800 leading-snug">${fac.note}</p>
+            </div>` : ''}
+
+            <div class="flex flex-col gap-2 mt-1">
+                <button onclick="toggleStatusPlata('${fac.id}', '${fac.status_plata}')"
+                        class="w-full ${isIncasat ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 'bg-blue-900 text-white hover:bg-blue-800'} h-11 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-2 transition-all">
+                    ${isIncasat ? 'ACHITAT' : 'ÎNCASARE'}
+                </button>
+                <div class="grid grid-cols-6 gap-1.5 w-full">
+                <button onclick="deschideModal('modal-factura', '${fac.id}')"
+                        class="h-11 bg-slate-50 text-slate-600 rounded-xl flex items-center justify-center border border-slate-100 hover:bg-amber-50 hover:text-amber-600 hover:border-amber-200 transition-all">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                </button>
+                <button onclick="event.stopPropagation(); printInvoice('${fac.id}')"
+                        class="h-11 bg-slate-50 text-slate-700 rounded-xl flex items-center justify-center border border-slate-100 hover:bg-blue-50 hover:text-blue-900 hover:border-blue-200 transition-all">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                </button>
+                ${fac.pdf_url ? `
+                    <a href="${fac.pdf_url}" target="_blank" class="h-11 bg-slate-800 text-white flex items-center justify-center rounded-xl shadow-sm hover:bg-slate-700 transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /></svg>
+                    </a>` : `
+                    <button onclick="deschideModal('modal-factura', '${fac.id}')" class="h-11 bg-white text-slate-300 flex items-center justify-center rounded-xl border-2 border-dashed border-slate-100 hover:bg-slate-50 hover:text-slate-500 hover:border-slate-300 transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" /></svg>
+                    </button>`}
+                <button onclick="event.stopPropagation(); trimiteEmailDebitor('${f.contact_email}', '${fac.numar_factura}', '${fac.valoare}')"
+                        class="h-11 ${esteScadenta ? 'bg-red-600 text-white animate-pulse hover:bg-red-700' : 'bg-indigo-50 text-indigo-400 hover:bg-indigo-100 hover:text-indigo-600'} rounded-xl flex items-center justify-center transition-all"
+                        title="Trimite Email">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0l-9.75 6.75-9.75-6.75m19.5 0l-9.75-6.75" /></svg>
+                </button>
+                <button onclick="event.stopPropagation(); trimiteWhatsAppReminder('${f.telefon || ''}', '${f.nume_firma || ''}', '${fac.numar_factura}', '${fac.valoare}', '${fac.data_scadenta || ''}')"
+                        class="h-11 ${esteScadenta ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700'} rounded-xl flex items-center justify-center transition-all"
+                        title="Trimite WhatsApp">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                </button>
+                <button onclick="stergeFactura('${fac.id}')"
+                        class="h-11 bg-red-50 text-red-500 rounded-xl flex items-center justify-center border border-red-100 hover:bg-red-100 hover:text-red-600 hover:border-red-200 transition-all">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                </button>
+                </div>
+            </div>
+        </div>
+    </div>`;
+}
 
 /**
  * Arată detaliile unui client
@@ -775,12 +1128,99 @@ function arataDetalii(id) {
         </div>
         ${areScadenta ? `
         <div class="mt-6 py-3 px-4 bg-red-500/20 rounded-2xl border border-red-400/50 flex justify-between items-center animate-pulse">
-            <p class="text-[8px] font-black text-red-300 uppercase tracking-widest">⚠️ Facturi Depășite</p>
+            <div class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
+                <p class="text-[8px] font-black text-red-300 uppercase tracking-widest">Facturi Depășite</p>
+            </div>
             <p class="text-red-200 font-black text-[14px] leading-none">${Math.round(sumaScadenta).toLocaleString()} lei</p>
         </div>` : ''}
     `;
 
+    // Generăm secțiunea Istoric Plăți (#21 TODO)
+    const istoricPlatiContainer = document.getElementById("istoric-plati-client");
+    if (istoricPlatiContainer && f.facturi && f.facturi.length > 0) {
+        const facturiIncasate = f.facturi.filter(fac => fac.status_plata === "Incasat");
+        const facturiNeincasate = f.facturi.filter(fac => fac.status_plata !== "Incasat");
+        const totalIncasat = facturiIncasate.reduce((sum, fac) => sum + Number(fac.valoare || 0), 0);
+        const totalNeincasat = facturiNeincasate.reduce((sum, fac) => sum + Number(fac.valoare || 0), 0);
+        const rataIncasare = f.facturi.length > 0 ? Math.round((facturiIncasate.length / f.facturi.length) * 100) : 0;
+        
+        // Ultimele 5 plăți cu dată
+        const ultimelePlati = facturiIncasate
+            .filter(fac => fac.data_plata)
+            .sort((a, b) => new Date(b.data_plata) - new Date(a.data_plata))
+            .slice(0, 5);
+        
+        const timelineHtml = ultimelePlati.length > 0 ? ultimelePlati.map(fac => `
+            <div class="flex items-center gap-3 py-2 border-b border-slate-100 last:border-0">
+                <div class="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                    <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-[11px] font-bold text-slate-700 truncate">#${fac.numar_factura}</p>
+                    <p class="text-[9px] text-slate-400">${formateazaDataZFlow(fac.data_plata)}</p>
+                </div>
+                <p class="text-[12px] font-black text-emerald-600">${Number(fac.valoare || 0).toLocaleString()} lei</p>
+            </div>
+        `).join('') : `
+            <div class="text-center py-4">
+                <p class="text-[10px] text-slate-400 italic">Nu există plăți înregistrate cu dată</p>
+            </div>
+        `;
+        
+        istoricPlatiContainer.innerHTML = `
+            <div class="bg-white rounded-2xl border border-slate-100 p-4 mb-4">
+                <div class="flex items-center gap-2 mb-4">
+                    <svg class="w-4 h-4 text-blue-900" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <h4 class="text-[11px] font-black text-slate-800 uppercase tracking-wider">Istoric Plăți</h4>
+                </div>
+                
+                <!-- Statistici Rapide -->
+                <div class="grid grid-cols-3 gap-2 mb-4">
+                    <div class="bg-emerald-50 rounded-xl p-3 text-center">
+                        <p class="text-[18px] font-black text-emerald-600">${rataIncasare}%</p>
+                        <p class="text-[8px] font-bold text-emerald-700 uppercase">Rată încasare</p>
+                    </div>
+                    <div class="bg-slate-50 rounded-xl p-3 text-center">
+                        <p class="text-[14px] font-black text-slate-700">${facturiIncasate.length}</p>
+                        <p class="text-[8px] font-bold text-slate-500 uppercase">Achitate</p>
+                    </div>
+                    <div class="bg-amber-50 rounded-xl p-3 text-center">
+                        <p class="text-[14px] font-black text-amber-600">${facturiNeincasate.length}</p>
+                        <p class="text-[8px] font-bold text-amber-700 uppercase">În așteptare</p>
+                    </div>
+                </div>
+                
+                <!-- Progress Bar -->
+                <div class="mb-4">
+                    <div class="flex justify-between text-[9px] font-bold mb-1">
+                        <span class="text-emerald-600">${totalIncasat.toLocaleString()} lei încasat</span>
+                        <span class="text-slate-400">${totalNeincasat.toLocaleString()} lei restant</span>
+                    </div>
+                    <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
+                        <div class="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full transition-all" style="width: ${rataIncasare}%"></div>
+                    </div>
+                </div>
+                
+                <!-- Timeline Ultimele Plăți -->
+                <div class="border-t border-slate-100 pt-3">
+                    <p class="text-[9px] font-bold text-slate-400 uppercase mb-2">Ultimele Plăți</p>
+                    ${timelineHtml}
+                </div>
+            </div>
+        `;
+        istoricPlatiContainer.classList.remove('hidden');
+    } else if (istoricPlatiContainer) {
+        istoricPlatiContainer.classList.add('hidden');
+    }
+
     const containerFacturi = document.getElementById("lista-facturi-detaliu");
+
+    // Verificăm dacă clientul are facturi
+    if (!f.facturi || f.facturi.length === 0) {
+        showEmptyState(containerFacturi, "Nicio factură", "Acest client nu are facturi înregistrate. Adaugă o factură nouă sau importă din SAGA.", "invoices");
+        return;
+    }
 
     // Sortare Facturi
     const facturiSortate = [...f.facturi].sort((a, b) => {
@@ -798,83 +1238,18 @@ function arataDetalii(id) {
         return 0;
     });
 
-    // Generare HTML Facturi
-    const htmlFacturi = facturiSortate.map((fac) => {
-        const isIncasat = fac.status_plata === "Incasat";
-        const dScad = fac.data_scadenta ? new Date(fac.data_scadenta) : null;
-        if (dScad) dScad.setHours(0, 0, 0, 0);
-        const esteScadenta = !isIncasat && dScad && dScad < azi;
-
-        const uitHtml = fac.numar_auto ? `
-            <div onclick="event.stopPropagation(); schimbaTab('logistic', document.querySelectorAll('.nav-item')[1])"
-                 class="flex items-center justify-center gap-2 bg-blue-50 border border-blue-100 px-3 py-2 rounded-xl cursor-pointer hover:bg-blue-600 group transition-all">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-blue-900 group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                    <path d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1" />
-                </svg>
-                <span class="text-[10px] font-black text-blue-900 group-hover:text-white uppercase">${fac.numar_auto}</span>
-            </div>` : `
-            <div class="flex items-center justify-center bg-slate-50 border border-dashed border-slate-200 px-3 py-2 rounded-xl opacity-40">
-                <span class="text-[9px] font-bold text-slate-400 uppercase italic">FĂRĂ TRP</span>
-            </div>`;
-
-        return `
-        <div class="card-factura-client card-flow flex flex-col gap-3 p-4 mb-3 bg-white border border-slate-100 rounded-2xl shadow-sm" data-nr="${fac.numar_factura}">
-            <div class="grid grid-cols-2 gap-2">
-                <div class="flex items-center gap-2 bg-slate-50 border border-slate-100 px-2 py-2 rounded-xl">
-                    <span class="flex h-2 w-2 relative">
-                        <span class="relative inline-flex rounded-full h-2 w-2 ${fac.status_anaf === 'validated' ? 'bg-emerald-500' : 'bg-amber-400'}"></span>
-                    </span>
-                    <span class="text-[9px] font-black uppercase tracking-tighter ${fac.status_anaf === 'validated' ? 'text-emerald-700' : 'text-amber-700'}">
-                        ${fac.status_anaf === 'validated' ? 'SPV VALIDAT' : 'SPV AȘTEPTARE'}
-                    </span>
-                </div>
-                ${uitHtml}
-            </div>
-
-            <div class="flex justify-between items-center py-1">
-                <div>
-                    <h4 class="font-black text-slate-800 text-[15px]">#${fac.numar_factura || 'N/A'}</h4>
-                    <p class="text-[10px] font-bold text-slate-400 uppercase">Emis: ${formateazaDataZFlow(fac.data_emiterii)}</p>
-                </div>
-                <div class="text-right">
-                    <p class="font-black ${esteScadenta ? 'text-red-600 animate-pulse' : 'text-blue-900'} text-[18px] leading-none tracking-tighter">
-                        ${Number(fac.valoare || 0).toLocaleString()} lei
-                    </p>
-                    <p class="text-[9px] font-black text-slate-300 uppercase mt-1">Scadență: ${formateazaDataZFlow(fac.data_scadenta)}</p>
-                </div>
-            </div>
-
-            <div class="flex gap-2 mt-1">
-                <button onclick="toggleStatusPlata('${fac.id}', '${fac.status_plata}')"
-                        class="flex-[2.5] md:flex-1 ${isIncasat ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-900 text-white'} h-11 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-2">
-                    ${isIncasat ? 'ACHITAT' : 'ÎNCASARE'}
-                </button>
-                <button onclick="deschideModal('modal-factura', '${fac.id}')"
-                        class="w-11 h-11 shrink-0 bg-slate-50 text-slate-600 rounded-xl flex items-center justify-center border border-slate-100">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                </button>
-                <button onclick="event.stopPropagation(); printInvoice('${fac.id}')"
-                        class="w-11 h-11 shrink-0 bg-slate-50 text-slate-700 rounded-xl flex items-center justify-center border border-slate-100 hover:bg-blue-50 hover:text-blue-900 transition-all">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
-                </button>
-                ${fac.pdf_url ? `
-                    <a href="${fac.pdf_url}" target="_blank" class="w-11 h-11 shrink-0 bg-slate-800 text-white flex items-center justify-center rounded-xl shadow-sm">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /></svg>
-                    </a>` : `
-                    <button onclick="deschideModal('modal-factura', '${fac.id}')" class="w-11 h-11 shrink-0 bg-white text-slate-300 flex items-center justify-center rounded-xl border-2 border-dashed border-slate-100">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" /></svg>
-                    </button>`}
-                <button onclick="event.stopPropagation(); trimiteEmailDebitor('${f.contact_email}', '${fac.numar_factura}', '${fac.valoare}')"
-                        class="w-11 h-11 shrink-0 ${esteScadenta ? 'bg-red-600 text-white animate-pulse' : 'bg-indigo-50 text-indigo-400'} rounded-xl flex items-center justify-center transition-all">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0l-9.75 6.75-9.75-6.75m19.5 0l-9.75-6.75" /></svg>
-                </button>
-                <button onclick="stergeFactura('${fac.id}')"
-                        class="w-11 h-11 shrink-0 bg-red-50 text-red-500 rounded-xl flex items-center justify-center border border-red-100">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                </button>
-            </div>
-        </div>`;
-    }).join("");
+    // Generare HTML Facturi - cu Lazy Loading (#6 TODO)
+    // Salvăm facturile sortate pentru Load More
+    ZFlowStore.facturiSortateClient = facturiSortate;
+    ZFlowStore.facturiLoadedCount = Math.min(facturiSortate.length, ZFlowStore.facturiPerPage);
+    ZFlowStore.facturiTotalCount = facturiSortate.length;
+    ZFlowStore.hasMoreFacturi = facturiSortate.length > ZFlowStore.facturiPerPage;
+    
+    // Afișăm doar primele N facturi inițial
+    const facturiDeAfisat = facturiSortate.slice(0, ZFlowStore.facturiPerPage);
+    
+    // Folosim funcția helper pentru generarea cardurilor cu suport swipe
+    const htmlFacturi = facturiDeAfisat.map((fac) => genereazaCardFactura(fac, f, azi)).join("");
 
     // Bară de Căutare Sticky & Rezultate
     containerFacturi.innerHTML = `
@@ -886,7 +1261,17 @@ function arataDetalii(id) {
                 </div>
             </div>
         </div>
-        <div id="lista-facturi-content" class="flex flex-col gap-3">${htmlFacturi}</div>`;
+        <div id="lista-facturi-content" class="flex flex-col gap-3">${htmlFacturi}</div>
+        ${ZFlowStore.hasMoreFacturi ? `
+        <div id="load-more-facturi" class="mt-4 mb-6">
+            <button onclick="loadMoreFacturiClient()" class="w-full py-4 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl text-[11px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                Încărcă mai multe (${ZFlowStore.facturiLoadedCount}/${ZFlowStore.facturiTotalCount})
+            </button>
+        </div>` : ''}`;
+    
+    // Inițializăm SwipeHandler pentru acțiunile touch pe mobile
+    SwipeHandler.init('#lista-facturi-content');
 }
 
 /**
@@ -898,16 +1283,98 @@ function filtreazaFacturiInDetalii() {
 
     const termen = input.value.toLowerCase().trim();
     const carduri = document.querySelectorAll("#lista-facturi-content .card-factura-client");
+    const container = document.getElementById("lista-facturi-content");
+    
+    let visibleCount = 0;
 
     carduri.forEach(card => {
         const nrFactura = card.getAttribute("data-nr") ? card.getAttribute("data-nr").toLowerCase() : "";
 
         if (nrFactura.includes(termen)) {
             card.style.setProperty("display", "flex", "important");
+            visibleCount++;
         } else {
             card.style.setProperty("display", "none", "important");
         }
     });
+    
+    // Gestionăm empty state pentru căutare
+    let emptySearchDiv = container?.querySelector(".empty-search-state");
+    
+    if (termen && visibleCount === 0) {
+        // Adăugăm empty state dacă nu există
+        if (!emptySearchDiv && container) {
+            emptySearchDiv = document.createElement("div");
+            emptySearchDiv.className = "empty-search-state col-span-full";
+            emptySearchDiv.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-12 px-8">
+                    <svg class="w-20 h-20 mx-auto mb-4" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="60" cy="60" r="56" stroke="#e2e8f0" stroke-width="2" stroke-dasharray="8 4"/>
+                        <circle cx="52" cy="52" r="20" stroke="#cbd5e1" stroke-width="3" fill="#f8fafc"/>
+                        <path d="M66 66l16 16" stroke="#cbd5e1" stroke-width="4" stroke-linecap="round"/>
+                        <path d="M45 52h14M52 45v14" stroke="#e2e8f0" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+                    </svg>
+                    <p class="font-bold text-slate-500 text-sm uppercase tracking-wider mb-2">Nicio factură găsită</p>
+                    <p class="text-xs text-slate-400 text-center">Nu am găsit facturi cu numărul "<span class="font-semibold">${termen}</span>"</p>
+                </div>`;
+            container.appendChild(emptySearchDiv);
+        }
+    } else if (emptySearchDiv) {
+        // Eliminăm empty state dacă există rezultate
+        emptySearchDiv.remove();
+    }
+}
+
+/**
+ * Încarcă mai multe facturi pentru clientul curent (Lazy Loading)
+ * #6 TODO - Lazy loading facturi
+ */
+function loadMoreFacturiClient() {
+    if (!ZFlowStore.facturiSortateClient || !ZFlowStore.hasMoreFacturi) return;
+    
+    const f = ZFlowStore.dateLocal.find((x) => String(x.id) === String(ZFlowStore.selectedClientId));
+    if (!f) return;
+    
+    const azi = new Date();
+    azi.setHours(0, 0, 0, 0);
+    
+    const start = ZFlowStore.facturiLoadedCount;
+    const end = Math.min(start + ZFlowStore.facturiPerPage, ZFlowStore.facturiTotalCount);
+    const facturiNoi = ZFlowStore.facturiSortateClient.slice(start, end);
+    
+    // Generăm HTML pentru facturile noi folosind funcția helper
+    const htmlNou = facturiNoi.map((fac) => genereazaCardFactura(fac, f, azi)).join("");
+    
+    // Adăugăm la container
+    const container = document.getElementById("lista-facturi-content");
+    if (container) {
+        container.insertAdjacentHTML('beforeend', htmlNou);
+    }
+    
+    // Re-inițializăm SwipeHandler pentru noile carduri
+    SwipeHandler.init('#lista-facturi-content');
+    
+    // Actualizăm contorul
+    ZFlowStore.facturiLoadedCount = end;
+    ZFlowStore.hasMoreFacturi = end < ZFlowStore.facturiTotalCount;
+    
+    // Actualizăm sau ascundem butonul
+    const loadMoreDiv = document.getElementById("load-more-facturi");
+    if (loadMoreDiv) {
+        if (ZFlowStore.hasMoreFacturi) {
+            loadMoreDiv.querySelector("button").innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                Încarcă mai multe (${ZFlowStore.facturiLoadedCount}/${ZFlowStore.facturiTotalCount})`;
+        } else {
+            loadMoreDiv.innerHTML = `
+                <div class="text-center py-4 text-slate-400 text-[10px] font-bold uppercase flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+                    Toate facturile încărcate (${ZFlowStore.facturiTotalCount})
+                </div>`;
+        }
+    }
+    
+    showNotification(`Încărcate ${facturiNoi.length} facturi`, "info");
 }
 
 // ==========================================
@@ -1062,7 +1529,7 @@ function genereazaBI() {
     if (pageInfo) pageInfo.innerText = `Pagina ${ZFlowStore.biCurrentPage} din ${totalPages} (${filtrate.length} facturi)`;
 
     if (filtrate.length === 0) {
-        showEmptyState(container, "Niciun rezultat", "Nicio factură găsită în perioada selectată");
+        showEmptyState(container, "Niciun rezultat", "Nu există facturi pentru perioada și filtrele selectate. Modifică intervalul de date sau clienții selectați.", "period");
         return;
     }
 
@@ -1073,8 +1540,14 @@ function genereazaBI() {
     container.innerHTML = paginatedData.map((f) => {
         const client = ZFlowStore.dateLocal.find((c) => String(c.id) === String(f.client_id));
         const isIncasat = f.status_plata === "Incasat";
-        return `<div class="card-flow flex items-center justify-between min-h-[65px] mb-2 ${isIncasat ? 'bg-white' : 'bg-red-50/40 border-red-100'}" data-client-id="${f.client_id}">
-            <div class="flex items-center gap-3"><span class="status-dot ${isIncasat ? 'bg-incasat' : 'bg-neincasat'}"></span>
+        const isSelected = ZFlowStore.bulkSelectedFacturi.includes(String(f.id));
+        const checkboxHtml = ZFlowStore.bulkMode ? `
+            <input type="checkbox" class="bulk-checkbox w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer" 
+                   data-factura-id="${f.id}" 
+                   ${isSelected ? 'checked' : ''} 
+                   onclick="event.stopPropagation(); toggleBulkSelectFactura('${f.id}')" />` : '';
+        return `<div class="card-flow flex items-center justify-between min-h-[65px] mb-2 ${isIncasat ? 'bg-white' : 'bg-red-50/40 border-red-100'} ${isSelected ? 'ring-2 ring-blue-500' : ''}" data-client-id="${f.client_id}" data-factura-id="${f.id}">
+            <div class="flex items-center gap-3">${checkboxHtml}<span class="status-dot ${isIncasat ? 'bg-incasat' : 'bg-neincasat'}"></span>
             <div><div class="flex items-center gap-2"><p class="text-[11px] font-black text-slate-800 uppercase truncate">${client?.nume_firma || "Client"}</p>
             ${f.pdf_url ? `<a href="${f.pdf_url}" target="_blank" class="text-blue-600"><svg class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path d="M9 2a2 2 0 00-2 2v8a2 2 0 002 2h6a2 2 0 002-2V6.414A2 2 0 0016.414 5L14 2.586A2 2 0 0012.586 2H9z"/></svg></a>` : ''}</div>
             <p class="text-[8px] font-bold text-slate-400 uppercase">#${f.numar_factura} | E: ${formateazaDataZFlow(f.data_emiterii)}</p></div></div>
@@ -1096,6 +1569,303 @@ function biPrevPage() {
         ZFlowStore.biCurrentPage--;
         genereazaBI();
     }
+}
+
+// ==========================================
+// BULK ACTIONS (#14 TODO)
+// ==========================================
+
+/**
+ * Activează/dezactivează modul de selecție multiplă
+ */
+function toggleBulkMode() {
+    ZFlowStore.bulkMode = !ZFlowStore.bulkMode;
+    ZFlowStore.bulkSelectedFacturi = [];
+    
+    const bulkBar = document.getElementById("bulk-actions-bar");
+    const toggleBtn = document.getElementById("btn-toggle-bulk");
+    
+    if (ZFlowStore.bulkMode) {
+        if (bulkBar) bulkBar.classList.remove("hidden");
+        if (toggleBtn) {
+            toggleBtn.classList.add("bg-blue-900", "text-white");
+            toggleBtn.classList.remove("bg-slate-100", "text-slate-600");
+            toggleBtn.innerHTML = `<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg> Mod Selecție Activ`;
+        }
+    } else {
+        if (bulkBar) bulkBar.classList.add("hidden");
+        if (toggleBtn) {
+            toggleBtn.classList.remove("bg-blue-900", "text-white");
+            toggleBtn.classList.add("bg-slate-100", "text-slate-600");
+            toggleBtn.innerHTML = `<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> Selecție Multiplă`;
+        }
+    }
+    
+    updateBulkUI();
+    genereazaBI(); // Re-render cu/fără checkbox-uri
+}
+
+/**
+ * Toggle selectare factură individuală
+ */
+function toggleBulkSelectFactura(facturaId) {
+    const idx = ZFlowStore.bulkSelectedFacturi.indexOf(facturaId);
+    if (idx > -1) {
+        ZFlowStore.bulkSelectedFacturi.splice(idx, 1);
+    } else {
+        ZFlowStore.bulkSelectedFacturi.push(facturaId);
+    }
+    updateBulkUI();
+}
+
+/**
+ * Selectează toate facturile vizibile
+ */
+function bulkSelectAll() {
+    const carduri = document.querySelectorAll("#rezultat-analiza .card-flow");
+    carduri.forEach(card => {
+        const facturaId = card.getAttribute("data-factura-id");
+        if (facturaId && !ZFlowStore.bulkSelectedFacturi.includes(facturaId)) {
+            ZFlowStore.bulkSelectedFacturi.push(facturaId);
+        }
+    });
+    updateBulkUI();
+    // Update checkbox-uri vizuale
+    document.querySelectorAll("#rezultat-analiza .bulk-checkbox").forEach(cb => {
+        cb.checked = true;
+    });
+}
+
+/**
+ * Actualizează UI-ul pentru bulk actions
+ */
+function updateBulkUI() {
+    const countEl = document.getElementById("bulk-count");
+    if (countEl) countEl.innerText = ZFlowStore.bulkSelectedFacturi.length;
+    
+    // Actualizează checkbox-urile
+    document.querySelectorAll("#rezultat-analiza .bulk-checkbox").forEach(cb => {
+        const facturaId = cb.getAttribute("data-factura-id");
+        cb.checked = ZFlowStore.bulkSelectedFacturi.includes(facturaId);
+    });
+    
+    // Actualizează label-urile butoanelor de export (Export Inteligent)
+    updateExportButtonLabels();
+}
+
+/**
+ * Marchează toate facturile selectate ca încasate
+ */
+async function bulkMarkPaid() {
+    if (ZFlowStore.bulkSelectedFacturi.length === 0) {
+        showNotification("Selectează cel puțin o factură", "warning");
+        return;
+    }
+    
+    if (!hasPermission('canEdit')) {
+        showNotification("⛔ Nu ai permisiunea de a edita facturi", "error");
+        return;
+    }
+    
+    const count = ZFlowStore.bulkSelectedFacturi.length;
+    if (!confirm(`Marchezi ${count} facturi ca ÎNCASATE?`)) return;
+    
+    setLoader(true);
+    let success = 0;
+    let failed = 0;
+    
+    for (const facturaId of ZFlowStore.bulkSelectedFacturi) {
+        try {
+            await ZFlowDB.updateFactura(facturaId, { 
+                status_plata: "Incasat",
+                data_incasarii: new Date().toISOString().split('T')[0]
+            });
+            
+            // Update local
+            const factura = ZFlowStore.dateFacturiBI.find(f => String(f.id) === String(facturaId));
+            if (factura) {
+                factura.status_plata = "Incasat";
+                factura.data_incasarii = new Date().toISOString().split('T')[0];
+            }
+            success++;
+        } catch (err) {
+            console.error("Eroare bulk update:", err);
+            failed++;
+        }
+    }
+    
+    setLoader(false);
+    ZFlowStore.bulkSelectedFacturi = [];
+    toggleBulkMode();
+    genereazaBI();
+    updateDashboardKPI();
+    
+    if (failed === 0) {
+        showNotification(`✅ ${success} facturi marcate ca încasate`, "success");
+    } else {
+        showNotification(`${success} reușite, ${failed} eșuate`, "warning");
+    }
+}
+
+/**
+ * Export PDF pentru facturi SELECTATE (bulk mode)
+ * Apelată de exportaPDF() când există selecție
+ */
+function exportaPDFSelectie() {
+    const facturiSelectate = ZFlowStore.dateFacturiBI.filter(f => 
+        ZFlowStore.bulkSelectedFacturi.includes(String(f.id))
+    );
+    
+    if (facturiSelectate.length === 0) {
+        showNotification("Nicio factură selectată", "warning");
+        return;
+    }
+    
+    const curataText = (text) => {
+        if (!text) return "";
+        return text.toString()
+            .replace(/ș/g, "s").replace(/Ș/g, "S")
+            .replace(/ț/g, "t").replace(/Ț/g, "T")
+            .replace(/ă/g, "a").replace(/Ă/g, "A")
+            .replace(/î/g, "i").replace(/Î/g, "I")
+            .replace(/â/g, "a").replace(/Â/g, "A");
+    };
+    
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF("p", "mm", "a4");
+    
+    const totalSelectat = facturiSelectate.reduce((acc, f) => acc + (Number(f.valoare) || 0), 0);
+    
+    doc.setFontSize(18);
+    doc.setTextColor(30, 58, 138);
+    doc.text(curataText("RAPORT FACTURI SELECTATE"), 14, 20);
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(curataText(`Generat: ${new Date().toLocaleDateString("ro-RO")} | ${facturiSelectate.length} facturi selectate`), 14, 28);
+    doc.setFontSize(13);
+    doc.text(curataText(`TOTAL SELECTAT: ${Math.round(totalSelectat).toLocaleString()} lei`), 14, 38);
+    
+    const headers = [[curataText("CLIENT"), curataText("DOCUMENT"), curataText("EMIS LA"), curataText("SCADENTA"), curataText("SUMA"), curataText("STATUS")]];
+    const rows = facturiSelectate.map(f => {
+        const client = ZFlowStore.dateLocal.find(c => String(c.id) === String(f.client_id));
+        return [
+            curataText(client?.nume_firma || "N/A"),
+            curataText(f.numar_factura || "N/A"),
+            curataText(formateazaDataZFlow(f.data_emiterii)),
+            curataText(formateazaDataZFlow(f.data_scadenta)),
+            curataText(`${Number(f.valoare).toLocaleString()} lei`),
+            curataText(f.status_plata === "Incasat" ? "INCASAT" : "NEINCASAT")
+        ];
+    });
+    
+    doc.autoTable({
+        startY: 45,
+        head: headers,
+        body: rows,
+        theme: "striped",
+        headStyles: { fillColor: [30, 58, 138], fontSize: 8, halign: "center" },
+        styles: { fontSize: 7, cellPadding: 2, halign: "center" },
+        columnStyles: {
+            0: { cellWidth: 40, halign: "center" },
+            1: { cellWidth: 30, halign: "center" },
+            2: { cellWidth: 22, halign: "center" },
+            3: { cellWidth: 22, halign: "center" },
+            4: { cellWidth: 30, halign: "center", fontStyle: "bold" },
+            5: { cellWidth: 25, halign: "center", fontStyle: "bold" },
+        },
+        didParseCell: function (data) {
+            if (data.section === "body" && data.column.index === 5) {
+                if (data.cell.raw === "INCASAT") {
+                    data.cell.styles.textColor = [16, 185, 129];
+                } else {
+                    data.cell.styles.textColor = [239, 68, 68];
+                }
+            }
+        },
+    });
+    
+    doc.save(`facturi_selectie_${new Date().toISOString().slice(0, 10)}.pdf`);
+    showNotification(`PDF generat cu ${facturiSelectate.length} facturi selectate`, "success");
+}
+
+/**
+ * Export Excel pentru facturi SELECTATE (bulk mode)
+ * Apelată de exportaExcel() când există selecție
+ */
+function exportaExcelSelectie() {
+    const facturiSelectate = ZFlowStore.dateFacturiBI.filter(f => 
+        ZFlowStore.bulkSelectedFacturi.includes(String(f.id))
+    );
+    
+    if (facturiSelectate.length === 0) {
+        showNotification("Nicio factură selectată", "warning");
+        return;
+    }
+    
+    const headers = ["Client", "Factură", "Valoare", "Status", "Data Emiterii", "Scadență"];
+    const rows = facturiSelectate.map(f => {
+        const client = ZFlowStore.dateLocal.find(c => String(c.id) === String(f.client_id));
+        return [
+            client?.nume_firma || "N/A",
+            f.numar_factura || "N/A",
+            f.valoare || 0,
+            f.status_plata === "Incasat" ? "Încasat" : "Neîncasat",
+            formateazaDataZFlow(f.data_emiterii),
+            formateazaDataZFlow(f.data_scadenta)
+        ];
+    });
+    
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Facturi Selectate");
+    XLSX.writeFile(wb, `facturi_selectie_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    showNotification(`📊 Excel generat cu ${facturiSelectate.length} facturi selectate`, "success");
+}
+
+/**
+ * Actualizează label-urile butoanelor de export în funcție de context
+ * Arată "Export Selecție" când sunt facturi selectate, altfel "Export Raport"
+ */
+function updateExportButtonLabels() {
+    const btnPDF = document.getElementById("btn-export-pdf");
+    const btnExcel = document.getElementById("btn-export-excel");
+    const hasSelection = ZFlowStore.bulkMode && ZFlowStore.bulkSelectedFacturi.length > 0;
+    const count = ZFlowStore.bulkSelectedFacturi.length;
+    
+    if (btnPDF) {
+        const labelPDF = btnPDF.querySelector(".export-label");
+        if (labelPDF) {
+            labelPDF.textContent = hasSelection ? `Export ${count} Selectate PDF` : "Export Raport PDF";
+        }
+        // Schimbă culoarea pentru a indica modul
+        if (hasSelection) {
+            btnPDF.classList.remove("bg-slate-800");
+            btnPDF.classList.add("bg-blue-600");
+        } else {
+            btnPDF.classList.remove("bg-blue-600");
+            btnPDF.classList.add("bg-slate-800");
+        }
+    }
+    
+    if (btnExcel) {
+        const labelExcel = btnExcel.querySelector(".export-label");
+        if (labelExcel) {
+            labelExcel.textContent = hasSelection ? `Export ${count} Selectate Excel` : "Export Date Excel";
+        }
+        // Schimbă culoarea pentru a indica modul
+        if (hasSelection) {
+            btnExcel.classList.remove("bg-emerald-600");
+            btnExcel.classList.add("bg-blue-500");
+        } else {
+            btnExcel.classList.remove("bg-blue-500");
+            btnExcel.classList.add("bg-emerald-600");
+        }
+    }
+}
+
+// Păstrăm funcția veche pentru compatibilitate (delegă către exportaPDF)
+function bulkExportPDF() {
+    exportaPDF();
 }
 
 /**
@@ -1242,6 +2012,7 @@ function deschideModal(id, targetId = null) {
                 document.getElementById("in-fac-emisie").value = fc.data_emiterii;
                 document.getElementById("in-fac-scad").value = fc.data_scadenta;
                 document.getElementById("in-auto").value = fc.numar_auto || "";
+                document.getElementById("in-fac-note").value = fc.note || "";
                 sincronizeazaDateVizual();
 
                 if (anafBox) {
@@ -1265,6 +2036,7 @@ function deschideModal(id, targetId = null) {
             document.getElementById("in-fac-id").value = "";
             document.getElementById("in-fac-client").value = "";
             document.querySelectorAll("#modal-factura input:not([type='hidden'])").forEach((i) => (i.value = ""));
+            document.getElementById("in-fac-note").value = "";
             document.getElementById("in-fac-emisie").value = new Date().toISOString().split("T")[0];
             sincronizeazaDateVizual();
             if (anafBox) anafBox.classList.add("hidden");
@@ -1343,7 +2115,7 @@ async function salveazaClient() {
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (dateFirma.contact_email && !emailRegex.test(dateFirma.contact_email.trim())) {
-        if (!confirm("⚠️ Email nevalid. Continuați oricum?")) return;
+        if (!confirm("Email nevalid. Continuați oricum?")) return;
     }
 
     setLoader(true);
@@ -1380,6 +2152,7 @@ async function salveazaFacturaOrchestrator() {
     const de = document.getElementById("in-fac-emisie").value;
     const ds = document.getElementById("in-fac-scad").value;
     const auto = document.getElementById("in-auto").value;
+    const note = document.getElementById("in-fac-note")?.value || "";
     const fileInput = document.getElementById("in-fac-file");
     const file = fileInput.files[0];
 
@@ -1400,6 +2173,7 @@ async function salveazaFacturaOrchestrator() {
             data_emiterii: de || new Date().toISOString().split("T")[0],
             data_scadenta: ds,
             numar_auto: auto,
+            note: note.trim() || null,
         };
 
         if (url) payload.pdf_url = url;
@@ -1430,13 +2204,19 @@ async function toggleStatusPlata(id, currentStatus) {
     const f = ZFlowStore.dateFacturiBI.find((x) => String(x.id) === String(id));
 
     if (f && (f.is_imported || f.id_descarcare_anaf)) {
-        return alert("⚠️ SAGA factură - Nu poate fi modificată");
+        return alert("SAGA factură - Nu poate fi modificată");
     }
 
     const noulStatus = currentStatus === "Incasat" ? "Neincasat" : "Incasat";
+    const updatePayload = { 
+        status_plata: noulStatus,
+        // Setăm data plății când se încasează, ștergem când se anulează
+        data_plata: noulStatus === "Incasat" ? new Date().toISOString().split("T")[0] : null
+    };
+    
     setLoader(true);
     try {
-        await ZFlowDB.updateFactura(id, { status_plata: noulStatus });
+        await ZFlowDB.updateFactura(id, updatePayload);
         await init();
         saveZFlowData();
         if (f) arataDetalii(f.client_id);
@@ -1635,17 +2415,17 @@ async function importaDateSaga() {
                 } else if (erori.length > 0) {
                     const duplicates = erori.filter(e => e.startsWith('Duplicat')).length;
                     if (duplicates === erori.length) {
-                        showNotification(`⚠️ Toate facturile există deja (${duplicates} duplicate)`, "warning");
+                        showNotification(`Toate facturile există deja (${duplicates} duplicate)`, "warning");
                     } else {
-                        showNotification(`⚠️ 0 facturi importate. Verifică consola (F12)`, "warning");
+                        showNotification(`0 facturi importate. Verifică consola (F12)`, "warning");
                     }
                     console.error("Erori import:", erori);
                 } else {
-                    showNotification(`⚠️ Fișierul nu conține date valide`, "warning");
+                    showNotification(`Fișierul nu conține date valide`, "warning");
                 }
             } catch (err) {
                 console.error("Eroare import CSV:", err);
-                showNotification("❌ Eroare import: " + err.message, "error");
+                showNotification("Eroare import: " + err.message, "error");
             } finally {
                 setLoader(false);
                 fileInput.value = "";
@@ -1660,9 +2440,19 @@ async function importaDateSaga() {
 }
 
 /**
- * Export PDF
+ * Export PDF - INTELIGENT: detectează dacă există selecție bulk
+ * Dacă sunt facturi selectate -> exportă doar selecția
+ * Altfel -> exportă toate facturile filtrate
  */
 function exportaPDF() {
+    // VERIFICARE BULK SELECTION - dacă există facturi selectate, exportă doar selecția
+    if (ZFlowStore.bulkMode && ZFlowStore.bulkSelectedFacturi.length > 0) {
+        console.log("📄 Export PDF - MOD SELECȚIE: " + ZFlowStore.bulkSelectedFacturi.length + " facturi");
+        exportaPDFSelectie();
+        return;
+    }
+    
+    console.log("📄 Export PDF - MOD COMPLET: toate facturile filtrate");
     const cards = document.querySelectorAll("#rezultat-analiza .card-flow:not(.is-hidden-by-search)");
 
     const curataText = (text) => {
@@ -1782,9 +2572,19 @@ function resetFiltreBIExport() {
 }
 
 /**
- * Export Excel
+ * Export Excel - INTELIGENT: detectează dacă există selecție bulk
+ * Dacă sunt facturi selectate -> exportă doar selecția
+ * Altfel -> exportă toate facturile filtrate
  */
 function exportaExcel() {
+    // VERIFICARE BULK SELECTION - dacă există facturi selectate, exportă doar selecția
+    if (ZFlowStore.bulkMode && ZFlowStore.bulkSelectedFacturi.length > 0) {
+        console.log("📊 Export Excel - MOD SELECȚIE: " + ZFlowStore.bulkSelectedFacturi.length + " facturi");
+        exportaExcelSelectie();
+        return;
+    }
+    
+    console.log("📊 Export Excel - MOD COMPLET: toate facturile filtrate");
     const s = document.getElementById("data-start")?.value;
     const e = document.getElementById("data-end")?.value;
     const ids = Array.from(document.querySelectorAll("#container-bi-checks input:checked")).map((i) => String(i.value));
@@ -1822,11 +2622,60 @@ function exportaExcel() {
 function trimiteEmailDebitor(email, nr, suma) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email || email === "undefined" || email === "null" || !emailRegex.test(email)) {
-        return alert("⚠️ Eroare: Adresa de email nu este validă!");
+        return alert("Eroare: Adresa de email nu este validă!");
     }
     const subiect = encodeURIComponent(`Notificare plată factură nr. ${nr}`);
     const corp = encodeURIComponent(`Bună ziua,\n\nVă reamintim de plata facturii nr. ${nr} în valoare de ${suma} RON.\n\nVă mulțumim!`);
     window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${email}&su=${subiect}&body=${corp}`, "_blank");
+}
+
+/**
+ * Trimite reminder WhatsApp - generează link direct cu mesaj pre-definit
+ * #30 TODO - WhatsApp notificări
+ */
+function trimiteWhatsAppReminder(telefon, numeClient, nrFactura, suma, dataScadenta) {
+    // Validare număr telefon
+    if (!telefon || telefon === "undefined" || telefon === "null" || telefon.trim() === "") {
+        showNotification("Clientul nu are număr de telefon configurat", "warning");
+        return;
+    }
+    
+    // Curăță numărul de telefon (elimină spații, paranteze, liniițe)
+    let telefonCurat = telefon.replace(/[\s\-\(\)\.]/g, "");
+    
+    // Adăugare prefix România dacă lipsește
+    if (telefonCurat.startsWith("07")) {
+        telefonCurat = "40" + telefonCurat.substring(1); // 07xx -> 407xx
+    } else if (telefonCurat.startsWith("0")) {
+        telefonCurat = "40" + telefonCurat.substring(1);
+    } else if (!telefonCurat.startsWith("40") && !telefonCurat.startsWith("+")) {
+        telefonCurat = "40" + telefonCurat;
+    }
+    
+    // Elimină "+" dacă există (WhatsApp API nu are nevoie)
+    telefonCurat = telefonCurat.replace("+", "");
+    
+    // Formatează data scadenței
+    const dataFormatata = dataScadenta ? formateazaDataZFlow(dataScadenta) : "necunoscută";
+    
+    // Compune mesajul
+    const mesaj = `Bună ziua,
+
+Vă contactăm pentru factura nr. *${nrFactura}* în valoare de *${Number(suma).toLocaleString()} lei*.
+
+Scadența: ${dataFormatata}
+
+Vă rugăm să efectuați plata cât mai curând posibil.
+
+Mulțumim!
+_Z-FLOW Enterprise_`;
+    
+    const mesajEncodat = encodeURIComponent(mesaj);
+    const whatsappUrl = `https://wa.me/${telefonCurat}?text=${mesajEncodat}`;
+    
+    // Deschide WhatsApp (web sau app nativ)
+    window.open(whatsappUrl, "_blank");
+    showNotification(`📤 WhatsApp deschis pentru ${numeClient}`, "success");
 }
 
 /**
@@ -2064,11 +2913,227 @@ window.renderMain = renderMain;
 window.filtreazaListaFirme = filtreazaListaFirme;
 window.arataDetalii = arataDetalii;
 window.filtreazaFacturiInDetalii = filtreazaFacturiInDetalii;
+window.loadMoreFacturiClient = loadMoreFacturiClient;
 window.populeazaBridgeUI = populeazaBridgeUI;
 window.toggleFirmeBI = toggleFirmeBI;
 window.genereazaBI = genereazaBI;
+// ==========================================
+// SWIPE ACTIONS - MOBILE GESTURES (#34 TODO)
+// ==========================================
+
+/**
+ * Inițializează swipe actions pe cardurile de facturi
+ * Swipe stânga → ștergere
+ * Swipe dreapta → toggle status plată
+ */
+const SwipeHandler = {
+    touchStartX: 0,
+    touchStartY: 0,
+    touchEndX: 0,
+    touchEndY: 0,
+    currentCard: null,
+    swipeThreshold: 80, // pixeli minimi pentru a considera un swipe
+    isSwipeing: false,
+    
+    /**
+     * Inițializează event listeners pentru o listă de carduri
+     */
+    init(containerSelector) {
+        // Detectăm dacă e dispozitiv touch
+        if (!('ontouchstart' in window)) return;
+        
+        const container = document.querySelector(containerSelector);
+        if (!container) return;
+        
+        // Delegăm evenimente la container
+        container.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: true });
+        container.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: false });
+        container.addEventListener('touchend', (e) => this.handleTouchEnd(e), { passive: true });
+    },
+    
+    /**
+     * Găsește cardul părinte din target
+     */
+    findCard(element) {
+        return element.closest('.swipeable-card');
+    },
+    
+    /**
+     * La începutul touch-ului
+     */
+    handleTouchStart(e) {
+        const card = this.findCard(e.target);
+        if (!card) return;
+        
+        this.currentCard = card;
+        this.touchStartX = e.touches[0].clientX;
+        this.touchStartY = e.touches[0].clientY;
+        this.isSwipeing = false;
+        
+        // Resetăm alte carduri deschise
+        document.querySelectorAll('.swipeable-card.swiped-left, .swipeable-card.swiped-right').forEach(c => {
+            if (c !== card) {
+                c.classList.remove('swiped-left', 'swiped-right');
+                const content = c.querySelector('.swipe-content');
+                if (content) content.style.transform = '';
+            }
+        });
+    },
+    
+    /**
+     * În timpul mișcării touch
+     */
+    handleTouchMove(e) {
+        if (!this.currentCard) return;
+        
+        const touchX = e.touches[0].clientX;
+        const touchY = e.touches[0].clientY;
+        const diffX = touchX - this.touchStartX;
+        const diffY = touchY - this.touchStartY;
+        
+        // Verificăm dacă e scroll vertical
+        if (Math.abs(diffY) > Math.abs(diffX) && !this.isSwipeing) {
+            return;
+        }
+        
+        // E swipe orizontal
+        if (Math.abs(diffX) > 10) {
+            this.isSwipeing = true;
+            e.preventDefault(); // Prevenim scroll-ul
+        }
+        
+        if (!this.isSwipeing) return;
+        
+        // Limităm distanța de swipe
+        const maxSwipe = 100;
+        const clampedDiff = Math.max(-maxSwipe, Math.min(maxSwipe, diffX));
+        
+        const content = this.currentCard.querySelector('.swipe-content');
+        if (content) {
+            content.style.transform = `translateX(${clampedDiff}px)`;
+            content.style.transition = 'none';
+        }
+        
+        // Afișăm acțiunile
+        const leftAction = this.currentCard.querySelector('.swipe-action-left');
+        const rightAction = this.currentCard.querySelector('.swipe-action-right');
+        
+        if (leftAction) {
+            leftAction.style.opacity = Math.min(1, Math.abs(diffX) / this.swipeThreshold);
+        }
+        if (rightAction) {
+            rightAction.style.opacity = Math.min(1, Math.abs(diffX) / this.swipeThreshold);
+        }
+    },
+    
+    /**
+     * La finalul touch-ului
+     */
+    handleTouchEnd(e) {
+        if (!this.currentCard || !this.isSwipeing) {
+            this.currentCard = null;
+            return;
+        }
+        
+        const diffX = e.changedTouches[0].clientX - this.touchStartX;
+        const content = this.currentCard.querySelector('.swipe-content');
+        
+        if (content) {
+            content.style.transition = 'transform 0.3s ease';
+        }
+        
+        // Swipe stânga = ștergere
+        if (diffX < -this.swipeThreshold) {
+            this.currentCard.classList.add('swiped-left');
+            if (content) content.style.transform = 'translateX(-100px)';
+            
+            // Vibrație (haptic feedback)
+            if (navigator.vibrate) navigator.vibrate(50);
+            
+        // Swipe dreapta = încasare
+        } else if (diffX > this.swipeThreshold) {
+            this.currentCard.classList.add('swiped-right');
+            if (content) content.style.transform = 'translateX(100px)';
+            
+            if (navigator.vibrate) navigator.vibrate(50);
+            
+        } else {
+            // Reset la poziția inițială
+            this.currentCard.classList.remove('swiped-left', 'swiped-right');
+            if (content) content.style.transform = '';
+        }
+        
+        this.currentCard = null;
+        this.isSwipeing = false;
+    },
+    
+    /**
+     * Execută acțiunea de swipe și resetează cardul
+     */
+    executeAction(button) {
+        const card = button.closest('.swipeable-card');
+        if (!card) return;
+        
+        const content = card.querySelector('.swipe-content');
+        if (content) {
+            content.style.transition = 'transform 0.3s ease';
+            content.style.transform = '';
+        }
+        card.classList.remove('swiped-left', 'swiped-right');
+    }
+};
+
+/**
+ * Resetează toate cardurile swipe la poziția inițială
+ */
+function resetAllSwipeCards() {
+    document.querySelectorAll('.swipeable-card.swiped-left, .swipeable-card.swiped-right').forEach(card => {
+        card.classList.remove('swiped-left', 'swiped-right');
+        const content = card.querySelector('.swipe-content');
+        if (content) {
+            content.style.transition = 'transform 0.3s ease';
+            content.style.transform = '';
+        }
+    });
+}
+
+/**
+ * Acțiune swipe pentru încasare rapidă
+ */
+function swipeToggleIncasare(facturaId, statusCurent) {
+    SwipeHandler.executeAction(event.target);
+    toggleStatusPlata(facturaId, statusCurent);
+}
+
+/**
+ * Acțiune swipe pentru ștergere rapidă
+ */
+function swipeStergeFactura(facturaId) {
+    SwipeHandler.executeAction(event.target);
+    stergeFactura(facturaId);
+}
+
+// Inițializăm SwipeHandler după DOM ready
+document.addEventListener('DOMContentLoaded', () => {
+    // Inițializăm pe listele de facturi
+    SwipeHandler.init('#lista-facturi-content');
+    SwipeHandler.init('#rezultat-analiza');
+});
+
+// Re-inițializăm după navigare
+const originalArataDetalii = typeof arataDetalii === 'function' ? arataDetalii : null;
+
+// ==========================================
+// WINDOW EXPORTS
+// ==========================================
+
 window.biNextPage = biNextPage;
 window.biPrevPage = biPrevPage;
+window.toggleBulkMode = toggleBulkMode;
+window.toggleBulkSelectFactura = toggleBulkSelectFactura;
+window.bulkSelectAll = bulkSelectAll;
+window.bulkMarkPaid = bulkMarkPaid;
+window.bulkExportPDF = bulkExportPDF;
 window.setFiltruStatusBI = setFiltruStatusBI;
 window.filtreazaFirmeInBI = filtreazaFirmeInBI;
 window.deschideModal = deschideModal;
@@ -2080,12 +3145,16 @@ window.salveazaFacturaOrchestrator = salveazaFacturaOrchestrator;
 window.toggleStatusPlata = toggleStatusPlata;
 window.stergeFactura = stergeFactura;
 window.stergeFirma = stergeFirma;
+window.swipeToggleIncasare = swipeToggleIncasare;
+window.swipeStergeFactura = swipeStergeFactura;
+window.resetAllSwipeCards = resetAllSwipeCards;
 window.showConfirmModal = showConfirmModal;
 window.inchideModalConfirm = inchideModalConfirm;
 window.importaDateSaga = importaDateSaga;
 window.exportaPDF = exportaPDF;
 window.exportaExcel = exportaExcel;
 window.trimiteEmailDebitor = trimiteEmailDebitor;
+window.trimiteWhatsAppReminder = trimiteWhatsAppReminder;
 window.printInvoice = printInvoice;
 window.autoCautareCUI = autoCautareCUI;
 window.renderTransportTab = renderTransportTab;

@@ -36,6 +36,32 @@ async function fetchFacturi() {
 }
 
 /**
+ * Încarcă facturi cu paginare (lazy loading)
+ * #6 TODO - Lazy loading facturi
+ * @param {number} limit - Numărul de facturi de încărcat
+ * @param {number} offset - Offset-ul de unde să înceapă
+ * @param {string} clientId - Optional: filtrare după client
+ * @returns {Promise<{data: Array, count: number}>}
+ */
+async function fetchFacturiPaginated(limit = 50, offset = 0, clientId = null) {
+    let query = zf
+        .from("facturi")
+        .select("*", { count: 'exact' })
+        .order("created_at", { ascending: false })
+        .range(offset, offset + limit - 1);
+    
+    // Filtrare opțională după client
+    if (clientId) {
+        query = query.eq("client_id", clientId);
+    }
+    
+    const { data, error, count } = await query;
+    
+    if (error) throw error;
+    return { data: data || [], count: count || 0 };
+}
+
+/**
  * Inserează o factură nouă
  */
 async function insertFactura(payload) {
@@ -185,6 +211,7 @@ window.ZFlowDB = {
     zf,
     fetchClienti,
     fetchFacturi,
+    fetchFacturiPaginated,
     insertFactura,
     updateFactura,
     deleteFactura,
