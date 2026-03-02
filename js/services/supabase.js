@@ -110,14 +110,32 @@ async function deleteClient(id) {
 }
 
 /**
+ * Șterge un fișier PDF din storage după URL-ul public
+ */
+async function deletePDFFromStorage(publicUrl) {
+    try {
+        // Extrage calea relativă din URL-ul public Supabase
+        const marker = '/object/public/facturi-pdf/';
+        const idx = publicUrl.indexOf(marker);
+        if (idx === -1) return; // URL necunoscut, nu facem nimic
+        const filePath = decodeURIComponent(publicUrl.slice(idx + marker.length));
+        const { error } = await zf.storage.from('facturi-pdf').remove([filePath]);
+        if (error) console.warn('[Storage] Eroare ștergere fișier:', error.message);
+    } catch (e) {
+        console.warn('[Storage] Eroare ștergere fișier:', e);
+    }
+}
+
+/**
  * Upload PDF factură în storage
  */
-async function uploadFacturaPDF(file, numarFactura) {
-    const fileName = `${Date.now()}_${numarFactura.replace(/\s+/g, "_")}.pdf`;
+async function uploadFacturaPDF(file, numarFactura, idx = 0) {
+    // idx garantează unicitate chiar dacă Date.now() returnează același ms pentru upload-uri rapide
+    const fileName = `${Date.now()}_${idx}_${numarFactura.replace(/\s+/g, "_")}.pdf`;
     
     const { data, error } = await zf.storage
         .from("facturi-pdf")
-        .upload(fileName, file, { upsert: true });
+        .upload(fileName, file, { upsert: false });
     
     if (error) throw error;
     
@@ -197,6 +215,110 @@ function onAuthStateChange(callback) {
 }
 
 /**
+ * Obține profilul firmei utilizatorului curent
+ */
+async function fetchProfile() {
+    const { data, error } = await zf
+        .from("profiles")
+        .select("*")
+        .single();
+    if (error && error.code !== 'PGRST116') throw error; // PGRST116 = no rows found
+    return data || null;
+}
+
+/**
+ * Creează sau actualizează profilul firmei
+ */
+async function upsertProfile(payload) {
+    const { data: { user } } = await zf.auth.getUser();
+    if (!user) throw new Error('Nu ești autentificat');
+    const { error } = await zf
+        .from("profiles")
+        .upsert({ ...payload, id: user.id, user_id: user.id, updated_at: new Date().toISOString() }, { onConflict: 'id' });
+    if (error) throw error;
+}
+
+// ==========================================
+// FURNIZORI
+// ==========================================
+
+/**
+ * Încarcă toți furnizorii din baza de date
+ */
+async function fetchFurnizori() {
+    const { data, error } = await zf
+        .from("furnizori")
+        .select("*")
+        .order("nume_firma");
+    if (error) throw error;
+    return data || [];
+}
+
+/**
+ * Inserează un furnizor nou
+ */
+async function insertFurnizor(payload) {
+    const { error } = await zf.from("furnizori").insert([payload]);
+    if (error) throw error;
+}
+
+/**
+ * Actualizează un furnizor existent
+ */
+async function updateFurnizor(id, payload) {
+    const { error } = await zf.from("furnizori").update(payload).eq("id", id);
+    if (error) throw error;
+}
+
+/**
+ * Șterge un furnizor
+ */
+async function deleteFurnizor(id) {
+    const { error } = await zf.from("furnizori").delete().eq("id", id);
+    if (error) throw error;
+}
+
+// ==========================================
+// FACTURI DE PLĂTIT
+// ==========================================
+
+/**
+ * Încarcă toate facturile de plătit
+ */
+async function fetchFacturiPlatit() {
+    const { data, error } = await zf
+        .from("facturi_platit")
+        .select("*")
+        .order("created_at", { ascending: false });
+    if (error) throw error;
+    return data || [];
+}
+
+/**
+ * Inserează o factură de plătit
+ */
+async function insertFacturaPlatit(payload) {
+    const { error } = await zf.from("facturi_platit").insert([payload]);
+    if (error) throw error;
+}
+
+/**
+ * Actualizează o factură de plătit
+ */
+async function updateFacturaPlatit(id, payload) {
+    const { error } = await zf.from("facturi_platit").update(payload).eq("id", id);
+    if (error) throw error;
+}
+
+/**
+ * Șterge o factură de plătit
+ */
+async function deleteFacturaPlatit(id) {
+    const { error } = await zf.from("facturi_platit").delete().eq("id", id);
+    if (error) throw error;
+}
+
+/**
  * Reset parolă
  */
 async function resetPassword(email) {
@@ -219,6 +341,7 @@ window.ZFlowDB = {
     updateClient,
     deleteClient,
     uploadFacturaPDF,
+    deletePDFFromStorage,
     // Auth functions
     signIn,
     signUp,
@@ -226,5 +349,18 @@ window.ZFlowDB = {
     getSession,
     getCurrentUser,
     onAuthStateChange,
-    resetPassword
+    resetPassword,
+    // Profile functions
+    fetchProfile,
+    upsertProfile,
+    // Furnizori
+    fetchFurnizori,
+    insertFurnizor,
+    updateFurnizor,
+    deleteFurnizor,
+    // Facturi de plătit
+    fetchFacturiPlatit,
+    insertFacturaPlatit,
+    updateFacturaPlatit,
+    deleteFacturaPlatit
 };

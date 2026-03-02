@@ -8,6 +8,9 @@ const ZFlowStore = Vue.reactive({
     // Date principale
     dateLocal: [],
     dateFacturiBI: [],
+    dateFurnizori: [],
+    dateFacturiPlatit: [],
+    selectedFurnizorId: null,
     
     // UI State
     isLoading: false,
@@ -17,6 +20,7 @@ const ZFlowStore = Vue.reactive({
     
     // Filtre BI
     filtruStatusBI: 'toate',
+    filtruTipBI: 'ambele',     // clienti | ambele | furnizori
     biPageSize: 50,
     biCurrentPage: 1,
     
@@ -41,6 +45,7 @@ const ZFlowStore = Vue.reactive({
     // User session
     userSession: null,
     userRole: 'viewer', // admin | user | viewer
+    userProfile: null, // Profilul firmei utilizatorului curent
     userPermissions: {
         canEdit: false,
         canDelete: false,
@@ -238,6 +243,7 @@ function toggleDarkMode() {
 // Export global
 window.ZFlowStore = ZFlowStore;
 window.saveZFlowData = saveZFlowData;
+window.ZFlowUserProfile = null; // referință rapidă la profilul curent
 window.loadZFlowData = loadZFlowData;
 window.checkSession = checkSession;
 window.saveDemoSession = saveDemoSession;
