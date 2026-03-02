@@ -21,8 +21,10 @@ const ZFlowStore = Vue.reactive({
     // Filtre BI
     filtruStatusBI: 'toate',
     filtruTipBI: 'ambele',     // clienti | ambele | furnizori
-    biPageSize: 50,
+    biPageSize: 100,
     biCurrentPage: 1,
+    biStartVal: null,   // Intervalul activ (persistă după reset input)
+    biEndVal: null,
     
     // Lazy Loading Facturi (#6 TODO)
     facturiPerPage: 20,

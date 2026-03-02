@@ -1,137 +1,163 @@
 /**
- * Z-FLOW Enterprise - Service Worker
- * PWA cu funcționalitate offline
+ * Z-FLOW Enterprise V2 - Service Worker
+ * Versiune Refactorizată cu Arhitectură Modulară
  */
 
-const CACHE_NAME = 'zflow-v7.14';
+const CACHE_NAME = 'zflow-v8.0';
 const STATIC_ASSETS = [
-    '/index-refactored.html',
-    '/css/styles.css',
-    '/js/app.js',
-    '/js/store.js',
-    '/js/services/supabase.js',
-    '/manifest.json'
+  '/',
+  '/index.html',
+  '/css/styles.css',
+  '/js/app.js',
+  '/js/store.js',
+  '/js/services/idb.js',
+  '/js/services/supabase.js',
+  '/js/modules/index.js',
+  '/js/modules/utils.js',
+  '/js/modules/auth.js',
+  '/js/modules/ui.js',
+  '/js/modules/clients.js',
+  '/js/modules/suppliers.js',
+  '/js/modules/invoices.js',
+  '/js/modules/analytics.js',
+  '/js/modules/export.js',
+  '/js/modules/import.js',
+  '/js/modules/notifications.js',
+  '/js/modules/attachments.js',
+  '/js/modules/mobile.js',
+  '/js/modules/bulk.js',
+  '/js/modules/anaf.js',
+  '/manifest.json',
+  '/icons/icon.svg'
 ];
 
-// CDN assets (cache on first use)
 const CDN_ASSETS = [
-    'https://cdn.tailwindcss.com',
-    'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
-    'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
-    'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js',
-    'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',
-    'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
-    'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
-    'https://unpkg.com/html5-qrcode@2.3.4/html5-qrcode.min.js',
-    'https://cdn.jsdelivr.net/npm/chart.js',
-    'https://unpkg.com/vue@3/dist/vue.global.js',
-    'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap'
+  'https://cdn.tailwindcss.com',
+  'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
+  'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js',
+  'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',
+  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
+  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
+  'https://unpkg.com/html5-qrcode@2.3.4/html5-qrcode.min.js',
+  'https://cdn.jsdelivr.net/npm/chart.js',
+  'https://unpkg.com/vue@3/dist/vue.global.js',
+  'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap'
 ];
 
-// Instalare - cache static assets
+// Install: Cache static assets
 self.addEventListener('install', event => {
-    console.log('🔧 Service Worker: Installing...');
-    event.waitUntil(
-        caches.open(CACHE_NAME)
-            .then(cache => {
-                console.log('📦 Caching static assets');
-                return cache.addAll(STATIC_ASSETS);
-            })
-            .then(() => self.skipWaiting())
-    );
+  console.log('🔧 SW V2: Installing...');
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => {
+        console.log('📦 SW V2: Caching static assets');
+        return cache.addAll(STATIC_ASSETS);
+      })
+      .then(() => {
+        console.log('✅ SW V2: Static assets cached');
+        return self.skipWaiting();
+      })
+      .catch(err => {
+        console.warn('⚠️ SW V2: Cache install error:', err);
+      })
+  );
 });
 
-// Activare - cleanup old caches
+// Activate: Clean old caches
 self.addEventListener('activate', event => {
-    console.log('✅ Service Worker: Activated');
-    event.waitUntil(
-        caches.keys().then(cacheNames => {
-            return Promise.all(
-                cacheNames
-                    .filter(name => name !== CACHE_NAME)
-                    .map(name => {
-                        console.log('🗑️ Deleting old cache:', name);
-                        return caches.delete(name);
-                    })
-            );
-        }).then(() => self.clients.claim())
-    );
+  console.log('🚀 SW V2: Activating...');
+  event.waitUntil(
+    caches.keys()
+      .then(keys => {
+        return Promise.all(
+          keys
+            .filter(key => key !== CACHE_NAME)
+            .map(key => {
+              console.log('🗑️ SW V2: Removing old cache:', key);
+              return caches.delete(key);
+            })
+        );
+      })
+      .then(() => {
+        console.log('✅ SW V2: Activated, claiming clients');
+        return self.clients.claim();
+      })
+  );
 });
 
-// Fetch - Network first, fallback to cache
+// Fetch: Network first for HTML, cache first for assets
 self.addEventListener('fetch', event => {
-    const { request } = event;
-    const url = new URL(request.url);
-
-    // Skip non-GET requests
-    if (request.method !== 'GET') return;
-
-    // Skip Supabase API calls (always network)
-    if (url.hostname.includes('supabase')) return;
-
-    // For HTML pages - Network first
-    if (request.headers.get('accept')?.includes('text/html')) {
-        event.respondWith(
-            fetch(request)
-                .then(response => {
-                    const clone = response.clone();
-                    caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
-                    return response;
-                })
-                .catch(() => caches.match(request))
-        );
-        return;
-    }
-
-    // For other assets - Cache first, network fallback
+  const url = new URL(event.request.url);
+  
+  // Skip non-GET requests
+  if (event.request.method !== 'GET') return;
+  
+  // Skip Supabase API calls
+  if (url.hostname.includes('supabase')) return;
+  
+  // HTML: Network first
+  if (event.request.mode === 'navigate' || url.pathname.endsWith('.html')) {
     event.respondWith(
-        caches.match(request)
-            .then(cachedResponse => {
-                if (cachedResponse) {
-                    return cachedResponse;
-                }
-                return fetch(request).then(response => {
-                    // Cache CDN assets on first fetch
-                    if (response.ok && (url.origin !== location.origin || CDN_ASSETS.some(cdn => request.url.includes(cdn)))) {
-                        const clone = response.clone();
-                        caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
-                    }
-                    return response;
-                });
-            })
+      fetch(event.request)
+        .then(response => {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          return response;
+        })
+        .catch(() => caches.match(event.request))
     );
+    return;
+  }
+  
+  // CDN assets: Cache first
+  if (CDN_ASSETS.some(cdn => event.request.url.startsWith(cdn.split('/').slice(0, 3).join('/')))) {
+    event.respondWith(
+      caches.match(event.request)
+        .then(cached => {
+          if (cached) return cached;
+          return fetch(event.request).then(response => {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+            return response;
+          });
+        })
+    );
+    return;
+  }
+  
+  // Static assets: Cache first, network fallback
+  event.respondWith(
+    caches.match(event.request)
+      .then(cached => {
+        if (cached) return cached;
+        return fetch(event.request)
+          .then(response => {
+            if (response.ok) {
+              const clone = response.clone();
+              caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+            }
+            return response;
+          })
+          .catch(() => {
+            // Return offline fallback for HTML
+            if (event.request.mode === 'navigate') {
+              return caches.match('/index.html');
+            }
+          });
+      })
+  );
 });
 
 // Background sync for offline actions
 self.addEventListener('sync', event => {
-    console.log('🔄 Background sync:', event.tag);
-    if (event.tag === 'sync-data') {
-        event.waitUntil(syncData());
-    }
+  console.log('🔄 SW V2: Background sync triggered:', event.tag);
+  if (event.tag === 'sync-invoices') {
+    event.waitUntil(syncPendingInvoices());
+  }
 });
 
-async function syncData() {
-    // Placeholder for future offline sync functionality
-    console.log('📤 Syncing offline data...');
+async function syncPendingInvoices() {
+  // Placeholder for offline sync logic
+  console.log('📤 SW V2: Syncing pending invoices...');
 }
-
-// Push notifications (for future use)
-self.addEventListener('push', event => {
-    const data = event.data?.json() || {};
-    const title = data.title || 'Z-FLOW';
-    const options = {
-        body: data.body || 'Notificare nouă',
-        icon: '/icons/icon-192.png',
-        badge: '/icons/icon-72.png',
-        vibrate: [100, 50, 100],
-        data: data.url || '/'
-    };
-    event.waitUntil(self.registration.showNotification(title, options));
-});
-
-self.addEventListener('notificationclick', event => {
-    event.notification.close();
-    event.waitUntil(
-        clients.openWindow(event.notification.data)
-    );
-});
