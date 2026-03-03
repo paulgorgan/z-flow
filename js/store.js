@@ -11,6 +11,19 @@ const ZFlowStore = Vue.reactive({
     dateFurnizori: [],
     dateFacturiPlatit: [],
     selectedFurnizorId: null,
+
+    // Depozit — Stoc & Produse
+    dateProduse: [],
+    dateMiscariStoc: [],
+    dateReceptii: [],
+    dateLivrari: [],
+    depozitView: 'produse',   // produse | miscari | receptii | livrari | scanner
+
+    // Logistic — Transport
+    dateSoferi: [],
+    dateVehicule: [],
+    dateComenziTransport: [],
+    logisticView: 'comenzi',  // comenzi | soferi | vehicule
     
     // UI State
     isLoading: false,
@@ -21,11 +34,40 @@ const ZFlowStore = Vue.reactive({
     // Filtre BI
     filtruStatusBI: 'toate',
     filtruTipBI: 'ambele',     // clienti | ambele | furnizori
-    biPageSize: 100,
+    biPageSize: 20,
     biCurrentPage: 1,
     biStartVal: null,   // Intervalul activ (persistă după reset input)
     biEndVal: null,
     
+    // Paginare Listă Clienți
+    clientiPageSize: 20,
+    clientiCurrentPage: 1,
+    _clientiFiltrati: [],   // Lista curentă filtrată — pentru paginare
+    
+    // Paginare Listă Furnizori
+    furnizoriPageSize: 20,
+    furnizoriCurrentPage: 1,
+    _furnizoriFiltrati: [], // Lista curentă filtrată — pentru paginare
+
+    // Paginare Depozit
+    produsePageSize: 10,
+    produseCurrentPage: 1,
+    _produseFiltrate: [],
+    miscariPageSize: 10,
+    miscariCurrentPage: 1,
+    _miscariFiltrate: [],
+
+    // Paginare Logistic
+    comenziPageSize: 10,
+    comenziCurrentPage: 1,
+    _comenziFiltrate: [],
+    soferiPageSize: 10,
+    soferiCurrentPage: 1,
+    _soferiFiltrati: [],
+    vehiculePageSize: 10,
+    vehiculeCurrentPage: 1,
+    _vehiculeFiltrate: [],
+
     // Lazy Loading Facturi (#6 TODO)
     facturiPerPage: 20,
     facturiLoadedCount: 0,
@@ -79,6 +121,13 @@ const ROLE_PERMISSIONS = {
         canExport: true,
         canImport: false,
         canManageUsers: false
+    },
+    demo_user: {
+        canEdit: true,
+        canDelete: true,
+        canExport: true,
+        canImport: true,
+        canManageUsers: false
     }
 };
 
@@ -125,7 +174,8 @@ function updateUIForRole() {
         const roleConfig = { 
             admin: { label: 'Administrator', color: 'bg-purple-100 text-purple-700 border-purple-200' }, 
             user: { label: 'Utilizator', color: 'bg-blue-100 text-blue-700 border-blue-200' }, 
-            viewer: { label: 'Vizualizare', color: 'bg-slate-100 text-slate-600 border-slate-200' } 
+            viewer: { label: 'Vizualizare', color: 'bg-slate-100 text-slate-600 border-slate-200' },
+            demo_user: { label: 'Prezentare', color: 'bg-amber-100 text-amber-700 border-amber-200' }
         };
         const config = roleConfig[ZFlowStore.userRole] || roleConfig.viewer;
         roleBadge.className = `text-[9px] font-semibold px-2.5 py-1 rounded-lg border ${config.color}`;
@@ -171,7 +221,7 @@ async function checkSession() {
             const parsed = JSON.parse(demoSession);
             const sessionAge = Date.now() - new Date(parsed.login_time).getTime();
             if (sessionAge < 24 * 60 * 60 * 1000) { // 24h valid
-                ZFlowStore.userSession = { user: { email: parsed.user }, isDemo: true };
+                ZFlowStore.userSession = { user: { email: parsed.user }, isDemo: parsed.isDemo === true };
                 setUserRole(parsed.role || 'user'); // Restabilește rolul
                 return true;
             } else {
@@ -202,10 +252,11 @@ async function checkSession() {
 /**
  * Salvează sesiunea demo în localStorage
  */
-function saveDemoSession(user, role = 'user') {
+function saveDemoSession(user, role = 'user', isDemo = true) {
     localStorage.setItem("zflow_demo_session", JSON.stringify({
         user: user,
         role: role,
+        isDemo: isDemo,
         login_time: new Date().toISOString()
     }));
 }

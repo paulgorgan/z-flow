@@ -13,21 +13,26 @@ const ZFlowImport = {
      * @returns {Array}
      */
     parseCSV(csvText, options = {}) {
-        const delimiter = options.delimiter || ',';
+        const delimiter = options.delimiter || ';';
         const hasHeader = options.hasHeader !== false;
         
-        const lines = csvText.trim().split('\n');
+        // Strip UTF-8 BOM (0xEF 0xBB 0xBF) — fișiere exportate din Windows/SAGA
+        const cleanText = csvText.replace(/^\uFEFF/, '');
+        const lines = cleanText.trim().split('\n');
         if (lines.length === 0) return [];
         
+        // Trim \r din fiecare linie (Windows CRLF)
+        const trimmedLines = lines.map(l => l.replace(/\r$/, ''));
+        
         const headers = hasHeader 
-            ? this.parseCSVLine(lines[0], delimiter)
+            ? this.parseCSVLine(trimmedLines[0], delimiter)
             : [];
         
         const startIndex = hasHeader ? 1 : 0;
         const data = [];
         
-        for (let i = startIndex; i < lines.length; i++) {
-            const values = this.parseCSVLine(lines[i], delimiter);
+        for (let i = startIndex; i < trimmedLines.length; i++) {
+            const values = this.parseCSVLine(trimmedLines[i], delimiter);
             if (values.length === 0 || values.every(v => !v.trim())) continue;
             
             if (hasHeader) {
@@ -87,16 +92,57 @@ const ZFlowImport = {
         const facturi = [];
         const errors = [];
         const clientMap = new Map();
-        
+
+        // Diagnosticare headere — afișat o singură dată
+        if (sagaData.length > 0) {
+            console.log('[Import] Headere detectate în CSV:', Object.keys(sagaData[0]));
+        }
+
+        // Helper: caută prima cheie existentă în row (case-insensitive + trim + strip BOM)
+        const _col = (row, ...keys) => {
+            const rowLower = {};
+            for (const k of Object.keys(row)) rowLower[k.trim().replace(/^\uFEFF/, '').toLowerCase()] = row[k];
+            for (const k of keys) {
+                const val = rowLower[k.trim().toLowerCase()];
+                if (val !== undefined && String(val).trim() !== '') return String(val).trim();
+            }
+            return '';
+        };
+
         sagaData.forEach((row, index) => {
             try {
-                // Mapare coloane SAGA
-                const cuiClient = row['CUI'] || row['CUI Client'] || row['COD FISCAL'] || '';
-                const numeClient = row['DENUMIRE'] || row['Denumire Client'] || row['NUME'] || '';
-                const nrFactura = row['NR. FACTURA'] || row['Nr. factura'] || row['NUMAR'] || '';
-                const dataEmitere = this.parseDataSAGA(row['DATA EMITERE'] || row['Data emitere'] || row['DATA']);
-                const dataScadenta = this.parseDataSAGA(row['DATA SCADENTA'] || row['Data scadenta'] || row['SCADENTA']);
-                const suma = this.parseSumaSAGA(row['VALOARE'] || row['Valoare'] || row['SUMA'] || row['TOTAL']);
+                // Mapare coloane SAGA — acoperă variantele comune de headere
+                const cuiClient = _col(row,
+                    'CUI', 'CUI Client', 'CUI CLIENT', 'COD FISCAL', 'Cod fiscal', 'Cod Fiscal',
+                    'COD FISCAL CLIENT', 'CUI/CNP', 'COD', 'Cod', 'CODFISCAL',
+                    'SIMBOL CONT', 'Simbol cont', 'SIMBOL');
+                const numeClient = _col(row,
+                    'DENUMIRE', 'Denumire', 'Denumire Client', 'DENUMIRE CLIENT', 'NUME', 'Nume',
+                    'PARTENER', 'Partener', 'FIRMA', 'Firma', 'BENEFICIAR', 'Beneficiar',
+                    'CLIENT', 'Client', 'FURNIZOR', 'Furnizor',
+                    'DEN. CONT', 'Den. cont', 'DENUMIRE CONT', 'Denumire cont', 'CONT',
+                    'EXPLICATII', 'Explicatii', 'EXPLICAȚII', 'Explicații');
+                const nrFactura = _col(row,
+                    'NR. FACTURA', 'Nr. factura', 'NR FACTURA', 'NUMAR', 'Nr. document',
+                    'NR. DOC', 'NR DOC', 'NR.DOC', 'Nr doc', 'NR. DOCUMENT', 'DOCUMENT',
+                    'Serie si numar', 'SERIE NR', 'SERIE SI NUMAR', 'NR_FACTURA',
+                    'NR. DOC.', 'Nr. doc.', 'NUMAR DOC', 'Numar doc');
+                const dataEmitere = this.parseDataSAGA(_col(row,
+                    'DATA EMITERE', 'Data emitere', 'DATA', 'Data', 'DATA DOC', 'Data doc',
+                    'DATA DOCUMENT', 'Data document', 'DATA FACTURA', 'Data factura',
+                    'DATA DOC.', 'Data doc.', 'DAT'));
+                const dataScadenta = this.parseDataSAGA(_col(row,
+                    'DATA SCADENTA', 'Data scadenta', 'SCADENTA', 'Scadenta', 'DATA SCAD.',
+                    'Data scad', 'TERMEN PLATA', 'Termen plata', 'SCAD.', 'Scad.'));
+                // SAGA poate exporta sume în coloane separate: RULAJ D (debit), RULAJ C (credit), SOLD
+                const sumaRaw = _col(row,
+                    'VALOARE', 'Valoare', 'SUMA', 'Suma', 'TOTAL', 'Total',
+                    'SUMA FACTURA', 'Suma factura', 'RULAJ', 'Rulaj',
+                    'SUMA DOC', 'Suma doc', 'VALOARE FACTURA', 'TOTAL FACTURA',
+                    'RULAJ D', 'Rulaj D', 'RULAJ DEBIT', 'Rulaj debit',
+                    'SOLD FINAL D', 'Sold final D', 'SOLD D', 'Sold D',
+                    'SOLD INITIAL D', 'DEBIT', 'Debit');
+                const suma = this.parseSumaSAGA(sumaRaw);
                 
                 if (!numeClient && !cuiClient) {
                     errors.push(`Rândul ${index + 1}: Lipsă client`);
@@ -104,15 +150,15 @@ const ZFlowImport = {
                 }
                 
                 // Crează sau găsește client
-                const clientKey = cuiClient || numeClient;
+                const clientKey = (cuiClient || numeClient).trim();
                 if (!clientMap.has(clientKey)) {
                     const client = {
                         _tempId: `temp_${Date.now()}_${index}`,
                         nume_firma: numeClient,
                         cui: cuiClient,
-                        adresa: row['ADRESA'] || row['Adresa'] || '',
-                        oras: row['LOCALITATE'] || row['Oras'] || '',
-                        judet: row['JUDET'] || row['Judet'] || ''
+                        adresa: _col(row, 'ADRESA', 'Adresa', 'ADRESA CLIENT', 'Adresa client', 'STRADA', 'Strada'),
+                        oras: _col(row, 'LOCALITATE', 'Localitate', 'ORAS', 'Oras', 'MUNICIPIU', 'Municipiu', 'LOC.', 'Loc.'),
+                        judet: _col(row, 'JUDET', 'Judet', 'JUD', 'Jud', 'JUD.', 'Jud.')
                     };
                     clientMap.set(clientKey, client);
                     clienti.push(client);
@@ -176,18 +222,32 @@ const ZFlowImport = {
         if (typeof sumaStr === 'number') return sumaStr;
         if (!sumaStr) return 0;
         
-        // Elimină caractere non-numerice (dar păstrează virgulă și punct)
-        let cleaned = sumaStr.toString()
-            .replace(/[^\d.,\-]/g, '')
-            .replace(',', '.');
+        let s = sumaStr.toString().trim();
+        // Elimină simboluri monedă, spații, caracterul \u2013 (minus special)
+        s = s.replace(/[^\d.,\-]/g, '');
+        if (!s) return 0;
         
-        // Dacă sunt mai multe puncte, elimină-le pe toate în afară de ultimul
-        const parts = cleaned.split('.');
-        if (parts.length > 2) {
-            cleaned = parts.slice(0, -1).join('') + '.' + parts[parts.length - 1];
+        const hasComma = s.includes(',');
+        const hasDot = s.includes('.');
+        
+        if (hasComma && hasDot) {
+            // Determină care e separatorul zecimal (ultimul simbol)
+            const lastComma = s.lastIndexOf(',');
+            const lastDot = s.lastIndexOf('.');
+            if (lastComma > lastDot) {
+                // Format românesc: 1.500,00 — punct = mii, virgulă = zecimal
+                s = s.replace(/\./g, '').replace(',', '.');
+            } else {
+                // Format englezesc: 1,500.00 — virgulă = mii, punct = zecimal
+                s = s.replace(/,/g, '');
+            }
+        } else if (hasComma) {
+            // Singură virgulă — separator zecimal românesc: 1500,00
+            s = s.replace(',', '.');
         }
+        // Altfel doar punct — deja format englezesc/ISO
         
-        return parseFloat(cleaned) || 0;
+        return parseFloat(s) || 0;
     },
 
     /**
@@ -247,10 +307,13 @@ const ZFlowImport = {
      * @returns {string}
      */
     detectDelimiter(csvText) {
-        const firstLine = csvText.split('\n')[0] || '';
-        const delimiters = [',', ';', '\t', '|'];
+        // Strip BOM înainte de detectare
+        const clean = csvText.replace(/^\uFEFF/, '');
+        const firstLine = clean.split('\n')[0] || '';
+        // Testăm ';' primul — SAGA exportă cu semicolon
+        const delimiters = [';', ',', '\t', '|'];
         let maxCount = 0;
-        let detected = ',';
+        let detected = ';';
         
         delimiters.forEach(d => {
             const count = (firstLine.match(new RegExp(d.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')) || []).length;

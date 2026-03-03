@@ -3,7 +3,7 @@
  * Versiune Refactorizată cu Arhitectură Modulară
  */
 
-const CACHE_NAME = 'zflow-v8.0';
+const CACHE_NAME = 'zflow-v30.0';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -27,6 +27,8 @@ const STATIC_ASSETS = [
   '/js/modules/mobile.js',
   '/js/modules/bulk.js',
   '/js/modules/anaf.js',
+  '/js/modules/depozit.js',
+  '/js/modules/logistic.js',
   '/manifest.json',
   '/icons/icon.svg'
 ];
