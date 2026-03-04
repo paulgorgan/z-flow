@@ -98,12 +98,14 @@ const ZFlowImport = {
             console.log('[Import] Headere detectate în CSV:', Object.keys(sagaData[0]));
         }
 
-        // Helper: caută prima cheie existentă în row (case-insensitive + trim + strip BOM)
+        // Helper: caută prima cheie existentă în row (case-insensitive + trim + strip BOM + underscore↔space)
         const _col = (row, ...keys) => {
-            const rowLower = {};
-            for (const k of Object.keys(row)) rowLower[k.trim().replace(/^\uFEFF/, '').toLowerCase()] = row[k];
+            // Normalizare: lowercase, trim BOM, spații multiple → 1 spațiu
+            const norm = s => s.trim().replace(/^\uFEFF/, '').toLowerCase().replace(/_/g, ' ').replace(/\s+/g, ' ');
+            const rowNorm = {};
+            for (const k of Object.keys(row)) rowNorm[norm(k)] = row[k];
             for (const k of keys) {
-                const val = rowLower[k.trim().toLowerCase()];
+                const val = rowNorm[norm(k)];
                 if (val !== undefined && String(val).trim() !== '') return String(val).trim();
             }
             return '';
@@ -113,36 +115,72 @@ const ZFlowImport = {
             try {
                 // Mapare coloane SAGA — acoperă variantele comune de headere
                 const cuiClient = _col(row,
-                    'CUI', 'CUI Client', 'CUI CLIENT', 'COD FISCAL', 'Cod fiscal', 'Cod Fiscal',
-                    'COD FISCAL CLIENT', 'CUI/CNP', 'COD', 'Cod', 'CODFISCAL',
-                    'SIMBOL CONT', 'Simbol cont', 'SIMBOL');
+                    // variante standard SAGA + snake_case Z-FLOW
+                    'CUI', 'cui', 'CUI Client', 'CUI CLIENT',
+                    'furnizor_cui', 'FURNIZOR CUI', 'client_cui', 'CLIENT CUI',
+                    'cui_furnizor', 'CUI FURNIZOR', 'cui_client', 'CUI CLIENT',
+                    'COD FISCAL', 'cod_fiscal', 'Cod fiscal', 'Cod Fiscal',
+                    'COD FISCAL CLIENT', 'CUI/CNP', 'cui_cnp',
+                    'COD', 'Cod', 'CODFISCAL', 'codfiscal',
+                    'SIMBOL CONT', 'simbol_cont', 'Simbol cont', 'SIMBOL', 'simbol');
                 const numeClient = _col(row,
-                    'DENUMIRE', 'Denumire', 'Denumire Client', 'DENUMIRE CLIENT', 'NUME', 'Nume',
-                    'PARTENER', 'Partener', 'FIRMA', 'Firma', 'BENEFICIAR', 'Beneficiar',
-                    'CLIENT', 'Client', 'FURNIZOR', 'Furnizor',
-                    'DEN. CONT', 'Den. cont', 'DENUMIRE CONT', 'Denumire cont', 'CONT',
-                    'EXPLICATII', 'Explicatii', 'EXPLICAȚII', 'Explicații');
+                    // variante standard SAGA + snake_case Z-FLOW
+                    'DENUMIRE', 'denumire', 'Denumire', 'Denumire Client', 'DENUMIRE CLIENT', 'denumire_client',
+                    'NUME FIRMA', 'nume_firma', 'Nume firma',
+                    'NUME', 'nume', 'Nume',
+                    'PARTENER', 'partener', 'Partener',
+                    'FIRMA', 'firma', 'Firma',
+                    'BENEFICIAR', 'beneficiar', 'Beneficiar',
+                    'CLIENT', 'client', 'Client',
+                    'FURNIZOR', 'furnizor', 'Furnizor',
+                    'DEN. CONT', 'den_cont', 'Den. cont', 'DENUMIRE CONT', 'denumire_cont', 'Denumire cont', 'CONT', 'cont',
+                    'EXPLICATII', 'explicatii', 'Explicatii', 'EXPLICAȚII', 'Explicații', 'explicatii');
                 const nrFactura = _col(row,
-                    'NR. FACTURA', 'Nr. factura', 'NR FACTURA', 'NUMAR', 'Nr. document',
-                    'NR. DOC', 'NR DOC', 'NR.DOC', 'Nr doc', 'NR. DOCUMENT', 'DOCUMENT',
-                    'Serie si numar', 'SERIE NR', 'SERIE SI NUMAR', 'NR_FACTURA',
-                    'NR. DOC.', 'Nr. doc.', 'NUMAR DOC', 'Numar doc');
+                    // variante standard SAGA + snake_case Z-FLOW
+                    'NR. FACTURA', 'nr_factura', 'numar_factura', 'NUMAR FACTURA',
+                    'Nr. factura', 'NR FACTURA', 'NUMAR', 'numar', 'Nr. document',
+                    'NR. DOC', 'nr_doc', 'NR DOC', 'NR.DOC', 'Nr doc',
+                    'NR. DOCUMENT', 'nr_document', 'DOCUMENT', 'document',
+                    'Serie si numar', 'serie_si_numar', 'SERIE NR', 'SERIE SI NUMAR', 'NR_FACTURA',
+                    'NR. DOC.', 'Nr. doc.', 'NUMAR DOC', 'Numar doc',
+                    'factura_numar', 'invoice_number', 'invoice_no');
                 const dataEmitere = this.parseDataSAGA(_col(row,
-                    'DATA EMITERE', 'Data emitere', 'DATA', 'Data', 'DATA DOC', 'Data doc',
-                    'DATA DOCUMENT', 'Data document', 'DATA FACTURA', 'Data factura',
-                    'DATA DOC.', 'Data doc.', 'DAT'));
+                    'DATA EMITERE', 'data_emiterii', 'data_emitere', 'DATA EMITERII',
+                    'Data emitere', 'DATA', 'data', 'Data',
+                    'DATA DOC', 'data_doc', 'Data doc',
+                    'DATA DOCUMENT', 'data_document', 'Data document',
+                    'DATA FACTURA', 'data_factura', 'Data factura',
+                    'DATA DOC.', 'Data doc.', 'DAT', 'dat'));
                 const dataScadenta = this.parseDataSAGA(_col(row,
-                    'DATA SCADENTA', 'Data scadenta', 'SCADENTA', 'Scadenta', 'DATA SCAD.',
-                    'Data scad', 'TERMEN PLATA', 'Termen plata', 'SCAD.', 'Scad.'));
+                    'DATA SCADENTA', 'data_scadenta', 'DATA SCADENŢĂ', 'Data scadenta',
+                    'SCADENTA', 'scadenta', 'Scadenta',
+                    'DATA SCAD.', 'data_scad', 'Data scad',
+                    'TERMEN PLATA', 'termen_plata', 'Termen plata',
+                    'SCAD.', 'scad', 'Scad.'));
                 // SAGA poate exporta sume în coloane separate: RULAJ D (debit), RULAJ C (credit), SOLD
                 const sumaRaw = _col(row,
-                    'VALOARE', 'Valoare', 'SUMA', 'Suma', 'TOTAL', 'Total',
-                    'SUMA FACTURA', 'Suma factura', 'RULAJ', 'Rulaj',
-                    'SUMA DOC', 'Suma doc', 'VALOARE FACTURA', 'TOTAL FACTURA',
-                    'RULAJ D', 'Rulaj D', 'RULAJ DEBIT', 'Rulaj debit',
-                    'SOLD FINAL D', 'Sold final D', 'SOLD D', 'Sold D',
-                    'SOLD INITIAL D', 'DEBIT', 'Debit');
+                    'VALOARE', 'valoare', 'Valoare',
+                    'SUMA', 'suma', 'Suma',
+                    'TOTAL', 'total', 'Total',
+                    'SUMA FACTURA', 'suma_factura', 'Suma factura',
+                    'RULAJ', 'rulaj', 'Rulaj',
+                    'SUMA DOC', 'suma_doc', 'Suma doc',
+                    'VALOARE FACTURA', 'valoare_factura', 'TOTAL FACTURA', 'total_factura',
+                    'RULAJ D', 'rulaj_d', 'Rulaj D', 'RULAJ DEBIT', 'rulaj_debit', 'Rulaj debit',
+                    'SOLD FINAL D', 'sold_final_d', 'Sold final D',
+                    'SOLD D', 'sold_d', 'Sold D',
+                    'SOLD INITIAL D', 'sold_initial_d',
+                    'DEBIT', 'debit', 'Debit');
                 const suma = this.parseSumaSAGA(sumaRaw);
+
+                // Status plată opțional în CSV (SAGA poate conține sold zero = achitat)
+                const statusRaw = _col(row,
+                    'STATUS', 'status', 'STATUS PLATA', 'status_plata', 'STATUS PLATĂ',
+                    'ACHITAT', 'achitat', 'INCASAT', 'incasat', 'PLATIT', 'platit').toLowerCase();
+                let statusPlata = 'Neincasat'; // default pentru clienți (furnizori: Neplatit—detectat în app.js)
+                if (statusRaw.includes('incasat') || statusRaw.includes('achitat') || statusRaw === 'da' || statusRaw === 'yes' || statusRaw === '1' || statusRaw.includes('platit')) {
+                    statusPlata = 'Incasat'; // normalizat la inserare: furnizori → 'Platit' în app.js
+                }
                 
                 if (!numeClient && !cuiClient) {
                     errors.push(`Rândul ${index + 1}: Lipsă client`);
@@ -172,9 +210,9 @@ const ZFlowImport = {
                         data_emitere: dataEmitere,
                         data_scadenta: dataScadenta,
                         suma: suma,
-                        status_plata: 'Neincasat',
+                        status_plata: statusPlata,   // din CSV sau 'Neincasat' implicit
                         sursa: 'SAGA',
-                        descriere: row['DESCRIERE'] || row['Descriere'] || ''
+                        descriere: _col(row, 'DESCRIERE', 'Descriere', 'descriere', 'observatii', 'OBSERVATII', 'Observatii', 'NOTE', 'note', 'Note', 'obs', 'OBS')
                     };
                     facturi.push(factura);
                 }

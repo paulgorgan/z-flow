@@ -217,3 +217,72 @@ const ZFlowExport = {
 
 // Export global
 window.ZFlowExport = ZFlowExport;
+
+// ==========================================
+// EXPORT CSV LOGISTIC — Task 8
+// ==========================================
+function exportComenziTransportCSV() {
+    const comenzi = window.ZFlowStore?.dateComenziTransport || [];
+    if (!comenzi.length) { if (typeof showNotification === 'function') showNotification('Nu există comenzi de exportat', 'error'); return; }
+    const clienti  = window.ZFlowStore?.dateLocal || [];
+    const soferi   = window.ZFlowStore?.dateSoferi || [];
+    const vehicule = window.ZFlowStore?.dateVehicule || [];
+    const headers  = ['Tracking', 'Ruta De', 'Ruta La', 'Client', 'Sofer', 'Vehicul', 'Data Plecare', 'Data Livrare', 'Status', 'Valoare', 'Observatii'];
+    const rows = comenzi.map(c => {
+        const cl  = clienti.find(x  => String(x.id)  === String(c.client_id));
+        const sf  = soferi.find(x   => String(x.id)  === String(c.sofer_id));
+        const vh  = vehicule.find(x => String(x.id)  === String(c.vehicul_id));
+        return [
+            `"${c.tracking_code||''}"`, `"${c.ruta_de||''}"`, `"${c.ruta_la||''}"`,
+            `"${cl?.nume_firma||''}"`, `"${sf?.nume||''}"`, `"${vh?.nr_inmatriculare||''}"`,
+            c.data_plecare||'', c.data_livrare||'',
+            `"${c.status||''}"`, c.valoare||0, `"${(c.observatii||'').replace(/"/g,'""')}"`
+        ];
+    });
+    const csv  = [headers.join(';'), ...rows.map(r => r.join(';'))].join('\n');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const a    = document.createElement('a');
+    a.href     = URL.createObjectURL(blob);
+    a.download = `comenzi_transport_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    if (typeof showNotification === 'function') showNotification('✅ Export comenzi finalizat', 'success');
+}
+
+function exportSoferiCSV() {
+    const soferi = window.ZFlowStore?.dateSoferi || [];
+    if (!soferi.length) { if (typeof showNotification === 'function') showNotification('Nu există șoferi de exportat', 'error'); return; }
+    const headers = ['Nume', 'Telefon', 'Nr Permis', 'CNP', 'Email', 'Observatii'];
+    const rows = soferi.map(s => [
+        `"${(s.nume||'').replace(/"/g,'""')}"`, `"${s.telefon||''}"`,
+        `"${s.nr_permis||''}"`, `"${s.cnp||''}"`,
+        `"${s.email||''}"`, `"${(s.observatii||'').replace(/"/g,'""')}"`
+    ]);
+    const csv  = [headers.join(';'), ...rows.map(r => r.join(';'))].join('\n');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const a    = document.createElement('a');
+    a.href     = URL.createObjectURL(blob);
+    a.download = `soferi_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    if (typeof showNotification === 'function') showNotification('✅ Export șoferi finalizat', 'success');
+}
+
+function exportVehiculeCSV() {
+    const vehicule = window.ZFlowStore?.dateVehicule || [];
+    if (!vehicule.length) { if (typeof showNotification === 'function') showNotification('Nu există vehicule de exportat', 'error'); return; }
+    const headers = ['Nr Inmatriculare', 'Marca', 'Model', 'Tip', 'An Fabricatie', 'Observatii'];
+    const rows = vehicule.map(v => [
+        `"${v.nr_inmatriculare||''}"`, `"${v.marca||''}"`, `"${v.model||''}"`,
+        `"${v.tip||''}"`, v.an_fabricatie||'', `"${(v.observatii||'').replace(/"/g,'""')}"`
+    ]);
+    const csv  = [headers.join(';'), ...rows.map(r => r.join(';'))].join('\n');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const a    = document.createElement('a');
+    a.href     = URL.createObjectURL(blob);
+    a.download = `vehicule_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    if (typeof showNotification === 'function') showNotification('✅ Export vehicule finalizat', 'success');
+}
+
+window.exportComenziTransportCSV = exportComenziTransportCSV;
+window.exportSoferiCSV           = exportSoferiCSV;
+window.exportVehiculeCSV         = exportVehiculeCSV;

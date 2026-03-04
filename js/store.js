@@ -34,18 +34,22 @@ const ZFlowStore = Vue.reactive({
     // Filtre BI
     filtruStatusBI: 'toate',
     filtruTipBI: 'ambele',     // clienti | ambele | furnizori
-    biPageSize: 20,
+    biPageSize: 5,                // Default 5 facturi/pagina in Analiza
     biCurrentPage: 1,
     biStartVal: null,   // Intervalul activ (persistă după reset input)
     biEndVal: null,
+    furnizoriBIPageSize: 5,         // Paginare furnizori in Analiza
+    furnizoriBICurrentPage: 1,
+    _furnizoriBIFiltrati: [],       // Cache furnizori filtrati BI
     
     // Paginare Listă Clienți
     clientiPageSize: 20,
     clientiCurrentPage: 1,
+    facturiPerPage: 20,         // Facturi de încasat afișate inițial per client (lazy loading)
     _clientiFiltrati: [],   // Lista curentă filtrată — pentru paginare
     
     // Paginare Listă Furnizori
-    furnizoriPageSize: 20,
+    furnizoriPageSize: 5,          // Default 5 furnizori/pagina
     furnizoriCurrentPage: 1,
     _furnizoriFiltrati: [], // Lista curentă filtrată — pentru paginare
 
@@ -220,7 +224,8 @@ async function checkSession() {
         if (demoSession) {
             const parsed = JSON.parse(demoSession);
             const sessionAge = Date.now() - new Date(parsed.login_time).getTime();
-            if (sessionAge < 24 * 60 * 60 * 1000) { // 24h valid
+            const ttl = parsed.remember ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000; // 30 zile / 24h
+            if (sessionAge < ttl) {
                 ZFlowStore.userSession = { user: { email: parsed.user }, isDemo: parsed.isDemo === true };
                 setUserRole(parsed.role || 'user'); // Restabilește rolul
                 return true;
@@ -252,11 +257,12 @@ async function checkSession() {
 /**
  * Salvează sesiunea demo în localStorage
  */
-function saveDemoSession(user, role = 'user', isDemo = true) {
+function saveDemoSession(user, role = 'user', isDemo = true, remember = false) {
     localStorage.setItem("zflow_demo_session", JSON.stringify({
         user: user,
         role: role,
         isDemo: isDemo,
+        remember: remember,
         login_time: new Date().toISOString()
     }));
 }

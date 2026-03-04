@@ -563,6 +563,286 @@ async function importaProduse() {
 }
 
 // ==========================================
+// MODAL RECEPȚIE — Task 1
+// ==========================================
+let _receptieItems = [];
+
+function deschideModalReceptie() {
+    _receptieItems = [];
+    const modal = document.getElementById('modal-receptie');
+    if (!modal) return;
+    // Populează furnizor dropdown
+    const furnSel = document.getElementById('rec-furnizor-select');
+    if (furnSel) {
+        furnSel.innerHTML = '<option value="">-- Furnizor (opțional) --</option>' +
+            (ZFlowStore.dateFurnizori || []).map(f =>
+                `<option value="${f.id}">${f.nume_firma || f.cui || f.id.slice(-4)}</option>`
+            ).join('');
+    }
+    // Data implicit azi
+    const dateEl = document.getElementById('rec-data');
+    if (dateEl) dateEl.value = new Date().toISOString().split('T')[0];
+    // Curăță items + obs
+    const obsEl = document.getElementById('rec-obs');
+    if (obsEl) obsEl.value = '';
+    _renderItemsReceptie();
+    modal.classList.add('active');
+}
+
+function inchideModalReceptie() {
+    const m = document.getElementById('modal-receptie');
+    if (m) m.classList.remove('active');
+}
+
+function _optiuniProduse() {
+    return (ZFlowStore.dateProduse || [])
+        .map(p => `<option value="${p.id}">${p.sku ? p.sku + ' – ' : ''}${p.nume || '?'} (${p.um || 'buc'})</option>`)
+        .join('');
+}
+
+function _renderItemsReceptie() {
+    const container = document.getElementById('rec-items-list');
+    if (!container) return;
+    if (!_receptieItems.length) {
+        container.innerHTML = `<p class="text-xs text-slate-400 text-center py-2">Niciun produs adăugat</p>`;
+        recalcTotalReceptie();
+        return;
+    }
+    container.innerHTML = _receptieItems.map((item, idx) => `
+        <div class="flex gap-2 items-center mb-1">
+          <select class="flex-1 min-w-0 p-2 bg-slate-50 rounded-xl text-xs font-bold border border-slate-200"
+            onchange="_receptieItems[${idx}].produs_id=this.value">
+            <option value="">-- Produs --</option>${_optiuniProduse()}
+          </select>
+          <input type="number" min="0.001" step="any" placeholder="Cant." value="${item.cantitate||''}"
+            class="w-20 p-2 bg-slate-50 rounded-xl text-xs font-bold border border-slate-200"
+            oninput="_receptieItems[${idx}].cantitate=Number(this.value); recalcTotalReceptie()"/>
+          <input type="number" min="0" step="any" placeholder="Preț/U" value="${item.pret_unitar||''}"
+            class="w-20 p-2 bg-slate-50 rounded-xl text-xs font-bold border border-slate-200"
+            oninput="_receptieItems[${idx}].pret_unitar=Number(this.value); recalcTotalReceptie()"/>
+          <button onclick="stergeItemReceptie(${idx})" class="text-red-500 hover:text-red-700 font-black text-base leading-none px-1">✕</button>
+        </div>`).join('');
+    // Re-selectăm produsele deja alese
+    _receptieItems.forEach((item, idx) => {
+        const sel = container.querySelectorAll('select')[idx];
+        if (sel && item.produs_id) sel.value = item.produs_id;
+    });
+    recalcTotalReceptie();
+}
+
+function adaugaItemReceptie() {
+    _receptieItems.push({ produs_id: '', cantitate: 1, pret_unitar: 0 });
+    _renderItemsReceptie();
+}
+
+function stergeItemReceptie(idx) {
+    _receptieItems.splice(idx, 1);
+    _renderItemsReceptie();
+}
+
+function recalcTotalReceptie() {
+    const total = _receptieItems.reduce((s, i) => s + (Number(i.cantitate)||0) * (Number(i.pret_unitar)||0), 0);
+    const el = document.getElementById('rec-total-display');
+    if (el) el.innerText = `Total: ${Math.round(total * 100) / 100} lei`;
+}
+
+async function salveazaReceptie() {
+    const itemsValide = _receptieItems.filter(i => i.produs_id && Number(i.cantitate) > 0);
+    if (!itemsValide.length) { showNotification('❌ Adaugă cel puțin un produs valid', 'error'); return; }
+    const furnizorId = document.getElementById('rec-furnizor-select')?.value || null;
+    const data = document.getElementById('rec-data')?.value || new Date().toISOString().split('T')[0];
+    const obs = document.getElementById('rec-obs')?.value?.trim() || null;
+    const total = itemsValide.reduce((s, i) => s + i.cantitate * i.pret_unitar, 0);
+
+    setLoader(true);
+    try {
+        await ZFlowDB.insertReceptie({ furnizor_id: furnizorId || null, data, total, observatii: obs });
+        for (const item of itemsValide) {
+            await ZFlowDB.insertMiscare({
+                produs_id: item.produs_id,
+                tip: 'Intrare',
+                cantitate: item.cantitate,
+                pret_unitar: item.pret_unitar,
+                data,
+                referinta: `Recepție ${data}`,
+                observatii: obs
+            });
+        }
+        ZFlowStore.dateReceptii    = await ZFlowDB.fetchReceptii();
+        ZFlowStore.dateMiscariStoc = await ZFlowDB.fetchMiscariStoc();
+        inchideModalReceptie();
+        calculeazaKPIDepozit();
+        renderReceptiiDepozit();
+        showNotification('✅ Recepție salvată!', 'success');
+    } catch(err) {
+        showNotification('❌ Eroare: ' + err.message, 'error');
+    } finally { setLoader(false); }
+}
+
+// ==========================================
+// MODAL LIVRARE — Task 1
+// ==========================================
+let _livrareItems = [];
+
+function deschideModalLivrare() {
+    _livrareItems = [];
+    const modal = document.getElementById('modal-livrare');
+    if (!modal) return;
+    const clSel = document.getElementById('liv-client-select');
+    if (clSel) {
+        clSel.innerHTML = '<option value="">-- Client (opțional) --</option>' +
+            (ZFlowStore.dateLocal || []).map(c =>
+                `<option value="${c.id}">${c.nume_firma || c.cui || c.id.slice(-4)}</option>`
+            ).join('');
+    }
+    const dateEl = document.getElementById('liv-data');
+    if (dateEl) dateEl.value = new Date().toISOString().split('T')[0];
+    const obsEl = document.getElementById('liv-obs');
+    if (obsEl) obsEl.value = '';
+    _renderItemsLivrare();
+    modal.classList.add('active');
+}
+
+function inchideModalLivrare() {
+    const m = document.getElementById('modal-livrare');
+    if (m) m.classList.remove('active');
+}
+
+function _renderItemsLivrare() {
+    const container = document.getElementById('liv-items-list');
+    if (!container) return;
+    if (!_livrareItems.length) {
+        container.innerHTML = `<p class="text-xs text-slate-400 text-center py-2">Niciun produs adăugat</p>`;
+        recalcTotalLivrare();
+        return;
+    }
+    container.innerHTML = _livrareItems.map((item, idx) => {
+        const stoc = calcStocCurent(item.produs_id);
+        return `<div class="flex gap-2 items-center mb-1">
+          <select class="flex-1 min-w-0 p-2 bg-slate-50 rounded-xl text-xs font-bold border border-slate-200"
+            onchange="_livrareItems[${idx}].produs_id=this.value; _renderItemsLivrare()">
+            <option value="">-- Produs --</option>${_optiuniProduse()}
+          </select>
+          <input type="number" min="0.001" step="any" placeholder="Cant." value="${item.cantitate||''}"
+            class="w-20 p-2 bg-slate-50 rounded-xl text-xs font-bold border border-slate-200"
+            oninput="_livrareItems[${idx}].cantitate=Number(this.value); recalcTotalLivrare()"/>
+          <input type="number" min="0" step="any" placeholder="Preț/U" value="${item.pret_unitar||''}"
+            class="w-20 p-2 bg-slate-50 rounded-xl text-xs font-bold border border-slate-200"
+            oninput="_livrareItems[${idx}].pret_unitar=Number(this.value); recalcTotalLivrare()"/>
+          <button onclick="stergeItemLivrare(${idx})" class="text-red-500 hover:text-red-700 font-black text-base leading-none px-1">✕</button>
+        </div>`;
+    }).join('');
+    _livrareItems.forEach((item, idx) => {
+        const sel = container.querySelectorAll('select')[idx];
+        if (sel && item.produs_id) sel.value = item.produs_id;
+    });
+    recalcTotalLivrare();
+}
+
+function adaugaItemLivrare() {
+    _livrareItems.push({ produs_id: '', cantitate: 1, pret_unitar: 0 });
+    _renderItemsLivrare();
+}
+
+function stergeItemLivrare(idx) {
+    _livrareItems.splice(idx, 1);
+    _renderItemsLivrare();
+}
+
+function recalcTotalLivrare() {
+    const total = _livrareItems.reduce((s, i) => s + (Number(i.cantitate)||0) * (Number(i.pret_unitar)||0), 0);
+    const el = document.getElementById('liv-total-display');
+    if (el) el.innerText = `Total: ${Math.round(total * 100) / 100} lei`;
+}
+
+async function salveazaLivrare() {
+    const itemsValide = _livrareItems.filter(i => i.produs_id && Number(i.cantitate) > 0);
+    if (!itemsValide.length) { showNotification('❌ Adaugă cel puțin un produs valid', 'error'); return; }
+    const clientId = document.getElementById('liv-client-select')?.value || null;
+    const data = document.getElementById('liv-data')?.value || new Date().toISOString().split('T')[0];
+    const obs = document.getElementById('liv-obs')?.value?.trim() || null;
+    const total = itemsValide.reduce((s, i) => s + i.cantitate * i.pret_unitar, 0);
+
+    // Verifică stoc înainte de salvare
+    for (const item of itemsValide) {
+        const stocDisp = calcStocCurent(item.produs_id);
+        const prod = (ZFlowStore.dateProduse || []).find(p => String(p.id) === String(item.produs_id));
+        if (Number(item.cantitate) > stocDisp) {
+            showNotification(`❌ Stoc insuficient pentru ${prod?.nume || 'produs'} (${stocDisp} disponibil)`, 'error');
+            return;
+        }
+    }
+
+    setLoader(true);
+    try {
+        await ZFlowDB.insertLivrare({ client_id: clientId || null, data, total, observatii: obs });
+        for (const item of itemsValide) {
+            await ZFlowDB.insertMiscare({
+                produs_id: item.produs_id,
+                tip: 'Iesire',
+                cantitate: item.cantitate,
+                pret_unitar: item.pret_unitar,
+                data,
+                referinta: `Livrare ${data}`,
+                observatii: obs
+            });
+        }
+        ZFlowStore.dateLivrari     = await ZFlowDB.fetchLivrari();
+        ZFlowStore.dateMiscariStoc = await ZFlowDB.fetchMiscariStoc();
+        inchideModalLivrare();
+        calculeazaKPIDepozit();
+        renderLivrariDepozit();
+        showNotification('✅ Livrare salvată!', 'success');
+    } catch(err) {
+        showNotification('❌ Eroare: ' + err.message, 'error');
+    } finally { setLoader(false); }
+}
+
+// ==========================================
+// EXPORT CSV DEPOZIT — Task 8
+// ==========================================
+function exportProduseCSV() {
+    const produse = ZFlowStore.dateProduse || [];
+    if (!produse.length) { showNotification('Nu există produse de exportat', 'error'); return; }
+    const headers = ['SKU', 'Nume', 'UM', 'Categorie', 'Pret Achizitie', 'Pret Vanzare', 'Stoc Min', 'Stoc Curent'];
+    const rows = produse.map(p => [
+        `"${p.sku||''}"`, `"${(p.nume||'').replace(/"/g,'""')}"`,
+        `"${p.um||'buc'}"`, `"${p.categorie||''}"`,
+        p.pret_achizitie||0, p.pret_vanzare||0, p.stoc_min||0,
+        calcStocCurent(p.id)
+    ]);
+    const csv = [headers.join(';'), ...rows.map(r => r.join(';'))].join('\n');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `produse_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    showNotification('✅ Export produse finalizat', 'success');
+}
+
+function exportMiscariStocCSV() {
+    const miscari = ZFlowStore.dateMiscariStoc || [];
+    if (!miscari.length) { showNotification('Nu există mișcări de exportat', 'error'); return; }
+    const headers = ['Data', 'Tip', 'Produs', 'SKU', 'Cantitate', 'Pret Unitar', 'Referinta', 'Observatii'];
+    const rows = miscari.map(m => {
+        const p = (ZFlowStore.dateProduse||[]).find(x => String(x.id) === String(m.produs_id));
+        return [
+            m.data||'', `"${m.tip||''}"`,
+            `"${(p?.nume||'').replace(/"/g,'""')}"`, `"${p?.sku||''}"`,
+            m.cantitate||0, m.pret_unitar||0,
+            `"${m.referinta||''}"`, `"${(m.observatii||'').replace(/"/g,'""')}"`
+        ];
+    });
+    const csv = [headers.join(';'), ...rows.map(r => r.join(';'))].join('\n');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `miscari_stoc_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    showNotification('✅ Export mișcări finalizat', 'success');
+}
+
+// ==========================================
 // EXPORT GLOBAL
 // ==========================================
 window.calcStocCurent          = calcStocCurent;
@@ -584,6 +864,22 @@ window.initDepozit             = initDepozit;
 window.importaProduse          = importaProduse;
 window.initDepozitServer       = initDepozitServer;
 window.syncDepozitServer       = syncDepozitServer;
+// Task 1 — Recepții & Livrări modals
+window.deschideModalReceptie   = deschideModalReceptie;
+window.inchideModalReceptie    = inchideModalReceptie;
+window.adaugaItemReceptie      = adaugaItemReceptie;
+window.stergeItemReceptie      = stergeItemReceptie;
+window.recalcTotalReceptie     = recalcTotalReceptie;
+window.salveazaReceptie        = salveazaReceptie;
+window.deschideModalLivrare    = deschideModalLivrare;
+window.inchideModalLivrare     = inchideModalLivrare;
+window.adaugaItemLivrare       = adaugaItemLivrare;
+window.stergeItemLivrare       = stergeItemLivrare;
+window.recalcTotalLivrare      = recalcTotalLivrare;
+window.salveazaLivrare         = salveazaLivrare;
+// Task 8 — Export
+window.exportProduseCSV        = exportProduseCSV;
+window.exportMiscariStocCSV    = exportMiscariStocCSV;
 
 // Debounced version for search input
 const renderProduseDebounced = (typeof debounce === 'function')

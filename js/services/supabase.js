@@ -9,102 +9,172 @@ const KEY_Z = "sb_publishable_nKFEv_6AOyKBFp3f_AnZmw_MMZ9MXl5";
 // Inițializăm clientul Supabase
 const zf = supabase.createClient(URL_Z, KEY_Z);
 
+/**
+ * Returnează UUID-ul utilizatorului Supabase curent (null pentru admin/demo local)
+ * Folosit pentru a seta user_id în toate inserările, garantând izolarea datelor per user.
+ */
+function _getCurrentUserId() {
+    // Admin local și demo user nu au UUID Supabase real
+    if (window.ZFlowStore?.userSession?.user?.email === 'admin') return null;
+    if (window.ZFlowStore?.userSession?.isDemo === true) return null;
+    // Pentru utilizatorii Supabase, user_id este disponibil în sesiune
+    return window.ZFlowStore?.userSession?.user?.id || null;
+}
+
 // ==========================================
 // HELPERS DEMO / LOCAL USER
-// Demo mode: operații in-memory (fără Supabase)
-// Local user: fetchProfile/upsertProfile via localStorage
+// "admin/1234"   → date salvate în localStorage (persistă la refresh)
+// "user/pass"    → date in-memory volatile (demo prezentare)
+// Supabase users → date în Supabase (RLS per user)
 // ==========================================
+
+/**
+ * Persistă/restaurează datele contului admin în localStorage.
+ * Prefixul 'zflow_ad_' evită conflicte cu alte chei.
+ */
+const _adminLS = {
+    _p: 'zflow_ad_',
+    get(key) {
+        try { const r = localStorage.getItem(this._p + key); return r ? JSON.parse(r) : null; } catch(e) { return null; }
+    },
+    set(key, val) {
+        try { localStorage.setItem(this._p + key, JSON.stringify(val)); } catch(e) {}
+    },
+    clear() {
+        try {
+            Object.keys(localStorage).filter(k => k.startsWith(this._p)).forEach(k => localStorage.removeItem(k));
+        } catch(e) {}
+    }
+};
+
 const _demoOps = {
+    /** true dacă utilizatorul curent NU este autentificat Supabase (admin local SAU demo) */
     isLocal() {
         const e = window.ZFlowStore?.userSession?.user?.email;
         return e === 'admin' || window.ZFlowStore?.userSession?.isDemo === true;
     },
+    /** true DOAR pentru contul demo user/pass (date volatile, se șterg la logout) */
     isDemo() { return window.ZFlowStore?.userSession?.isDemo === true; },
-    initialized() { return window.ZFlowStore?._demoClienti !== undefined; },
+    /** true DOAR pentru contul admin/1234 (date persistate în localStorage) */
+    isAdminLocal() { return window.ZFlowStore?.userSession?.user?.email === 'admin'; },
 
-    // Profile — localStorage pentru admin; in-memory pentru demo
+    /**
+     * Restaurează din localStorage în memorie (o singură dată per sesiune).
+     * Apelat înainte de orice operație care citește datele.
+     */
+    _restore(lsKey, storeKey) {
+        if (this.isAdminLocal() && window.ZFlowStore[storeKey] === undefined) {
+            window.ZFlowStore[storeKey] = _adminLS.get(lsKey) || [];
+        }
+        if (!window.ZFlowStore[storeKey]) window.ZFlowStore[storeKey] = [];
+    },
+    /** Salvează în localStorage dacă este admin (nu demo). */
+    _persist(lsKey, storeKey) {
+        if (this.isAdminLocal()) _adminLS.set(lsKey, window.ZFlowStore[storeKey] || []);
+    },
+
+    initialized() {
+        if (this.isAdminLocal()) return window.ZFlowStore?._demoClienti !== undefined || _adminLS.get('clienti') !== null;
+        return window.ZFlowStore?._demoClienti !== undefined;
+    },
+
+    // Profile — localStorage per-admin (namespaced); in-memory pentru demo
     fetchProfile() {
-        // Demo user (user/pass): profil izolat — nu preia profilul admin
         if (window.ZFlowStore?.userSession?.isDemo) return null;
-        try { const s = localStorage.getItem('zflow_local_profile'); return s ? JSON.parse(s) : null; } catch(e) { return null; }
+        try { return _adminLS.get('profile'); } catch(e) { return null; }
     },
     upsertProfile(payload) {
         const p = { ...payload, onboarding_done: true, updated_at: new Date().toISOString() };
-        // Demo user: salvare doar în memorie (nu persistă în localStorage)
         if (window.ZFlowStore?.userSession?.isDemo) {
             if (window.ZFlowStore) window.ZFlowStore.userProfile = p;
             return;
         }
-        localStorage.setItem('zflow_local_profile', JSON.stringify(p));
+        _adminLS.set('profile', p);
         if (window.ZFlowStore) window.ZFlowStore.userProfile = p;
     },
 
-    // In-memory CRUD — clienți
+    // ── CRUD clienți ──────────────────────────────────────────────────
     insertClient(payload) {
-        if (!window.ZFlowStore._demoClienti) window.ZFlowStore._demoClienti = [];
+        this._restore('clienti', '_demoClienti');
         const id = 'cDemo' + Date.now() + Math.random().toString(36).slice(2,4);
         window.ZFlowStore._demoClienti.push({ ...payload, id, created_at: new Date().toISOString() });
-        return id;  // ← returnează ID-ul creat
+        this._persist('clienti', '_demoClienti');
+        return id;
     },
     updateClient(id, payload) {
-        const arr = window.ZFlowStore._demoClienti || [];
+        this._restore('clienti', '_demoClienti');
+        const arr = window.ZFlowStore._demoClienti;
         const i = arr.findIndex(c => String(c.id) === String(id));
         if (i !== -1) arr[i] = { ...arr[i], ...payload };
+        this._persist('clienti', '_demoClienti');
     },
     deleteClient(id) {
-        if (!window.ZFlowStore._demoClienti) return;
+        this._restore('clienti', '_demoClienti');
         const i = window.ZFlowStore._demoClienti.findIndex(c => String(c.id) === String(id));
         if (i !== -1) window.ZFlowStore._demoClienti.splice(i, 1);
+        this._persist('clienti', '_demoClienti');
     },
 
-    // In-memory CRUD — facturi de încasat
+    // ── CRUD facturi de încasat ───────────────────────────────────────
     insertFactura(payload) {
-        if (!window.ZFlowStore._demoFacturi) window.ZFlowStore._demoFacturi = [];
+        this._restore('facturi', '_demoFacturi');
         window.ZFlowStore._demoFacturi.push({ ...payload, id: 'fDemo' + Date.now(), created_at: new Date().toISOString() });
+        this._persist('facturi', '_demoFacturi');
     },
     updateFactura(id, payload) {
-        const arr = window.ZFlowStore._demoFacturi || [];
+        this._restore('facturi', '_demoFacturi');
+        const arr = window.ZFlowStore._demoFacturi;
         const i = arr.findIndex(f => String(f.id) === String(id));
         if (i !== -1) arr[i] = { ...arr[i], ...payload };
+        this._persist('facturi', '_demoFacturi');
     },
     deleteFactura(id) {
-        if (!window.ZFlowStore._demoFacturi) return;
+        this._restore('facturi', '_demoFacturi');
         const i = window.ZFlowStore._demoFacturi.findIndex(f => String(f.id) === String(id));
         if (i !== -1) window.ZFlowStore._demoFacturi.splice(i, 1);
+        this._persist('facturi', '_demoFacturi');
     },
 
-    // In-memory CRUD — furnizori
+    // ── CRUD furnizori ────────────────────────────────────────────────
     insertFurnizor(payload) {
-        if (!window.ZFlowStore._demoFurnizori) window.ZFlowStore._demoFurnizori = [];
+        this._restore('furnizori', '_demoFurnizori');
         const id = 'furnDemo' + Date.now() + Math.random().toString(36).slice(2,4);
         window.ZFlowStore._demoFurnizori.push({ ...payload, id, created_at: new Date().toISOString() });
-        return id;  // ← returnează ID-ul creat
+        this._persist('furnizori', '_demoFurnizori');
+        return id;
     },
     updateFurnizor(id, payload) {
-        const arr = window.ZFlowStore._demoFurnizori || [];
+        this._restore('furnizori', '_demoFurnizori');
+        const arr = window.ZFlowStore._demoFurnizori;
         const i = arr.findIndex(f => String(f.id) === String(id));
         if (i !== -1) arr[i] = { ...arr[i], ...payload };
+        this._persist('furnizori', '_demoFurnizori');
     },
     deleteFurnizor(id) {
-        if (!window.ZFlowStore._demoFurnizori) return;
+        this._restore('furnizori', '_demoFurnizori');
         const i = window.ZFlowStore._demoFurnizori.findIndex(f => String(f.id) === String(id));
         if (i !== -1) window.ZFlowStore._demoFurnizori.splice(i, 1);
+        this._persist('furnizori', '_demoFurnizori');
     },
 
-    // In-memory CRUD — facturi de plătit
+    // ── CRUD facturi de plătit ────────────────────────────────────────
     insertFacturaPlatit(payload) {
-        if (!window.ZFlowStore._demoFacturiPlatit) window.ZFlowStore._demoFacturiPlatit = [];
+        this._restore('facturi_platit', '_demoFacturiPlatit');
         window.ZFlowStore._demoFacturiPlatit.push({ ...payload, id: 'fpDemo' + Date.now(), created_at: new Date().toISOString() });
+        this._persist('facturi_platit', '_demoFacturiPlatit');
     },
     updateFacturaPlatit(id, payload) {
-        const arr = window.ZFlowStore._demoFacturiPlatit || [];
+        this._restore('facturi_platit', '_demoFacturiPlatit');
+        const arr = window.ZFlowStore._demoFacturiPlatit;
         const i = arr.findIndex(f => String(f.id) === String(id));
         if (i !== -1) arr[i] = { ...arr[i], ...payload };
+        this._persist('facturi_platit', '_demoFacturiPlatit');
     },
     deleteFacturaPlatit(id) {
-        if (!window.ZFlowStore._demoFacturiPlatit) return;
+        this._restore('facturi_platit', '_demoFacturiPlatit');
         const i = window.ZFlowStore._demoFacturiPlatit.findIndex(f => String(f.id) === String(id));
         if (i !== -1) window.ZFlowStore._demoFacturiPlatit.splice(i, 1);
+        this._persist('facturi_platit', '_demoFacturiPlatit');
     },
 
     // PDF mock — returnează URL local object
@@ -115,46 +185,116 @@ const _demoOps = {
 
 // ==========================================
 // EXTINDERE _demoOps — DEPOZIT & LOGISTIC
+// (același pattern: _restore + _persist pentru admin localStorage)
 // ==========================================
 Object.assign(_demoOps, {
     // ---- PRODUSE ----
-    insertProdus(p) { if (!window.ZFlowStore._demoProduse) window.ZFlowStore._demoProduse = []; window.ZFlowStore._demoProduse.push({...p, id:'prod'+Date.now(), created_at:new Date().toISOString()}); },
-    updateProdus(id,p) { const a=window.ZFlowStore._demoProduse||[]; const i=a.findIndex(x=>String(x.id)===String(id)); if(i!==-1)a[i]={...a[i],...p}; },
-    deleteProdus(id) { if(!window.ZFlowStore._demoProduse)return; const i=window.ZFlowStore._demoProduse.findIndex(x=>String(x.id)===String(id)); if(i!==-1)window.ZFlowStore._demoProduse.splice(i,1); },
-    fetchProduse() { return (window.ZFlowStore._demoProduse||[]).map(x=>({...x})); },
+    insertProdus(p) {
+        this._restore('produse','_demoProduse');
+        window.ZFlowStore._demoProduse.push({...p,id:'prod'+Date.now(),created_at:new Date().toISOString()});
+        this._persist('produse','_demoProduse');
+    },
+    updateProdus(id,p) {
+        this._restore('produse','_demoProduse');
+        const a=window.ZFlowStore._demoProduse; const i=a.findIndex(x=>String(x.id)===String(id)); if(i!==-1)a[i]={...a[i],...p};
+        this._persist('produse','_demoProduse');
+    },
+    deleteProdus(id) {
+        this._restore('produse','_demoProduse');
+        const i=window.ZFlowStore._demoProduse.findIndex(x=>String(x.id)===String(id)); if(i!==-1)window.ZFlowStore._demoProduse.splice(i,1);
+        this._persist('produse','_demoProduse');
+    },
+    fetchProduse() { this._restore('produse','_demoProduse'); return (window.ZFlowStore._demoProduse||[]).map(x=>({...x})); },
     // ---- MIȘCĂRI STOC ----
-    insertMiscare(p) { if(!window.ZFlowStore._demoMiscariStoc)window.ZFlowStore._demoMiscariStoc=[]; window.ZFlowStore._demoMiscariStoc.push({...p,id:'mis'+Date.now(),created_at:new Date().toISOString()}); },
-    fetchMiscariStoc() { return (window.ZFlowStore._demoMiscariStoc||[]).map(x=>({...x})); },
+    insertMiscare(p) {
+        this._restore('miscari_stoc','_demoMiscariStoc');
+        window.ZFlowStore._demoMiscariStoc.push({...p,id:'mis'+Date.now(),created_at:new Date().toISOString()});
+        this._persist('miscari_stoc','_demoMiscariStoc');
+    },
+    fetchMiscariStoc() { this._restore('miscari_stoc','_demoMiscariStoc'); return (window.ZFlowStore._demoMiscariStoc||[]).map(x=>({...x})); },
     // ---- RECEPȚII ----
-    insertReceptie(p) { if(!window.ZFlowStore._demoReceptii)window.ZFlowStore._demoReceptii=[]; window.ZFlowStore._demoReceptii.push({...p,id:'rec'+Date.now(),created_at:new Date().toISOString()}); },
-    fetchReceptii() { return (window.ZFlowStore._demoReceptii||[]).map(x=>({...x})); },
+    insertReceptie(p) {
+        this._restore('receptii','_demoReceptii');
+        window.ZFlowStore._demoReceptii.push({...p,id:'rec'+Date.now(),created_at:new Date().toISOString()});
+        this._persist('receptii','_demoReceptii');
+    },
+    fetchReceptii() { this._restore('receptii','_demoReceptii'); return (window.ZFlowStore._demoReceptii||[]).map(x=>({...x})); },
     // ---- LIVRĂRI ----
-    insertLivrare(p) { if(!window.ZFlowStore._demoLivrari)window.ZFlowStore._demoLivrari=[]; window.ZFlowStore._demoLivrari.push({...p,id:'liv'+Date.now(),created_at:new Date().toISOString()}); },
-    fetchLivrari() { return (window.ZFlowStore._demoLivrari||[]).map(x=>({...x})); },
+    insertLivrare(p) {
+        this._restore('livrari','_demoLivrari');
+        window.ZFlowStore._demoLivrari.push({...p,id:'liv'+Date.now(),created_at:new Date().toISOString()});
+        this._persist('livrari','_demoLivrari');
+    },
+    fetchLivrari() { this._restore('livrari','_demoLivrari'); return (window.ZFlowStore._demoLivrari||[]).map(x=>({...x})); },
     // ---- ȘOFERI ----
-    insertSofer(p) { if(!window.ZFlowStore._demoSoferi)window.ZFlowStore._demoSoferi=[]; window.ZFlowStore._demoSoferi.push({...p,id:'sof'+Date.now(),created_at:new Date().toISOString()}); },
-    updateSofer(id,p) { const a=window.ZFlowStore._demoSoferi||[]; const i=a.findIndex(x=>String(x.id)===String(id)); if(i!==-1)a[i]={...a[i],...p}; },
-    deleteSofer(id) { if(!window.ZFlowStore._demoSoferi)return; const i=window.ZFlowStore._demoSoferi.findIndex(x=>String(x.id)===String(id)); if(i!==-1)window.ZFlowStore._demoSoferi.splice(i,1); },
-    fetchSoferi() { return (window.ZFlowStore._demoSoferi||[]).map(x=>({...x})); },
+    insertSofer(p) {
+        this._restore('soferi','_demoSoferi');
+        window.ZFlowStore._demoSoferi.push({...p,id:'sof'+Date.now(),created_at:new Date().toISOString()});
+        this._persist('soferi','_demoSoferi');
+    },
+    updateSofer(id,p) {
+        this._restore('soferi','_demoSoferi');
+        const a=window.ZFlowStore._demoSoferi; const i=a.findIndex(x=>String(x.id)===String(id)); if(i!==-1)a[i]={...a[i],...p};
+        this._persist('soferi','_demoSoferi');
+    },
+    deleteSofer(id) {
+        this._restore('soferi','_demoSoferi');
+        const i=window.ZFlowStore._demoSoferi.findIndex(x=>String(x.id)===String(id)); if(i!==-1)window.ZFlowStore._demoSoferi.splice(i,1);
+        this._persist('soferi','_demoSoferi');
+    },
+    fetchSoferi() { this._restore('soferi','_demoSoferi'); return (window.ZFlowStore._demoSoferi||[]).map(x=>({...x})); },
     // ---- VEHICULE ----
-    insertVehicul(p) { if(!window.ZFlowStore._demoVehicule)window.ZFlowStore._demoVehicule=[]; window.ZFlowStore._demoVehicule.push({...p,id:'veh'+Date.now(),created_at:new Date().toISOString()}); },
-    updateVehicul(id,p) { const a=window.ZFlowStore._demoVehicule||[]; const i=a.findIndex(x=>String(x.id)===String(id)); if(i!==-1)a[i]={...a[i],...p}; },
-    deleteVehicul(id) { if(!window.ZFlowStore._demoVehicule)return; const i=window.ZFlowStore._demoVehicule.findIndex(x=>String(x.id)===String(id)); if(i!==-1)window.ZFlowStore._demoVehicule.splice(i,1); },
-    fetchVehicule() { return (window.ZFlowStore._demoVehicule||[]).map(x=>({...x})); },
+    insertVehicul(p) {
+        this._restore('vehicule','_demoVehicule');
+        window.ZFlowStore._demoVehicule.push({...p,id:'veh'+Date.now(),created_at:new Date().toISOString()});
+        this._persist('vehicule','_demoVehicule');
+    },
+    updateVehicul(id,p) {
+        this._restore('vehicule','_demoVehicule');
+        const a=window.ZFlowStore._demoVehicule; const i=a.findIndex(x=>String(x.id)===String(id)); if(i!==-1)a[i]={...a[i],...p};
+        this._persist('vehicule','_demoVehicule');
+    },
+    deleteVehicul(id) {
+        this._restore('vehicule','_demoVehicule');
+        const i=window.ZFlowStore._demoVehicule.findIndex(x=>String(x.id)===String(id)); if(i!==-1)window.ZFlowStore._demoVehicule.splice(i,1);
+        this._persist('vehicule','_demoVehicule');
+    },
+    fetchVehicule() { this._restore('vehicule','_demoVehicule'); return (window.ZFlowStore._demoVehicule||[]).map(x=>({...x})); },
     // ---- COMENZI TRANSPORT ----
-    insertComanda(p) { if(!window.ZFlowStore._demoComenziTransport)window.ZFlowStore._demoComenziTransport=[]; window.ZFlowStore._demoComenziTransport.push({...p,id:'ct'+Date.now(),created_at:new Date().toISOString()}); },
-    updateComanda(id,p) { const a=window.ZFlowStore._demoComenziTransport||[]; const i=a.findIndex(x=>String(x.id)===String(id)); if(i!==-1)a[i]={...a[i],...p}; },
-    deleteComanda(id) { if(!window.ZFlowStore._demoComenziTransport)return; const i=window.ZFlowStore._demoComenziTransport.findIndex(x=>String(x.id)===String(id)); if(i!==-1)window.ZFlowStore._demoComenziTransport.splice(i,1); },
-    fetchComenzi() { return (window.ZFlowStore._demoComenziTransport||[]).map(x=>({...x})); },
-    initializedDepozit() { return window.ZFlowStore?._demoProduse !== undefined; },
-    initializedLogistic() { return window.ZFlowStore?._demoSoferi !== undefined; }
+    insertComanda(p) {
+        this._restore('comenzi_transport','_demoComenziTransport');
+        window.ZFlowStore._demoComenziTransport.push({...p,id:'ct'+Date.now(),created_at:new Date().toISOString()});
+        this._persist('comenzi_transport','_demoComenziTransport');
+    },
+    updateComanda(id,p) {
+        this._restore('comenzi_transport','_demoComenziTransport');
+        const a=window.ZFlowStore._demoComenziTransport; const i=a.findIndex(x=>String(x.id)===String(id)); if(i!==-1)a[i]={...a[i],...p};
+        this._persist('comenzi_transport','_demoComenziTransport');
+    },
+    deleteComanda(id) {
+        this._restore('comenzi_transport','_demoComenziTransport');
+        const i=window.ZFlowStore._demoComenziTransport.findIndex(x=>String(x.id)===String(id)); if(i!==-1)window.ZFlowStore._demoComenziTransport.splice(i,1);
+        this._persist('comenzi_transport','_demoComenziTransport');
+    },
+    fetchComenzi() { this._restore('comenzi_transport','_demoComenziTransport'); return (window.ZFlowStore._demoComenziTransport||[]).map(x=>({...x})); },
+    initializedDepozit() {
+        if (this.isAdminLocal()) return window.ZFlowStore?._demoProduse !== undefined || _adminLS.get('produse') !== null;
+        return window.ZFlowStore?._demoProduse !== undefined;
+    },
+    initializedLogistic() {
+        if (this.isAdminLocal()) return window.ZFlowStore?._demoSoferi !== undefined || _adminLS.get('soferi') !== null;
+        return window.ZFlowStore?._demoSoferi !== undefined;
+    }
 });
 
 /**
  * Încarcă toți clienții din baza de date
  */
 async function fetchClienti() {
-    if (_demoOps.isDemo() && _demoOps.initialized()) return (window.ZFlowStore._demoClienti || []).map(c => ({...c}));
+    if (_demoOps.isLocal()) {
+        _demoOps._restore('clienti', '_demoClienti');
+        return (window.ZFlowStore._demoClienti || []).map(c => ({...c}));
+    }
     const { data, error } = await zf
         .from("clienti")
         .select("*")
@@ -167,7 +307,10 @@ async function fetchClienti() {
  * Încarcă toate facturile din baza de date
  */
 async function fetchFacturi() {
-    if (_demoOps.isDemo() && _demoOps.initialized()) return (window.ZFlowStore._demoFacturi || []).map(f => ({...f}));
+    if (_demoOps.isLocal()) {
+        _demoOps._restore('facturi', '_demoFacturi');
+        return (window.ZFlowStore._demoFacturi || []).map(f => ({...f}));
+    }
     const { data, error } = await zf
         .from("facturi")
         .select("*")
@@ -185,6 +328,12 @@ async function fetchFacturi() {
  * @returns {Promise<{data: Array, count: number}>}
  */
 async function fetchFacturiPaginated(limit = 50, offset = 0, clientId = null) {
+    // Local check — admin și demo user folosesc stocul in-memory exclusiv, fără acces Supabase
+    if (_demoOps.isLocal()) {
+        const all = (window.ZFlowStore._demoFacturi || []).map(f => ({...f}));
+        const filtered = clientId ? all.filter(f => String(f.client_id) === String(clientId)) : all;
+        return { data: filtered, count: filtered.length };
+    }
     let query = zf
         .from("facturi")
         .select("*", { count: 'exact' })
@@ -208,8 +357,10 @@ async function fetchFacturiPaginated(limit = 50, offset = 0, clientId = null) {
 async function insertFactura(payload, strict = false) {
     if (_demoOps.isDemo()) { _demoOps.insertFactura(payload); return; }
     if (_demoOps.isLocal()) { _demoOps.insertFactura(payload); return; }
+    const uid = _getCurrentUserId();
+    const p = uid ? { ...payload, user_id: uid } : payload;
     try {
-        const { error } = await zf.from("facturi").insert([payload]);
+        const { error } = await zf.from("facturi").insert([p]);
         if (error) throw error;
     } catch(e) {
         if (strict) throw e;
@@ -222,7 +373,7 @@ async function insertFactura(payload, strict = false) {
  * Actualizează o factură existentă
  */
 async function updateFactura(id, payload) {
-    if (_demoOps.isDemo()) { _demoOps.updateFactura(id, payload); return; }
+    if (_demoOps.isLocal()) { _demoOps.updateFactura(id, payload); return; }
     const { error } = await zf.from("facturi").update(payload).eq("id", id);
     if (error) throw error;
 }
@@ -231,7 +382,7 @@ async function updateFactura(id, payload) {
  * Șterge o factură
  */
 async function deleteFactura(id) {
-    if (_demoOps.isDemo()) { _demoOps.deleteFactura(id); return; }
+    if (_demoOps.isLocal()) { _demoOps.deleteFactura(id); return; }
     const { error } = await zf.from("facturi").delete().eq("id", id);
     if (error) throw error;
 }
@@ -243,8 +394,10 @@ async function deleteFactura(id) {
 async function insertClient(payload, strict = false) {
     if (_demoOps.isDemo()) return _demoOps.insertClient(payload);
     if (_demoOps.isLocal()) return _demoOps.insertClient(payload);
+    const uid = _getCurrentUserId();
+    const p = uid ? { ...payload, user_id: uid } : payload;
     try {
-        const { data, error } = await zf.from("clienti").insert([payload]).select('id').single();
+        const { data, error } = await zf.from("clienti").insert([p]).select('id').single();
         if (error) throw error;
         return data.id;
     } catch(e) {
@@ -266,7 +419,7 @@ async function insertClient(payload, strict = false) {
  * Actualizează un client existent
  */
 async function updateClient(id, payload) {
-    if (_demoOps.isDemo()) { _demoOps.updateClient(id, payload); return; }
+    if (_demoOps.isLocal()) { _demoOps.updateClient(id, payload); return; }
     const { error } = await zf.from("clienti").update(payload).eq("id", id);
     if (error) throw error;
 }
@@ -275,7 +428,7 @@ async function updateClient(id, payload) {
  * Șterge un client
  */
 async function deleteClient(id) {
-    if (_demoOps.isDemo()) { _demoOps.deleteClient(id); return; }
+    if (_demoOps.isLocal()) { _demoOps.deleteClient(id); return; }
     const { error } = await zf.from("clienti").delete().eq("id", id);
     if (error) throw error;
 }
@@ -284,7 +437,7 @@ async function deleteClient(id) {
  * Șterge un fișier PDF din storage după URL-ul public
  */
 async function deletePDFFromStorage(publicUrl) {
-    if (_demoOps.isDemo()) return; // no-op in demo mode
+    if (_demoOps.isLocal()) return; // no-op in demo/admin mode
     try {
         // Extrage calea relativă din URL-ul public Supabase
         const marker = '/object/public/facturi-pdf/';
@@ -301,7 +454,8 @@ async function deletePDFFromStorage(publicUrl) {
 /**
  * Upload PDF factură în storage
  */
-async function uploadFacturaPDF(file, numarFactura, idx = 0) {    if (_demoOps.isDemo()) return _demoOps.uploadPDF(file);    // idx garantează unicitate chiar dacă Date.now() returnează același ms pentru upload-uri rapide
+async function uploadFacturaPDF(file, numarFactura, idx = 0) {
+    if (_demoOps.isLocal()) return _demoOps.uploadPDF(file); // admin & demo: mock URL    // idx garantează unicitate chiar dacă Date.now() returnează același ms pentru upload-uri rapide
     const fileName = `${Date.now()}_${idx}_${numarFactura.replace(/\s+/g, "_")}.pdf`;
     
     const { data, error } = await zf.storage
@@ -395,13 +549,13 @@ async function fetchProfile() {
     try {
         const { data: { user } } = await zf.auth.getUser();
         if (!user) {
-            // Nu e autentificat Supabase — încearcă cache local
-            try { const s = localStorage.getItem('zflow_local_profile'); return s ? JSON.parse(s) : null; } catch(e) { return null; }
+            // Nu e autentificat Supabase
+            return null;
         }
         const { data, error } = await zf
             .from("profiles")
             .select("*")
-            .eq('user_id', user.id)
+            .eq('id', user.id)
             .single();
         if (error && error.code !== 'PGRST116') throw error;
         // Merge câmpuri extra salvate local (judet, reg_com, banca)
@@ -410,13 +564,12 @@ async function fetchProfile() {
             if (data) return { ...(extras ? JSON.parse(extras) : {}), ...data };
         } catch(e) {}
         if (data) return data;
-        // Supabase profiles gol — fallback pe cache localStorage
-        console.warn('[Profile] profiles table empty, fallback pe cache local');
-        try { const s = localStorage.getItem('zflow_local_profile'); return s ? JSON.parse(s) : null; } catch(e) { return null; }
+        // Supabase profiles gol — fallback pe cache per-user
+        console.warn('[Profile] profiles table empty, fallback pe cache per-user');
+        try { const s = localStorage.getItem('zflow_prc_' + user.id); return s ? JSON.parse(s) : null; } catch(e) { return null; }
     } catch(e) {
         console.warn('[Profile] fetchProfile error:', e.message);
-        // Fallback pe cache local la orice eroare
-        try { const s = localStorage.getItem('zflow_local_profile'); return s ? JSON.parse(s) : null; } catch(e2) { return null; }
+        return null;
     }
 }
 
@@ -425,14 +578,14 @@ async function fetchProfile() {
  */
 async function upsertProfile(payload) {
     if (_demoOps.isLocal()) { _demoOps.upsertProfile(payload); return; }
-    // Salvează întotdeauna în localStorage ca backup (indiferent de tipul de user)
-    try { localStorage.setItem('zflow_local_profile', JSON.stringify({ ...payload, onboarding_done: true })); } catch(e) {}
     const { data: { user } } = await zf.auth.getUser();
     if (!user) {
-        // Nu e sesiune Supabase activă — s-a salvat în localStorage, suficient
+        // Nu e sesiune Supabase activă
         if (window.ZFlowStore) window.ZFlowStore.userProfile = { ...payload, onboarding_done: true };
         return;
     }
+    // Cache per-user (namespaced, nu shared) pentru recuperare offline
+    try { localStorage.setItem('zflow_prc_' + user.id, JSON.stringify({ ...payload, onboarding_done: true })); } catch(e) {}
     // Cacheaza local campurile care pot lipsi din schema Supabase
     const { judet, reg_com, banca, ...dbPayload } = payload;
     try {
@@ -462,8 +615,10 @@ async function upsertProfile(payload) {
  * Încarcă toți furnizorii din baza de date
  */
 async function fetchFurnizori() {
-    if (_demoOps.isDemo() && _demoOps.initialized()) return (window.ZFlowStore._demoFurnizori || []).map(f => ({...f}));
-    if (_demoOps.isLocal()) return (window.ZFlowStore._demoFurnizori || []).map(f => ({...f}));
+    if (_demoOps.isLocal()) {
+        _demoOps._restore('furnizori', '_demoFurnizori');
+        return (window.ZFlowStore._demoFurnizori || []).map(f => ({...f}));
+    }
     const { data, error } = await zf
         .from("furnizori")
         .select("*")
@@ -479,8 +634,10 @@ async function fetchFurnizori() {
 async function insertFurnizor(payload, strict = false) {
     if (_demoOps.isDemo()) return _demoOps.insertFurnizor(payload);
     if (_demoOps.isLocal()) return _demoOps.insertFurnizor(payload);
+    const uid = _getCurrentUserId();
+    const p = uid ? { ...payload, user_id: uid } : payload;
     try {
-        const { data, error } = await zf.from("furnizori").insert([payload]).select('id').single();
+        const { data, error } = await zf.from("furnizori").insert([p]).select('id').single();
         if (error) throw error;
         return data.id;
     } catch(e) {
@@ -502,7 +659,7 @@ async function insertFurnizor(payload, strict = false) {
  * Actualizează un furnizor existent
  */
 async function updateFurnizor(id, payload) {
-    if (_demoOps.isDemo()) { _demoOps.updateFurnizor(id, payload); return; }
+    if (_demoOps.isLocal()) { _demoOps.updateFurnizor(id, payload); return; }
     const { error } = await zf.from("furnizori").update(payload).eq("id", id);
     if (error) throw error;
 }
@@ -511,7 +668,7 @@ async function updateFurnizor(id, payload) {
  * Șterge un furnizor
  */
 async function deleteFurnizor(id) {
-    if (_demoOps.isDemo()) { _demoOps.deleteFurnizor(id); return; }
+    if (_demoOps.isLocal()) { _demoOps.deleteFurnizor(id); return; }
     const { error } = await zf.from("furnizori").delete().eq("id", id);
     if (error) throw error;
 }
@@ -524,7 +681,10 @@ async function deleteFurnizor(id) {
  * Încarcă toate facturile de plătit
  */
 async function fetchFacturiPlatit() {
-    if (_demoOps.isDemo() && _demoOps.initialized()) return (window.ZFlowStore._demoFacturiPlatit || []).map(f => ({...f}));
+    if (_demoOps.isLocal()) {
+        _demoOps._restore('facturi_platit', '_demoFacturiPlatit');
+        return (window.ZFlowStore._demoFacturiPlatit || []).map(f => ({...f}));
+    }
     const { data, error } = await zf
         .from("facturi_platit")
         .select("*")
@@ -539,8 +699,10 @@ async function fetchFacturiPlatit() {
 async function insertFacturaPlatit(payload, strict = false) {
     if (_demoOps.isDemo()) { _demoOps.insertFacturaPlatit(payload); return; }
     if (_demoOps.isLocal()) { _demoOps.insertFacturaPlatit(payload); return; }
+    const uid = _getCurrentUserId();
+    const p = uid ? { ...payload, user_id: uid } : payload;
     try {
-        const { error } = await zf.from("facturi_platit").insert([payload]);
+        const { error } = await zf.from("facturi_platit").insert([p]);
         if (error) throw error;
     } catch(e) {
         if (strict) throw e;
@@ -553,7 +715,7 @@ async function insertFacturaPlatit(payload, strict = false) {
  * Actualizează o factură de plătit
  */
 async function updateFacturaPlatit(id, payload) {
-    if (_demoOps.isDemo()) { _demoOps.updateFacturaPlatit(id, payload); return; }
+    if (_demoOps.isLocal()) { _demoOps.updateFacturaPlatit(id, payload); return; }
     const { error } = await zf.from("facturi_platit").update(payload).eq("id", id);
     if (error) throw error;
 }
@@ -562,7 +724,7 @@ async function updateFacturaPlatit(id, payload) {
  * Șterge o factură de plătit
  */
 async function deleteFacturaPlatit(id) {
-    if (_demoOps.isDemo()) { _demoOps.deleteFacturaPlatit(id); return; }
+    if (_demoOps.isLocal()) { _demoOps.deleteFacturaPlatit(id); return; }
     const { error } = await zf.from("facturi_platit").delete().eq("id", id);
     if (error) throw error;
 }
@@ -587,7 +749,9 @@ async function fetchProduse() {
 }
 async function insertProdus(payload) {
     if (_demoOps.isLocal()) { _demoOps.insertProdus(payload); return; }
-    try { const { error } = await zf.from('produse').insert([payload]); if (error) throw error; } catch(e) { _demoOps.insertProdus(payload); }
+    const uid = _getCurrentUserId();
+    const p = uid ? { ...payload, user_id: uid } : payload;
+    try { const { error } = await zf.from('produse').insert([p]); if (error) throw error; } catch(e) { _demoOps.insertProdus(payload); }
 }
 async function updateProdus(id, payload) {
     if (_demoOps.isLocal()) { _demoOps.updateProdus(id, payload); return; }
@@ -603,11 +767,61 @@ async function deleteProdus(id) {
 // ==========================================
 async function fetchMiscariStoc() {
     if (_demoOps.isLocal()) return _demoOps.fetchMiscariStoc();
-    try { const { data, error } = await zf.from('miscari_stoc').select('*').order('created_at', {ascending:false}); if (error) throw error; return data || []; } catch(e) { return []; }
+    try { const { data, error } = await zf.from('miscari_stoc').select('*').order('data', {ascending:false}).order('created_at', {ascending:false}); if (error) throw error; return data || []; } catch(e) { return []; }
 }
 async function insertMiscare(payload) {
     if (_demoOps.isLocal()) { _demoOps.insertMiscare(payload); return; }
-    try { const { error } = await zf.from('miscari_stoc').insert([payload]); if (error) throw error; } catch(e) { _demoOps.insertMiscare(payload); }
+    const uid = _getCurrentUserId();
+    const p = uid ? { ...payload, user_id: uid } : payload;
+    try { const { error } = await zf.from('miscari_stoc').insert([p]); if (error) throw error; } catch(e) { _demoOps.insertMiscare(payload); }
+}
+
+// ==========================================
+// SUPABASE REALTIME SUBSCRIPTIONS (Task 9)
+// ==========================================
+let _realtimeChannel = null;
+
+function initRealtimeSubscriptions() {
+    if (_demoOps.isLocal()) return; // nicio subscriere pentru admin/demo
+    if (!zf) return;
+    if (_realtimeChannel) return; // deja subscris
+
+    _realtimeChannel = zf.channel('zflow-realtime-v1')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'clienti' }, () => {
+            ZFlowDB.fetchClienti().then(d => {
+                if (window.ZFlowStore) window.ZFlowStore.dateLocal = d;
+                if (typeof renderClienti === 'function') renderClienti();
+            }).catch(() => {});
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'facturi' }, () => {
+            ZFlowDB.fetchFacturi().then(d => {
+                if (window.ZFlowStore) window.ZFlowStore.dateFacturiBI = d;
+                if (typeof renderFacturi === 'function') renderFacturi();
+                if (typeof verificaScadenteNotificari === 'function') verificaScadenteNotificari();
+            }).catch(() => {});
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'furnizori' }, () => {
+            ZFlowDB.fetchFurnizori().then(d => {
+                if (window.ZFlowStore) window.ZFlowStore.dateFurnizori = d;
+                if (typeof renderFurnizori === 'function') renderFurnizori();
+            }).catch(() => {});
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'facturi_platit' }, () => {
+            ZFlowDB.fetchFacturiPlatit().then(d => {
+                if (window.ZFlowStore) window.ZFlowStore.dateFacturiPlatit = d;
+                if (typeof renderFurnizori === 'function') renderFurnizori();
+            }).catch(() => {});
+        })
+        .subscribe(status => {
+            console.info('[Realtime] status:', status);
+        });
+}
+
+function stopRealtimeSubscriptions() {
+    if (_realtimeChannel && zf) {
+        zf.removeChannel(_realtimeChannel);
+        _realtimeChannel = null;
+    }
 }
 
 // ==========================================
@@ -619,7 +833,9 @@ async function fetchReceptii() {
 }
 async function insertReceptie(payload) {
     if (_demoOps.isLocal()) { _demoOps.insertReceptie(payload); return; }
-    try { const { error } = await zf.from('receptii').insert([payload]); if (error) throw error; } catch(e) { _demoOps.insertReceptie(payload); }
+    const uid = _getCurrentUserId();
+    const p = uid ? { ...payload, user_id: uid } : payload;
+    try { const { error } = await zf.from('receptii').insert([p]); if (error) throw error; } catch(e) { _demoOps.insertReceptie(payload); }
 }
 
 // ==========================================
@@ -631,7 +847,9 @@ async function fetchLivrari() {
 }
 async function insertLivrare(payload) {
     if (_demoOps.isLocal()) { _demoOps.insertLivrare(payload); return; }
-    try { const { error } = await zf.from('livrari').insert([payload]); if (error) throw error; } catch(e) { _demoOps.insertLivrare(payload); }
+    const uid = _getCurrentUserId();
+    const p = uid ? { ...payload, user_id: uid } : payload;
+    try { const { error } = await zf.from('livrari').insert([p]); if (error) throw error; } catch(e) { _demoOps.insertLivrare(payload); }
 }
 
 // ==========================================
@@ -643,7 +861,9 @@ async function fetchSoferi() {
 }
 async function insertSofer(payload) {
     if (_demoOps.isLocal()) { _demoOps.insertSofer(payload); return; }
-    try { const { error } = await zf.from('soferi').insert([payload]); if (error) throw error; } catch(e) { _demoOps.insertSofer(payload); }
+    const uid = _getCurrentUserId();
+    const p = uid ? { ...payload, user_id: uid } : payload;
+    try { const { error } = await zf.from('soferi').insert([p]); if (error) throw error; } catch(e) { _demoOps.insertSofer(payload); }
 }
 async function updateSofer(id, payload) {
     if (_demoOps.isLocal()) { _demoOps.updateSofer(id, payload); return; }
@@ -663,7 +883,9 @@ async function fetchVehicule() {
 }
 async function insertVehicul(payload) {
     if (_demoOps.isLocal()) { _demoOps.insertVehicul(payload); return; }
-    try { const { error } = await zf.from('vehicule').insert([payload]); if (error) throw error; } catch(e) { _demoOps.insertVehicul(payload); }
+    const uid = _getCurrentUserId();
+    const p = uid ? { ...payload, user_id: uid } : payload;
+    try { const { error } = await zf.from('vehicule').insert([p]); if (error) throw error; } catch(e) { _demoOps.insertVehicul(payload); }
 }
 async function updateVehicul(id, payload) {
     if (_demoOps.isLocal()) { _demoOps.updateVehicul(id, payload); return; }
@@ -683,7 +905,9 @@ async function fetchComenziTransport() {
 }
 async function insertComandaTransport(payload) {
     if (_demoOps.isLocal()) { _demoOps.insertComanda(payload); return; }
-    try { const { error } = await zf.from('comenzi_transport').insert([payload]); if (error) throw error; } catch(e) { _demoOps.insertComanda(payload); }
+    const uid = _getCurrentUserId();
+    const p = uid ? { ...payload, user_id: uid } : payload;
+    try { const { error } = await zf.from('comenzi_transport').insert([p]); if (error) throw error; } catch(e) { _demoOps.insertComanda(payload); }
 }
 async function updateComandaTransport(id, payload) {
     if (_demoOps.isLocal()) { _demoOps.updateComanda(id, payload); return; }
@@ -736,6 +960,8 @@ window.ZFlowDB = {
     deleteProdus,
     // Depozit — Mișcări stoc
     fetchMiscariStoc,
+    initRealtimeSubscriptions,
+    stopRealtimeSubscriptions,
     insertMiscare,
     // Depozit — Recepții
     fetchReceptii,

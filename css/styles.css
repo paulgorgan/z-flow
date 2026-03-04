@@ -754,6 +754,16 @@ input, select, button {
   /* Normalizare fonturi in carduri mobile */
   .card-flow h4 { font-size: 13px !important; }
   .card-flow p { font-size: 11px !important; }
+
+  /* Fix: bara butoane din Logistic si Depozit nu iese din container pe mobile complet */
+  #logistic-view-comenzi > .flex.gap-2,
+  #depozit-view-produse > .flex.gap-2 {
+    overflow: hidden;
+  }
+  #logistic-view-comenzi > .flex.gap-2 > input,
+  #depozit-view-produse > .flex.gap-2 > input {
+    min-width: 0;
+  }
 }
 
 @media (min-width: 641px) and (max-width: 1023px) {
@@ -875,8 +885,6 @@ input, select, button {
     display: grid !important;
     grid-template-columns: repeat(3, 1fr) !important;
     gap: 20px !important;
-    max-height: 65vh;
-    overflow-y: auto;
     padding: 8px;
   }
 
@@ -885,8 +893,6 @@ input, select, button {
     display: grid !important;
     grid-template-columns: repeat(3, 1fr) !important;
     gap: 20px !important;
-    max-height: 65vh;
-    overflow-y: auto;
     padding: 8px;
   }
 
@@ -1801,3 +1807,96 @@ input {
     width: 700px;
   }
 }
+
+/* ============================================
+   DARK MODE
+   Activat prin clasa .dark pe <html>
+   ============================================ */
+
+.dark body {
+  background-color: #0f172a !important;
+  color: #e2e8f0 !important;
+}
+
+/* Header */
+.dark .glass-header {
+  background: rgba(15, 23, 42, 0.95) !important;
+  border-bottom: 1px solid rgba(255,255,255,0.06) !important;
+}
+.dark .glass-header h1 { color: #93c5fd !important; }
+.dark .glass-header p  { color: #64748b !important; }
+
+/* Carduri principale */
+.dark .card-flow,
+.dark .bg-white {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+/* Text colors */
+.dark .text-slate-800,
+.dark .text-slate-700 { color: #e2e8f0 !important; }
+.dark .text-slate-600 { color: #cbd5e1 !important; }
+.dark .text-slate-500 { color: #94a3b8 !important; }
+.dark .text-slate-400 { color: #64748b !important; }
+.dark .text-blue-900  { color: #93c5fd !important; }
+
+/* Fundal slate */
+.dark .bg-slate-50  { background-color: #1e293b !important; }
+.dark .bg-slate-100 { background-color: #0f172a !important; }
+.dark .bg-slate-200 { background-color: #1e293b !important; }
+
+/* Input-uri */
+.dark input,
+.dark textarea,
+.dark select {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+.dark input::placeholder,
+.dark textarea::placeholder { color: #4b5563 !important; }
+
+/* Bottom Nav */
+.dark .bottom-nav {
+  background: rgba(15, 23, 42, 0.97) !important;
+  border-top: 1px solid rgba(255,255,255,0.06) !important;
+}
+.dark .nav-item     { color: #64748b !important; }
+.dark .nav-item.active { color: #93c5fd !important; }
+
+/* Modal / Sheet */
+.dark .modal-sheet .sheet-content {
+  background-color: #1e293b !important;
+  color: #e2e8f0 !important;
+}
+.dark .modal-sheet.active .sheet-backdrop {
+  background: rgba(0,0,0,0.7) !important;
+}
+
+/* FAB sheet */
+.dark #fab-menu .sheet-content { background-color: #1e293b !important; }
+
+/* Skeleton */
+.dark .skeleton { background: #334155 !important; }
+.dark .skeleton-card { background: #1e293b !important; border-color: #334155 !important; }
+
+/* Notificări badge */
+.dark #bell-badge { background: #ef4444 !important; }
+
+/* Secțiunea Home gradient — rămâne colorată */
+.dark .bg-gradient-to-br.from-blue-900 { /* intentionally unchanged */ }
+
+/* Borduri */
+.dark .border-slate-100 { border-color: #334155 !important; }
+.dark .border-slate-200 { border-color: #475569 !important; }
+
+/* Buton primară dark */
+.dark .bg-blue-900 { background-color: #1e40af !important; }
+.dark .bg-blue-50  { background-color: #1e3a5f !important; }
+
+/* Scrollbars */
+.dark ::-webkit-scrollbar-track { background: #0f172a !important; }
+.dark ::-webkit-scrollbar-thumb { background: #334155 !important; }
+.dark ::-webkit-scrollbar-thumb:hover { background: #475569 !important; }

@@ -129,14 +129,42 @@ function getInitiale(nume, maxChars = 2) {
 }
 
 /**
- * Validează CUI românesc (format)
- * @param {string} cui - CUI de validat
+ * Validează CUI românesc cu cifră de control (algoritm ANAF)
+ * @param {string} cui - CUI de validat (cu sau fără prefix RO)
  * @returns {boolean}
  */
 function validareCUI(cui) {
     if (!cui) return false;
-    const cuiCurat = cui.toString().replace(/\D/g, '');
-    return cuiCurat.length >= 2 && cuiCurat.length <= 10;
+    const cuiCurat = cui.toString().toUpperCase().replace(/^RO/i, '').replace(/\D/g, '');
+    if (cuiCurat.length < 2 || cuiCurat.length > 10) return false;
+    const cheie = [7, 5, 3, 2, 1, 7, 5, 3, 2];
+    const cifre = cuiCurat.split('').map(Number);
+    const cifraCrtl = cifre[cifre.length - 1];
+    const cifreCalc = cifre.slice(0, -1);
+    const offset = cheie.length - cifreCalc.length;
+    const suma = cifreCalc.reduce((acc, d, i) => acc + d * cheie[offset + i], 0);
+    const calculat = (suma * 10) % 11 === 10 ? 0 : (suma * 10) % 11;
+    return calculat === cifraCrtl;
+}
+
+/**
+ * Validează IBAN românesc (ISO 7064 MOD 97-10)
+ * @param {string} iban - IBAN de validat
+ * @returns {boolean}
+ */
+function validareIBAN(iban) {
+    if (!iban) return false;
+    const ibanCurat = iban.toString().toUpperCase().replace(/\s/g, '');
+    // Format RO: RO + 2 check digits + 4 litere bancă + 16 alfanumerice = 24 caractere
+    if (!/^RO\d{2}[A-Z]{4}[A-Z0-9]{16}$/.test(ibanCurat)) return false;
+    // Mută primele 4 caractere la sfârșit
+    const rearanjat = ibanCurat.slice(4) + ibanCurat.slice(0, 4);
+    // Înlocuiește literele cu cifre (A=10 … Z=35)
+    const numeric = rearanjat.replace(/[A-Z]/g, c => (c.charCodeAt(0) - 55).toString());
+    // Calculează mod 97 (pe grupe de 9 cifre)
+    let rest = 0;
+    for (const digit of numeric) rest = (rest * 10 + parseInt(digit)) % 97;
+    return rest === 1;
 }
 
 /**
@@ -200,11 +228,16 @@ window.ZFlowUtils = {
     generateUUID,
     getInitiale,
     validareCUI,
+    validareIBAN,
     escapeHTML,
     deepClone,
     isEmpty,
     throttle
 };
+
+// Export individual
+window.validareCUI  = validareCUI;
+window.validareIBAN = validareIBAN;
 
 // Export individual pentru compatibilitate cu codul existent
 window.debounce = debounce;
