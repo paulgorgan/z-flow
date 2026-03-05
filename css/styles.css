@@ -66,8 +66,12 @@ h3 { font-size: 1.1rem !important; }
 
 .card-flow .flex.gap-3.mt-4 button,
 .card-flow .flex.gap-2.mt-4 button,
+.card-flow .flex.gap-3.mt-auto button,
+.card-flow .flex.gap-2.mt-auto button,
 .card-flow .flex.gap-3.mt-4 a,
-.card-flow .flex.gap-2.mt-4 a {
+.card-flow .flex.gap-2.mt-4 a,
+.card-flow .flex.gap-3.mt-auto a,
+.card-flow .flex.gap-2.mt-auto a {
   flex: 1 !important;
   height: 44px !important;
   border-radius: 12px !important;
@@ -79,11 +83,21 @@ h3 { font-size: 1.1rem !important; }
   gap: 6px;
 }
 
+/* Buton ștergere — menține lățimea fixă, nu primește flex-1 */
+.card-flow .flex.gap-3.mt-auto button[data-permission="delete"],
+.card-flow .flex.gap-3.mt-4 button[data-permission="delete"] {
+  flex: none !important;
+  flex-shrink: 0 !important;
+  width: 40px !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
 .card-flow .text-right p:last-child {
   font-size: 10px !important;
   font-weight: 800 !important;
   color: #94a3b8 !important;
-  text-transform: uppercase;
+  text-transform: none;
   margin-top: 2px;
 }
 
@@ -378,6 +392,19 @@ h3 { font-size: 1.1rem !important; }
   -webkit-backdrop-filter: blur(12px);
 }
 
+/* Modal Confirmare - deasupra tuturor celorlalte modale */
+#modal-confirm {
+  z-index: 9998;
+  align-items: center;
+  justify-content: center;
+}
+
+#modal-confirm .sheet-content {
+  border-radius: 32px;
+  max-width: 380px;
+  width: 90%;
+}
+
 #modal-auth .sheet-content {
   border-radius: 32px;
   max-width: 400px;
@@ -445,6 +472,32 @@ input, select, button {
 /* ============================================
    COMPONENTE SPECIALE
    ============================================ */
+
+/* BI Quick Date Range Pills */
+.quick-range-btn {
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1.5px solid #e2e8f0;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.quick-range-btn:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+.quick-range-btn.active {
+  background: #1e3a8a;
+  color: #fff;
+  border-color: #1e3a8a;
+}
+
 #total-general {
   font-size: 2.5rem !important;
 }
@@ -856,7 +909,7 @@ input, select, button {
   #view-firme > .relative,
   #view-firme > .bg-blue-900,
   #view-furnizori > .relative,
-  #view-furnizori > .grid,
+  #view-furnizori > .grid:not(#lista-furnizori-global),
   #view-detalii > div:not(.flex) {
     max-width: 900px !important;
     width: 100% !important;
@@ -912,6 +965,50 @@ input, select, button {
     transform: translateY(-2px) !important;
   }
 
+  /* Nume furnizor - la fel ca clienti */
+  #lista-furnizori-global .card-flow h4 {
+    font-size: 14px !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.02em !important;
+  }
+
+  /* Sold - mai vizibil */
+  #lista-furnizori-global .card-flow .text-red-700.font-black {
+    font-size: 22px !important;
+  }
+
+  /* Butoane în carduri furnizori - la fel ca clienti */
+  #lista-furnizori-global .card-flow .flex.gap-3.mt-4,
+  #lista-furnizori-global .card-flow .flex.gap-3.mt-auto {
+    margin-top: 16px !important;
+    gap: 10px !important;
+  }
+
+  #lista-furnizori-global .card-flow .flex.gap-3.mt-4 button,
+  #lista-furnizori-global .card-flow .flex.gap-3.mt-auto button {
+    padding: 10px 12px !important;
+    font-size: 9px !important;
+    border-radius: 10px !important;
+  }
+
+  /* Buton ștergere furnizori — lățime fixă pe desktop */
+  #lista-furnizori-global .card-flow .flex.gap-3.mt-4 button[data-permission="delete"],
+  #lista-furnizori-global .card-flow .flex.gap-3.mt-auto button[data-permission="delete"] {
+    flex: none !important;
+    flex-grow: 0 !important;
+    flex-shrink: 0 !important;
+    width: 40px !important;
+    min-width: 40px !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  /* Banner restanțe - mai compact */
+  #lista-furnizori-global .card-flow .bg-red-50 {
+    padding: 10px 12px !important;
+    margin-top: 12px !important;
+  }
+
   /* Carduri clienți - aspect profesional pe desktop */
   #lista-firme-global .card-flow {
     padding: 20px !important;
@@ -942,15 +1039,29 @@ input, select, button {
   }
 
   /* Butoane în carduri clienți - mai compacte */
-  #lista-firme-global .card-flow .flex.gap-3.mt-4 {
+  #lista-firme-global .card-flow .flex.gap-3.mt-4,
+  #lista-firme-global .card-flow .flex.gap-3.mt-auto {
     margin-top: 16px !important;
     gap: 10px !important;
   }
 
-  #lista-firme-global .card-flow .flex.gap-3.mt-4 button {
+  #lista-firme-global .card-flow .flex.gap-3.mt-4 button,
+  #lista-firme-global .card-flow .flex.gap-3.mt-auto button {
     padding: 10px 12px !important;
     font-size: 9px !important;
     border-radius: 10px !important;
+  }
+
+  /* Buton ștergere clienți — lățime fixă pe desktop */
+  #lista-firme-global .card-flow .flex.gap-3.mt-4 button[data-permission="delete"],
+  #lista-firme-global .card-flow .flex.gap-3.mt-auto button[data-permission="delete"] {
+    flex: none !important;
+    flex-grow: 0 !important;
+    flex-shrink: 0 !important;
+    width: 40px !important;
+    min-width: 40px !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
   }
 
   /* Banner restanțe - mai compact */
@@ -976,6 +1087,11 @@ input, select, button {
     overflow-y: auto !important;
   }
 
+  /* Desktop: center export PDF/Excel buttons inside left panel */
+  .bi-left-panel .export-group {
+    justify-content: center !important;
+  }
+
   .bi-right-panel {
     flex: 1 !important;
     min-width: 0 !important;
@@ -991,6 +1107,15 @@ input, select, button {
   /* Detalii Client - Layout special pentru facturi */
   #view-detalii {
     max-width: 100% !important;
+  }
+
+  /* Desktop: center action bar (Înapoi / Editare Profil) above client card */
+  #view-detalii > .flex.justify-between {
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+    justify-content: center !important;
+    gap: 24px !important;
   }
 
   /* Container facturi - bara de căutare rămâne full width */
@@ -1139,13 +1264,138 @@ input, select, button {
     width: 450px;
   }
 
-  /* Bottom Nav ascunsă sau fixată */
+  /* ============================================
+     DESKTOP NAV — mutare de la bottom la top
+     Bara de navigare principala se afiseaza
+     orizontal, sub sticky header.
+  ============================================ */
   .bottom-nav {
-    max-width: 600px;
-    left: 50%;
-    transform: translateX(-50%);
-    border-radius: 20px 20px 0 0;
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+    display: flex !important;
+    position: fixed !important;
+    top: 72px !important;          /* sub glass-header */
+    bottom: auto !important;
+    left: 0 !important;
+    right: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    transform: none !important;
+    border-radius: 0 !important;
+    border-top: none !important;
+    border-bottom: 2px solid #e2e8f0 !important;
+    box-shadow: 0 3px 16px rgba(0, 0, 0, 0.06) !important;
+    background: rgba(255, 255, 255, 0.97) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 6px 48px !important;
+    z-index: 45 !important;
+  }
+
+  /* Nav items — orizontale cu icon + label */
+  .nav-item {
+    flex-direction: row !important;
+    gap: 8px !important;
+    padding: 10px 20px !important;
+    border-radius: 14px !important;
+    font-size: 11px !important;
+    min-height: unset !important;
+  }
+
+  .nav-item svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  .nav-item span {
+    font-size: 11px !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.04em;
+  }
+
+  .nav-item.active {
+    background: #eff6ff;
+    border-radius: 14px;
+    padding: 10px 20px;
+  }
+
+  /* Compensare: header (sticky ~72px) + nav (fixed ~50px) = 122px total deasupra continutului */
+  main {
+    margin-top: 54px !important;
+    padding-top: 16px !important;
+  }
+
+  /* Paginare clienti/furnizori — sub grid, latime completa */
+  #clienti-pagination,
+  #furnizori-pagination {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-top: 16px !important;
+    margin-bottom: 8px !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    clear: both;
+    position: relative;
+    z-index: 5;
+    padding: 8px 0 !important;
+    border-top: 1px solid #e2e8f0;
+  }
+
+  /* Grila clienti/furnizori — latime COMPLETA (nu mai are 900px constraint) */
+  #lista-firme-global,
+  #lista-furnizori-global {
+    max-width: 100% !important;
+    width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  /* Reducere padding-bottom pe desktop — nu mai e nevoie de safe area */
+  .tab-content {
+    padding-bottom: 48px !important;
+  }
+
+  /* ============================================
+     UNIFORMITATE DESKTOP — toate view-urile
+  ============================================ */
+
+  /* View detalii furnizor — identic cu view detalii client */
+  #view-detalii-furnizor {
+    max-width: 100% !important;
+  }
+
+  #view-detalii-furnizor .flex.justify-between {
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+    justify-content: center !important;
+    gap: 24px !important;
+  }
+
+  #card-detaliu-furnizor {
+    max-width: 900px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  /* Lista facturi platit — 2 coloane (identic cu lista facturi client) */
+  #lista-facturi-platit-detaliu {
+    max-width: 900px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 16px !important;
+    padding-bottom: 48px !important;
+  }
+
+  /* Selector per-page platit */
+  #view-detalii-furnizor > .flex.items-center.gap-2.pl-2 {
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
   }
 
   /* Input-uri și selecturi mai mari */
@@ -1447,16 +1697,19 @@ input[type="date"] {
    SAFE AREA (NOTCH DEVICES)
    ============================================ */
 @supports (padding: env(safe-area-inset-bottom)) {
-  .bottom-nav {
-    padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  /* Safe-area doar pe mobile/tablet — desktop nu are notch */
+  @media (max-width: 1023px) {
+    .bottom-nav {
+      padding-bottom: calc(16px + env(safe-area-inset-bottom));
+    }
+
+    .tab-content {
+      padding-bottom: calc(120px + env(safe-area-inset-bottom));
+    }
   }
-  
+
   .modal-sheet .sheet-content {
     padding-bottom: calc(24px + env(safe-area-inset-bottom));
-  }
-  
-  .tab-content {
-    padding-bottom: calc(120px + env(safe-area-inset-bottom));
   }
 }
 
@@ -1858,13 +2111,14 @@ input {
 .dark input::placeholder,
 .dark textarea::placeholder { color: #4b5563 !important; }
 
-/* Bottom Nav */
+/* Bottom Nav (mobile: border-top; desktop: top-nav with border-bottom) */
 .dark .bottom-nav {
   background: rgba(15, 23, 42, 0.97) !important;
   border-top: 1px solid rgba(255,255,255,0.06) !important;
+  border-bottom: 1px solid rgba(255,255,255,0.06) !important;
 }
 .dark .nav-item     { color: #64748b !important; }
-.dark .nav-item.active { color: #93c5fd !important; }
+.dark .nav-item.active { color: #93c5fd !important; background: rgba(147,197,253,0.08) !important; }
 
 /* Modal / Sheet */
 .dark .modal-sheet .sheet-content {
@@ -1900,3 +2154,108 @@ input {
 .dark ::-webkit-scrollbar-track { background: #0f172a !important; }
 .dark ::-webkit-scrollbar-thumb { background: #334155 !important; }
 .dark ::-webkit-scrollbar-thumb:hover { background: #475569 !important; }
+
+/* ──── Completări dark mode ──── */
+
+/* Text amber / orange / yellow — mărire luminozitate pentru vizibilitate */
+.dark .text-amber-600  { color: #fbbf24 !important; }
+.dark .text-amber-700  { color: #f59e0b !important; }
+.dark .text-orange-600 { color: #fb923c !important; }
+.dark .text-orange-700 { color: #f97316 !important; }
+
+/* Text roșu — mai luminos pe dark */
+.dark .text-red-700    { color: #f87171 !important; }
+.dark .text-red-600    { color: #fca5a5 !important; }
+.dark .text-red-500    { color: #fca5a5 !important; }
+
+/* Text verde — mai luminos pe dark */
+.dark .text-emerald-600 { color: #34d399 !important; }
+.dark .text-emerald-500 { color: #6ee7b7 !important; }
+
+/* Background-uri de accent — reducere intensitate */
+.dark .bg-amber-50  { background-color: #292524 !important; }
+.dark .bg-amber-100 { background-color: #3b2f1e !important; }
+.dark .bg-red-50    { background-color: #1f1313 !important; }
+.dark .bg-red-50\/40 { background-color: rgba(31,19,19,0.6) !important; }
+.dark .bg-emerald-50  { background-color: #0d2318 !important; }
+.dark .bg-emerald-100 { background-color: #14532d !important; }
+.dark .bg-purple-100  { background-color: #2e1065 !important; }
+.dark .text-purple-700 { color: #c4b5fd !important; }
+
+/* Borduri accent */
+.dark .border-red-100   { border-color: #7f1d1d !important; }
+.dark .border-blue-100  { border-color: #1e3a5f !important; }
+.dark .border-emerald-100 { border-color: #064e3b !important; }
+
+/* Carduri pill-nav (financiar / depozit / logistic tabs) */
+.dark .pill-nav { background-color: #1e293b !important; }
+.dark .pill-btn { color: #94a3b8 !important; }
+.dark .pill-btn.active { background-color: #334155 !important; color: #e2e8f0 !important; }
+
+/* KPI Home boxes */
+.dark .bg-white.rounded-2xl { background-color: #1e293b !important; }
+
+/* FAB action buttons */
+.dark #fab-menu button { background-color: #1e293b !important; border-color: #334155 !important; }
+.dark #fab-menu .bg-emerald-50 { background-color: #0d2318 !important; }
+.dark #fab-menu .bg-blue-50    { background-color: #0f265c !important; }
+.dark #fab-menu .bg-red-50     { background-color: #1f1313 !important; }
+.dark #fab-menu .bg-amber-50   { background-color: #292524 !important; }
+
+/* Card detaliu client (bg dark) — texte secundare */
+.dark #card-detaliu .text-blue-200 { color: #93c5fd !important; }
+.dark #card-detaliu .opacity-70    { opacity: 0.6 !important; }
+
+/* Taburi financiar (btn-firme, btn-furnizori, btn-analiza) */
+.dark .tab-switcher { background-color: #1e293b !important; border-color: #334155 !important; }
+.dark .tab-switcher button { color: #94a3b8 !important; }
+.dark .tab-switcher button.active { background-color: #334155 !important; color: #e2e8f0 !important; }
+
+/* Select în paginator */
+.dark select { background-color: #334155 !important; color: #e2e8f0 !important; }
+.dark .bg-slate-100 select { background-color: #334155 !important; }
+
+/* Butoane paginare */
+.dark button.px-3.py-1\\.5.bg-slate-100 { background-color: #334155 !important; color: #e2e8f0 !important; }
+
+/* Scadente badge */
+.dark .bg-red-500\/20  { background-color: rgba(239,68,68,0.15) !important; }
+.dark .border-red-400\/50 { border-color: rgba(239,68,68,0.3) !important; }
+
+/* Text pe carduri roșii/albastre (inline BI rows) */
+.dark .bg-red-50\/40.border-red-100 { background-color: rgba(30,10,10,0.8) !important; }
+
+/* Subtitluri pagini */
+.dark h4.font-extrabold.text-slate-800 { color: #e2e8f0 !important; }
+.dark .text-blue-900.font-black { color: #93c5fd !important; }
+.dark .text-red-700.font-black  { color: #fca5a5 !important; }
+
+/* BI Quick Date Range Buttons — dark mode */
+.dark .quick-range-btn {
+  background: #1e293b !important;
+  color: #94a3b8 !important;
+  border-color: #334155 !important;
+}
+.dark .quick-range-btn:hover {
+  background: #334155 !important;
+  color: #e2e8f0 !important;
+}
+.dark .quick-range-btn.active {
+  background: #1e40af !important;
+  color: #fff !important;
+  border-color: #1e40af !important;
+}
+
+/* Date inputs in BI panel dark mode */
+.dark #data-start + div span,
+.dark #data-end + div span { color: #e2e8f0 !important; }
+.dark [id="label-start"],
+.dark [id="label-end"] { color: #e2e8f0 !important; }
+
+/* Desktop top-nav in dark mode — border-bottom instead of top */
+@media (min-width: 1024px) {
+  .dark .bottom-nav {
+    border-top: none !important;
+    border-bottom: 2px solid rgba(255,255,255,0.07) !important;
+  }
+}

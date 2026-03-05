@@ -43,13 +43,13 @@ const ZFlowStore = Vue.reactive({
     _furnizoriBIFiltrati: [],       // Cache furnizori filtrati BI
     
     // Paginare Listă Clienți
-    clientiPageSize: 20,
+    clientiPageSize: 10,
     clientiCurrentPage: 1,
     facturiPerPage: 20,         // Facturi de încasat afișate inițial per client (lazy loading)
     _clientiFiltrati: [],   // Lista curentă filtrată — pentru paginare
     
     // Paginare Listă Furnizori
-    furnizoriPageSize: 5,          // Default 5 furnizori/pagina
+    furnizoriPageSize: 10,          // Default 10 furnizori/pagina
     furnizoriCurrentPage: 1,
     _furnizoriFiltrati: [], // Lista curentă filtrată — pentru paginare
 
@@ -60,6 +60,9 @@ const ZFlowStore = Vue.reactive({
     miscariPageSize: 10,
     miscariCurrentPage: 1,
     _miscariFiltrate: [],
+    miscariQuery: '',
+    receptiiQuery: '',
+    livrariQuery: '',
 
     // Paginare Logistic
     comenziPageSize: 10,
@@ -68,9 +71,11 @@ const ZFlowStore = Vue.reactive({
     soferiPageSize: 10,
     soferiCurrentPage: 1,
     _soferiFiltrati: [],
+    soferiQuery: '',
     vehiculePageSize: 10,
     vehiculeCurrentPage: 1,
     _vehiculeFiltrate: [],
+    vehiculeQuery: '',
 
     // Lazy Loading Facturi (#6 TODO)
     facturiPerPage: 20,
@@ -114,7 +119,7 @@ const ROLE_PERMISSIONS = {
     },
     user: {
         canEdit: true,
-        canDelete: false,
+        canDelete: true,
         canExport: true,
         canImport: true,
         canManageUsers: false
@@ -172,17 +177,17 @@ function updateUIForRole() {
         el.style.display = hasPermission('canImport') ? '' : 'none';
     });
     
-    // Badge rol în header - profesional, fără emoji
+    // Badge rol în header — afișat ca text colorat în interiorul butonului unificat
     const roleBadge = document.getElementById('user-role-badge');
     if (roleBadge) {
         const roleConfig = { 
-            admin: { label: 'Administrator', color: 'bg-purple-100 text-purple-700 border-purple-200' }, 
-            user: { label: 'Utilizator', color: 'bg-blue-100 text-blue-700 border-blue-200' }, 
-            viewer: { label: 'Vizualizare', color: 'bg-slate-100 text-slate-600 border-slate-200' },
-            demo_user: { label: 'Prezentare', color: 'bg-amber-100 text-amber-700 border-amber-200' }
+            admin:     { label: 'Administrator', color: 'text-purple-600' }, 
+            user:      { label: 'Utilizator',    color: 'text-blue-600' }, 
+            viewer:    { label: 'Vizualizare',   color: 'text-slate-500' },
+            demo_user: { label: 'Prezentare',    color: 'text-amber-600' }
         };
         const config = roleConfig[ZFlowStore.userRole] || roleConfig.viewer;
-        roleBadge.className = `text-[9px] font-semibold px-2.5 py-1 rounded-lg border ${config.color}`;
+        roleBadge.className = `text-[7px] font-semibold leading-none mt-0.5 ${config.color}`;
         roleBadge.innerText = config.label;
     }
 }

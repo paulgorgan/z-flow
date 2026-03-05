@@ -3,7 +3,7 @@
  * Versiune Refactorizată cu Arhitectură Modulară
  */
 
-const CACHE_NAME = 'zflow-v36.0';
+const CACHE_NAME = 'zflow-v49.0';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -29,6 +29,7 @@ const STATIC_ASSETS = [
   '/js/modules/anaf.js',
   '/js/modules/depozit.js',
   '/js/modules/logistic.js',
+  '/js/modules/features.js',
   '/manifest.json',
   '/icons/icon.svg'
 ];
@@ -128,25 +129,24 @@ self.addEventListener('fetch', event => {
     return;
   }
   
-  // Static assets: Cache first, network fallback
+  // Static assets (JS/CSS): Network first, cache fallback
+  // Always fetch fresh from network so live edits are immediately visible.
   event.respondWith(
-    caches.match(event.request)
-      .then(cached => {
-        if (cached) return cached;
-        return fetch(event.request)
-          .then(response => {
-            if (response.ok) {
-              const clone = response.clone();
-              caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-            }
-            return response;
-          })
-          .catch(() => {
-            // Return offline fallback for HTML
-            if (event.request.mode === 'navigate') {
-              return caches.match('/index.html');
-            }
-          });
+    fetch(event.request)
+      .then(response => {
+        if (response.ok) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+        }
+        return response;
+      })
+      .catch(() => {
+        return caches.match(event.request).then(cached => {
+          if (cached) return cached;
+          if (event.request.mode === 'navigate') {
+            return caches.match('/index.html');
+          }
+        });
       })
   );
 });

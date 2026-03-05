@@ -1122,6 +1122,8 @@ async function deschideProfilFirma() {
         }
 
         document.getElementById('modal-profil-firma').classList.add('active');
+        // Populare secțiune Firmele Mele integrată în modal
+        if (window.ZFlowMultiFirma) window.ZFlowMultiFirma.renderPanel('pf-firme-content');
     } catch (err) {
         console.error('deschideProfilFirma error:', err);
         showNotification('❌ Eroare la încărcarea profilului', 'error');
@@ -1272,10 +1274,16 @@ function comutaVedereFin(v, pushState = true) {
                 btnActions.querySelector("span").innerText = "DOC NOU";
                 btnActions.setAttribute("onclick", "deschideModalDirectFactura()");
                 btnActions.classList.add("text-blue-600", "animate-pulse");
+                btnActions.classList.remove("text-red-600");
+            } else if (v === "detalii-furnizor") {
+                btnActions.querySelector("span").innerText = "DOC NOU";
+                btnActions.setAttribute("onclick", "deschideModalFacturaPlatit(ZFlowStore.selectedFurnizorId)");
+                btnActions.classList.add("text-red-600", "animate-pulse");
+                btnActions.classList.remove("text-blue-600");
             } else {
                 btnActions.querySelector("span").innerText = "ACȚIUNI";
                 btnActions.setAttribute("onclick", "toggleFAB()");
-                btnActions.classList.remove("text-blue-600", "animate-pulse");
+                btnActions.classList.remove("text-blue-600", "text-red-600", "animate-pulse");
             }
         } else {
             btnActions.style.display = "none";
@@ -1307,6 +1315,47 @@ function comutaVedereFin(v, pushState = true) {
 function toggleFAB() {
     document.getElementById("fab-menu").classList.toggle("active");
 }
+
+/**
+ * Setare rapidă interval date BI
+ * @param {string} range - 'luna', '30', '90', '180', 'an', 'all'
+ */
+function setBIRange(range) {
+    const azi = new Date();
+    const fmt = (d) => d.toISOString().split('T')[0];
+    let start = null, end = fmt(azi);
+
+    if (range === 'all') {
+        start = null; end = null;
+    } else if (range === 'luna') {
+        start = fmt(new Date(azi.getFullYear(), azi.getMonth(), 1));
+    } else if (range === 'an') {
+        start = fmt(new Date(azi.getFullYear(), 0, 1));
+    } else {
+        const d = new Date();
+        d.setDate(d.getDate() - (parseInt(range) - 1));
+        start = fmt(d);
+    }
+
+    const inStart = document.getElementById('data-start');
+    const inEnd   = document.getElementById('data-end');
+    const lblStart = document.getElementById('label-start');
+    const lblEnd   = document.getElementById('label-end');
+
+    if (inStart) { inStart.value = start || ''; ZFlowStore.biStartVal = start; }
+    if (inEnd)   { inEnd.value   = end   || ''; ZFlowStore.biEndVal   = end; }
+
+    const fmtLbl = (v) => v ? new Date(v + 'T12:00:00').toLocaleDateString('ro-RO', { day: '2-digit', month: 'short', year: 'numeric' }) : '--';
+    if (lblStart) lblStart.innerText = 'De la: ' + fmtLbl(start);
+    if (lblEnd)   lblEnd.innerText   = 'Până la: ' + fmtLbl(end);
+
+    // Actualizare dropdown interval rapid (înlocuiește butoanele quick-range-btn)
+    const presetSel = document.getElementById('bi-range-preset');
+    if (presetSel) presetSel.value = range;
+
+    genereazaBI();
+}
+window.setBIRange = setBIRange;
 
 // ==========================================
 // RENDER CLIENȚI
@@ -1373,6 +1422,7 @@ function renderMain(lista = null) {
     <div class="flex justify-between items-start w-full">
         <div class="max-w-[60%]">
             <h4 class="font-extrabold text-slate-800 text-[15px] leading-tight truncate tracking-tight">${f.nume_firma || f.cui}</h4>
+            ${esteSiClientSiFurnizor(f.cui) ? '<span class="inline-block text-[7px] font-black uppercase px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 mt-0.5">Client + Furnizor</span>' : ''}
             <div class="flex items-center gap-1.5 mt-1.5">
                 <span class="w-2 h-2 rounded-full ${areRestante ? "bg-red-400" : "bg-emerald-400"}"></span>
                 <p class="text-[10px] font-semibold text-slate-400">${f.oras || "Zalău"}</p>
@@ -1391,7 +1441,7 @@ function renderMain(lista = null) {
         </div>
         <p class="text-red-600 font-black text-[13px] leading-none">${Math.round(sumaScadenta).toLocaleString()} lei</p>
     </div>` : ""}
-    <div class="flex gap-3 mt-4">
+    <div class="flex gap-3 mt-auto pt-4">
         <button onclick="event.stopPropagation(); arataDetalii('${f.id}')"
                 class="flex-1 bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-700 py-3 rounded-xl text-[10px] font-bold uppercase transition-all flex items-center justify-center gap-2 border border-blue-100 hover:border-blue-600">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
@@ -1401,6 +1451,10 @@ function renderMain(lista = null) {
                 class="flex-1 bg-slate-50 hover:bg-slate-700 hover:text-white text-slate-600 py-3 rounded-xl text-[10px] font-bold uppercase transition-all flex items-center justify-center gap-2 border border-slate-200 hover:border-slate-700">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
             Profil
+        </button>
+        <button onclick="event.stopPropagation(); stergeFirma('${f.id}')" title="Șterge client"
+                class="w-10 flex-shrink-0 bg-red-50 hover:bg-red-600 hover:text-white text-red-400 py-3 rounded-xl transition-all flex items-center justify-center border border-red-100 hover:border-red-600" data-permission="delete">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
         </button>
     </div>
 </div>`;
@@ -1488,6 +1542,7 @@ function renderFurnizori(lista) {
     <div class="flex justify-between items-start w-full">
         <div class="max-w-[60%]">
             <h4 class="font-extrabold text-slate-800 text-[15px] leading-tight truncate tracking-tight">${f.nume_firma || f.cui}</h4>
+            ${esteSiClientSiFurnizor(f.cui) ? '<span class="inline-block text-[7px] font-black uppercase px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 mt-0.5">Client + Furnizor</span>' : ''}
             <div class="flex items-center gap-1.5 mt-1.5">
                 <span class="w-2 h-2 rounded-full ${areRestante ? "bg-red-400" : "bg-emerald-400"}"></span>
                 <p class="text-[10px] font-semibold text-slate-400">${f.oras || "—"}</p>
@@ -1506,7 +1561,7 @@ function renderFurnizori(lista) {
         </div>
         <p class="text-red-600 font-black text-[13px] leading-none">${Math.round(f.sumaScadenta).toLocaleString()} lei</p>
     </div>` : ""}
-    <div class="flex gap-3 mt-4">
+    <div class="flex gap-3 mt-auto pt-4">
         <button onclick="event.stopPropagation(); arataDetaliiFurnizor('${f.id}')"
                 class="flex-1 bg-red-50 hover:bg-red-700 hover:text-white text-red-700 py-3 rounded-xl text-[10px] font-bold uppercase transition-all flex items-center justify-center gap-2 border border-red-100 hover:border-red-700">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
@@ -1517,6 +1572,10 @@ function renderFurnizori(lista) {
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
             Profil
         </button>
+        <button onclick="event.stopPropagation(); stergeFurnizorDirect('${f.id}')" title="Șterge furnizor"
+                class="w-10 flex-shrink-0 bg-red-50 hover:bg-red-600 hover:text-white text-red-400 py-3 rounded-xl transition-all flex items-center justify-center border border-red-100 hover:border-red-600" data-permission="delete">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+        </button>
     </div>
 </div>`;
     }).join("");
@@ -1525,6 +1584,8 @@ function renderFurnizori(lista) {
     const totalEl = document.getElementById("total-general-platit");
     if (totalEl) totalEl.innerText = `${Math.round(totalPlatit).toLocaleString()} lei`;
     _renderFurnizoriPagination(sursa.length);
+    // Sync KPI restante/plătit
+    updateFurnizoriKPI();
 }
 
 /**
@@ -1707,10 +1768,8 @@ function updateFurnizoriKPI() {
         if (f.status_plata === "Platit") {
             totalPlatit += val;
         } else {
-            if (f.data_scadenta) {
-                const d = new Date(f.data_scadenta); d.setHours(0,0,0,0);
-                if (d < azi) totalRestante += val;
-            }
+            // Neplătit = TOATE facturile neachitate (sincronizat cu cardul "FACTURI DE PLĂTIT")
+            totalRestante += val;
         }
         if (f.data_emiterii) {
             const d = new Date(f.data_emiterii);
@@ -1898,6 +1957,39 @@ function stergeFurnizorModal() {
             }
         }
     );
+}
+
+/**
+ * Șterge furnizor direct din lista (fără a deschide profilul)
+ */
+function stergeFurnizorDirect(id) {
+    if (!hasPermission('canDelete')) { showNotification('Nu ai permisiunea de a șterge furnizori', 'error'); return; }
+    showConfirmModal("Ștergi furnizorul? Toate facturile asociate vor fi șterse.", async () => {
+        setLoader(true);
+        try {
+            await ZFlowDB.deleteFurnizor(id);
+            const fr = await ZFlowDB.fetchFurnizori();
+            const fp = await ZFlowDB.fetchFacturiPlatit();
+            ZFlowStore.dateFacturiPlatit = fp || [];
+            const azi = new Date(); azi.setHours(0,0,0,0);
+            ZFlowStore.dateFurnizori = fr.map(furn => {
+                const fps = ZFlowStore.dateFacturiPlatit.filter(fp2 => String(fp2.furnizor_id) === String(furn.id));
+                const sold = fps.filter(fp2 => fp2.status_plata !== 'Platit').reduce((s, fp2) => s + (Number(fp2.valoare) || 0), 0);
+                const sumaScadenta = fps.reduce((acc, fac) => {
+                    if (fac.status_plata !== 'Platit' && fac.data_scadenta) {
+                        const d = new Date(fac.data_scadenta); d.setHours(0,0,0,0);
+                        if (d < azi) return acc + (Number(fac.valoare) || 0);
+                    }
+                    return acc;
+                }, 0);
+                return { ...furn, facturi: fps, sold, sumaScadenta };
+            });
+            renderFurnizori();
+            updateFurnizoriKPI();
+            showNotification('Furnizor șters!', 'success');
+        } catch (err) { showNotification('Eroare: ' + err.message, 'error'); }
+        finally { setLoader(false); }
+    });
 }
 
 /**
@@ -2260,25 +2352,32 @@ function incarcaDashboard() {
         return isNaN(d.getTime()) ? null : d;
     };
 
+    // Prima zi din luna curenta (pentru "Facturat luna")
+    const primaZiLuna = new Date(azi.getFullYear(), azi.getMonth(), 1);
+    primaZiLuna.setHours(0,0,0,0);
+
+    const inLunaCurenta = (f) => {
+        const d = parseDataFactura(f.data_emiterii);
+        return d && d >= primaZiLuna && d <= azi;
+    };
+
     const inUltimele30 = (f) => {
         const d = parseDataFactura(f.data_emiterii);
         return d && d >= acum30 && d <= azi;
     };
 
-    // Filtrare comună pe ultimele 30 zile
+    // Pastrat pentru trend comparativ (30 de zile)
     const facturiIncasat30 = facturiIncasat.filter(inUltimele30);
     const facturiPlatit30  = facturiPlatit.filter(inUltimele30);
 
-    // KPI: Total facturat în ultimele 30 zile
-    const totalFacturat = facturiIncasat30.reduce((s, f) => s + (Number(f.valoare) || 0), 0);
-    // KPI: De încasat (restanțe clienți) — facturi neîncasate emise în ultimele 30 zile
-    const neincasat = facturiIncasat30.filter(f => f.status_plata !== "Incasat").reduce((s, f) => s + (Number(f.valoare) || 0), 0);
-    // KPI: De plătit (datorii furnizori) — facturi neplătite emise în ultimele 30 zile
-    const neplatit = facturiPlatit30.filter(f => f.status_plata !== "Platit").reduce((s, f) => s + (Number(f.valoare) || 0), 0);
-    // KPI: Cashflow net = intrări totale - ieșiri totale din ultimele 30 zile
-    const intrari30 = facturiIncasat30.reduce((s, f) => s + (Number(f.valoare) || 0), 0);
-    const iesiri30  = facturiPlatit30.reduce((s, f) => s + (Number(f.valoare) || 0), 0);
-    const net = intrari30 - iesiri30;
+    // KPI: Total facturat in LUNA CURENTA
+    const totalFacturat = facturiIncasat.filter(inLunaCurenta).reduce((s, f) => s + (Number(f.valoare) || 0), 0);
+    // KPI: De incasat - total neincasat ALL TIME
+    const neincasat = facturiIncasat.filter(f => f.status_plata !== "Incasat").reduce((s, f) => s + (Number(f.valoare) || 0), 0);
+    // KPI: De platit - total neplatit ALL TIME
+    const neplatit = facturiPlatit.filter(f => f.status_plata !== "Platit").reduce((s, f) => s + (Number(f.valoare) || 0), 0);
+    // KPI: Cashflow net = de incasat - de platit (balanta totala)
+    const net = neincasat - neplatit;
 
     const fmt = (v) => new Intl.NumberFormat("ro-RO", { style: "currency", currency: "RON", maximumFractionDigits: 0 }).format(v);
 
@@ -2350,6 +2449,35 @@ function incarcaDashboard() {
             else { badge.classList.add("hidden"); }
         }
     }
+
+    // ── Trend indicatori KPI ──
+    const lunaPrec = new Date(azi.getFullYear(), azi.getMonth() - 1, 1);
+    const lunaPrec_sfarsit = new Date(azi.getFullYear(), azi.getMonth(), 0);  // ultima zi luna precedenta
+    lunaPrec_sfarsit.setHours(23, 59, 59, 999);
+    const inLunaPrecedenta = (f) => {
+        const d = parseDataFactura(f.data_emiterii);
+        return d && d >= lunaPrec && d <= lunaPrec_sfarsit;
+    };
+    const totalFacturatPrec = facturiIncasat.filter(inLunaPrecedenta).reduce((s, f) => s + (Number(f.valoare) || 0), 0);
+    const trendPct = totalFacturatPrec > 0 ? Math.round(((totalFacturat - totalFacturatPrec) / totalFacturatPrec) * 100) : null;
+
+    const setTrend = (id, pct, pozitivBun = true) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (pct === null) { el.innerText = ''; return; }
+        const up = pct >= 0;
+        const good = pozitivBun ? up : !up;
+        const color = good ? 'text-emerald-600' : 'text-red-500';
+        el.className = `text-[7px] font-black ${color}`;
+        el.innerText = (up ? '↑' : '↓') + ' ' + Math.abs(pct) + '%';
+    };
+    setTrend('home-kpi-facturat-trend', trendPct, true);
+
+    // Trend de incasat: reducere e buna (se incaseaza), crestere e rea (restante cresc)
+    const neincasatPrec = facturiIncasat.filter(inLunaPrecedenta).filter(f => f.status_plata !== 'Incasat')
+        .reduce((s, f) => s + (Number(f.valoare) || 0), 0);
+    const trendNeincasat = neincasatPrec > 0 ? Math.round(((neincasat - neincasatPrec) / neincasatPrec) * 100) : null;
+    setTrend('home-kpi-neincasat-trend', trendNeincasat, false);
 
     // Cashflow chart — ultimele 30 de zile (rolling window, se actualizează zilnic)
     const labels = [];
@@ -3698,6 +3826,7 @@ function genereazaBI() {
     const paginatedData = filtrate.slice(startIdx, endIdx);
 
     container.innerHTML = paginatedData.map((f) => {
+        try {
         const client = ZFlowStore.dateLocal.find((c) => String(c.id) === String(f.client_id));
         const isIncasat = f.status_plata === "Incasat";
         const isSelected = ZFlowStore.bulkSelectedFacturi.includes(String(f.id));
@@ -3718,9 +3847,14 @@ function genereazaBI() {
               </div>
               <span class="text-[8px] text-slate-400 font-semibold">#${f.numar_factura} &middot; ${formateazaDataZFlow(f.data_emiterii)}${f.data_scadenta ? ' &middot; S: ' + formateazaDataZFlow(f.data_scadenta) : ''}</span>
             </div>
-            <b class="text-[0.875rem] font-semibold flex-shrink-0 ${isIncasat ? 'text-blue-900' : 'text-red-600'} tabular-nums">${Number(f.valoare).toLocaleString()} lei</b>
+            <b class="text-[0.875rem] font-semibold flex-shrink-0 ${isIncasat ? 'text-blue-900' : 'text-red-600'} tabular-nums">${Math.round(Number(f.valoare) || 0).toLocaleString()} lei</b>
         </div>`;
-    }).join("");
+        } catch(cardErr) {
+            console.warn('[BI] Eroare randare factură:', cardErr, f);
+            return `<div class="text-xs text-red-400 px-3 py-2 bg-red-50 rounded-xl mb-1">Eroare afișare factură #${f?.numar_factura || '?'}</div>`;
+        }
+    }).join("") + '<div id="bi-pagination" class="mt-1"></div>';
+    _renderBIPagination(filtrate.length);
 
     // Append furnizori doar în modul TOATE
     if (ZFlowStore.filtruStatusBI === 'toate') {
@@ -3745,9 +3879,7 @@ function renderFurnizoriBI() {
     const endDate = endVal ? new Date(endVal + "T23:59:59") : null;
     const azi = new Date(); azi.setHours(0,0,0,0);
 
-    const ids = Array.from(document.querySelectorAll("#container-bi-furnizori-checks input:checked")).map(i => String(i.value));
-    const allIds = ZFlowStore.dateFurnizori.map(f => String(f.id));
-    const activeIds = ids.length > 0 ? ids : allIds;
+    const activeIds = Array.from(document.querySelectorAll("#container-bi-furnizori-checks input:checked")).map(i => String(i.value));
 
     const filtrate = _filtreazaFacturiPlatit(startDate, endDate, activeIds, q);
 
@@ -3773,7 +3905,7 @@ function renderFurnizoriBI() {
     const fbiEnd   = fbiPS === 0 ? filtrate.length : fbiStart + fbiPS;
     const paginated = filtrate.slice(fbiStart, fbiEnd);
 
-    container.innerHTML = _htmlFurnizoriRows(paginated, azi);
+    container.innerHTML = _htmlFurnizoriRows(paginated, azi) + '<div id="bi-pagination-furnizori" class="mt-1"></div>';
     _renderFurnizoriBIPagination(filtrate.length);
     calculeazaCashflow();
 }
@@ -3784,9 +3916,7 @@ function renderFurnizoriBI() {
 function appendFurnizoriBI(container, startDate, endDate, q) {
     const sumaPlatit2 = document.getElementById("suma-platit-bi");
 
-    const ids = Array.from(document.querySelectorAll("#container-bi-furnizori-checks input:checked")).map(i => String(i.value));
-    const allIds = ZFlowStore.dateFurnizori.map(f => String(f.id));
-    const activeIds = ids.length > 0 ? ids : allIds;
+    const activeIds = Array.from(document.querySelectorAll("#container-bi-furnizori-checks input:checked")).map(i => String(i.value));
 
     if (activeIds.length === 0) { _renderFurnizoriBIPagination(0); return; }
 
@@ -3814,7 +3944,8 @@ function appendFurnizoriBI(container, startDate, endDate, q) {
   <span class="text-[9px] font-black text-red-600 uppercase tracking-widest px-2 py-1 bg-red-50 rounded-full">Furnizori — Facturi de Plătit (${filtrate.length})</span>
   <div class="flex-1 h-px bg-red-100"></div>
 </div>
-${_htmlFurnizoriRows(paginated, azi)}`;
+${_htmlFurnizoriRows(paginated, azi)}
+<div id="bi-pagination-furnizori" class="mt-1"></div>`;
 
     _renderFurnizoriBIPagination(filtrate.length);
 }
@@ -3855,21 +3986,28 @@ function _htmlFurnizoriRows(filtrate, azi) {
         const aOk = a.status_plata === "Platit"; const bOk = b.status_plata === "Platit";
         if (aOk && !bOk) return 1; if (!aOk && bOk) return -1; return 0;
     }).map(f => {
+        try {
         const furnizor = ZFlowStore.dateFurnizori.find(furn => String(furn.id) === String(f.furnizor_id));
         const isPlatit = f.status_plata === "Platit";
         const isDepasit = !isPlatit && f.data_scadenta && new Date(f.data_scadenta).setHours(0,0,0,0) < azi;
-        return `<div class="flex items-center gap-2 px-3 py-2 rounded-xl mb-1 border ${isPlatit ? 'bg-white border-slate-100' : 'bg-red-50/40 border-red-100'} hover:shadow-sm transition-all" data-furnizor-id="${f.furnizor_id}" data-fp-id="${f.id}">
+        const isSelected = ZFlowStore.bulkMode && ZFlowStore.bulkSelectedFacturi.includes(String(f.id));
+        const checkboxHtml = ZFlowStore.bulkMode ? `
+            <input type="checkbox" class="bulk-checkbox w-4 h-4 rounded border-slate-300 text-blue-600 cursor-pointer flex-shrink-0"
+                   data-factura-id="${f.id}" ${isSelected ? 'checked' : ''}
+                   onclick="event.stopPropagation(); toggleBulkSelectFactura('${f.id}')"/>` : '';
+        return `<div class="flex items-center gap-2 px-3 py-2 rounded-xl mb-1 border ${isPlatit ? 'bg-white border-slate-100' : 'bg-red-50/40 border-red-100'} ${isSelected ? 'ring-2 ring-blue-400' : ''} hover:shadow-sm transition-all ${ZFlowStore.bulkMode ? 'cursor-pointer' : ''}" data-furnizor-id="${f.furnizor_id}" data-factura-id="${f.id}" ${ZFlowStore.bulkMode ? `onclick="toggleBulkSelectFactura('${f.id}')"` : ''}>
+    ${checkboxHtml}
     <span class="w-1.5 h-1.5 rounded-full flex-shrink-0 ${isPlatit ? 'bg-emerald-400' : isDepasit ? 'bg-red-500 animate-pulse' : 'bg-amber-400'}"></span>
     <div class="flex-1 min-w-0">
         <span class="text-[10px] font-black text-slate-800 uppercase truncate block">${furnizor?.nume_firma || 'Furnizor'}</span>
         <span class="text-[8px] text-slate-400 font-semibold">#${f.numar_factura || '—'} &middot; ${formateazaDataZFlow(f.data_emiterii)}${f.data_scadenta ? ' &middot; S: ' + formateazaDataZFlow(f.data_scadenta) : ''}</span>
     </div>
-    <b class="text-[0.875rem] font-semibold flex-shrink-0 ${isPlatit ? 'text-blue-900' : 'text-red-600'} tabular-nums">${Number(f.valoare).toLocaleString()} lei</b>
-    <button onclick="event.stopPropagation(); toggleStatusPlatit('${f.id}', '${f.status_plata}')"
-            class="w-6 h-6 rounded-lg flex items-center justify-center transition-all flex-shrink-0 ${isPlatit ? 'bg-slate-100 text-slate-400 hover:bg-emerald-100 hover:text-emerald-600' : 'bg-emerald-100 text-emerald-600 hover:bg-emerald-200'}">
-        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
-    </button>
+    <b class="text-[0.875rem] font-semibold flex-shrink-0 ${isPlatit ? 'text-blue-900' : 'text-red-600'} tabular-nums">${Math.round(Number(f.valoare) || 0).toLocaleString()} lei</b>
 </div>`;
+        } catch(rowErr) {
+            console.warn('[BI furnizori] Eroare randare rând:', rowErr, f);
+            return `<div class="text-xs text-red-400 px-3 py-2 bg-red-50 rounded-xl mb-1">Eroare afișare factură furnizor #${f?.numar_factura || '?'}</div>`;
+        }
     }).join("");
 }
 function biNextPage() {
@@ -3909,7 +4047,7 @@ function _paginareHTML(total, pageSize, currentPage, prefix) {
         `<option value="${v}" ${pageSize === v ? 'selected' : ''}>${v}</option>`
     ).join('');
     return `
-<div class="flex items-center justify-between gap-2 mt-2 mb-4 px-1">
+<div class="flex flex-wrap items-center justify-between md:justify-center gap-3 md:gap-6 mt-2 mb-4 px-1">
     <div class="flex items-center gap-1.5">
         <span class="text-[9px] font-bold text-slate-400 uppercase">Afișare</span>
         <select onchange="${prefix}SetPageSize(this.value)"
@@ -4041,6 +4179,37 @@ function furnizoriFacturiSetPerPage(n) {
     if (ZFlowStore.selectedFurnizorId) {
         arataDetaliiFurnizor(ZFlowStore.selectedFurnizorId);
     }
+}
+
+/**
+ * Detectează automat statusul de plată al unei facturi importate din CSV.
+ * Logică:
+ *  - Dacă statusul explicit din CSV este 'Incasat'/'Platit' → marcat ca plătit
+ *  - Dacă există o dată de plată (`data_plata`) → marcat ca plătit
+ *  - Dacă suma restantă/sold din CSV este 0 → marcat ca plătit
+ *  - Altfel → neplătit
+ * @param {Object} csvFact - rândul mapat din CSV
+ * @param {boolean} isFurnizori - true = furnizori, false = clienți
+ * @returns {string} status_plata
+ */
+function _detectaStatusPlata(csvFact, isFurnizori) {
+    const statusCSV = (csvFact.status_plata || '').trim().toLowerCase();
+    // Explicit paid
+    const platitKeywords = ['incasat', 'platit', 'achitat', 'paid', 'yes', 'da', '1'];
+    if (platitKeywords.includes(statusCSV)) {
+        return isFurnizori ? 'Platit' : 'Incasat';
+    }
+    // Data plata completata => plătit
+    if (csvFact.data_plata && String(csvFact.data_plata).trim().length > 0) {
+        return isFurnizori ? 'Platit' : 'Incasat';
+    }
+    // Suma restanta 0 => plătit
+    const sold = parseFloat(String(csvFact.sold_ramas || csvFact.rest_plata || csvFact.suma_restanta || '').replace(/[^0-9.,\-]/g,'').replace(',','.'));
+    if (!isNaN(sold) && sold === 0) {
+        return isFurnizori ? 'Platit' : 'Incasat';
+    }
+    // Implicit neplătit
+    return isFurnizori ? 'Neplatit' : 'Neincasat';
 }
 
 /**
@@ -4232,6 +4401,19 @@ function updateBulkUI() {
         const facturaId = cb.getAttribute("data-factura-id");
         cb.checked = ZFlowStore.bulkSelectedFacturi.includes(facturaId);
     });
+
+    // Actualizează suma afișată pe baza facturilor selectate
+    const sumaDisplay = document.getElementById("suma-selectata-bi");
+    if (sumaDisplay && ZFlowStore.bulkMode && ZFlowStore.bulkSelectedFacturi.length > 0) {
+        const allFacturi = [
+            ...(ZFlowStore.dateFacturiBI || []),
+            ...(ZFlowStore.dateFacturiPlatit || [])
+        ];
+        const sumaSelectata = allFacturi
+            .filter(f => ZFlowStore.bulkSelectedFacturi.includes(String(f.id)))
+            .reduce((acc, f) => acc + (Number(f.valoare) || 0), 0);
+        sumaDisplay.innerText = `${Math.round(sumaSelectata).toLocaleString()} lei`;
+    }
     
     // Actualizează label-urile butoanelor de export (Export Inteligent)
     updateExportButtonLabels();
@@ -4265,11 +4447,16 @@ async function bulkMarkPaid() {
                 data_incasarii: new Date().toISOString().split('T')[0]
             });
             
-            // Update local
-            const factura = ZFlowStore.dateFacturiBI.find(f => String(f.id) === String(facturaId));
-            if (factura) {
-                factura.status_plata = "Incasat";
-                factura.data_incasarii = new Date().toISOString().split('T')[0];
+            // Update local — caută în ambele colecții (clienti + furnizori)
+            const facturaClient = ZFlowStore.dateFacturiBI.find(f => String(f.id) === String(facturaId));
+            if (facturaClient) {
+                facturaClient.status_plata = "Incasat";
+                facturaClient.data_incasarii = new Date().toISOString().split('T')[0];
+            }
+            const facturaFurnizor = (ZFlowStore.dateFacturiPlatit || []).find(f => String(f.id) === String(facturaId));
+            if (facturaFurnizor) {
+                facturaFurnizor.status_plata = "Incasat";
+                facturaFurnizor.data_incasarii = new Date().toISOString().split('T')[0];
             }
             success++;
         } catch (err) {
@@ -4639,6 +4826,7 @@ function deschideModal(id, targetId = null) {
                 document.getElementById("in-fac-emisie").value = fc.data_emiterii;
                 document.getElementById("in-fac-scad").value = fc.data_scadenta;
                 document.getElementById("in-auto").value = fc.numar_auto || "";
+                const uitEl = document.getElementById("in-uit"); if (uitEl) uitEl.value = fc.uit_code || "";
                 document.getElementById("in-fac-note").value = fc.note || "";
                 sincronizeazaDateVizual();
 
@@ -4942,10 +5130,13 @@ async function salveazaClient() {
         iban: document.getElementById("in-iban").value,
     };
 
-    const cuiRegex = /^\d{1,10}$/;
-    if (!dateFirma.nume_firma || !dateFirma.cui) return alert("Denumirea și CUI-ul sunt obligatorii!");
-    if (!cuiRegex.test(dateFirma.cui.toString().trim())) return alert("❌ CUI-ul invalid: doar cifre (2-10 caractere)");
-    if (typeof validareCUI === 'function' && !validareCUI(dateFirma.cui.toString().trim())) {
+    // Normalizare CUI: elimina prefix RO/ro și spații
+    const cuiNorm = dateFirma.cui.toString().trim().replace(/^RO/i, '').trim();
+    const cuiRegex = /^\d{2,10}$/;
+    if (!dateFirma.nume_firma || !cuiNorm) return alert("Denumirea și CUI-ul sunt obligatorii!");
+    if (!cuiRegex.test(cuiNorm)) return alert("❌ CUI-ul invalid: doar cifre (2-10 caractere)");
+    dateFirma.cui = cuiNorm; // salvează fără prefix RO
+    if (typeof validareCUI === 'function' && !validareCUI(cuiNorm)) {
         if (!confirm("⚠️ CUI-ul nu trece validarea cifrei de control ANAF. Continuați oricum?")) return;
     }
     if (dateFirma.iban && typeof validareIBAN === 'function' && !validareIBAN(dateFirma.iban.trim())) {
@@ -4980,7 +5171,7 @@ async function salveazaClient() {
         }
 
         inchideModal("modal-client");
-        await init();
+        await init(false);
         if (id) arataDetalii(id);
     } catch (e) {
         console.error("Eroare Supabase:", e);
@@ -5014,6 +5205,7 @@ async function salveazaFacturaOrchestrator() {
     const de = document.getElementById("in-fac-emisie").value;
     const ds = document.getElementById("in-fac-scad").value;
     const auto = document.getElementById("in-auto").value;
+    const uit = document.getElementById("in-uit")?.value?.trim() || "";
     const note = document.getElementById("in-fac-note")?.value || "";
     const fileInput = document.getElementById("in-fac-file");
 
@@ -5049,6 +5241,7 @@ async function salveazaFacturaOrchestrator() {
             data_emiterii: de || new Date().toISOString().split("T")[0],
             data_scadenta: ds,
             numar_auto: auto,
+            uit_code: uit || null,
             note: note.trim() || null,
         };
 
@@ -5194,7 +5387,7 @@ async function stergeFirma(id) {
     }
     showConfirmModal("Ștergi clientul definitiv? Toate facturile asociate vor fi orfane.", async () => {
         await ZFlowDB.deleteClient(id);
-        init();
+        init(false);
         comutaVedereFin("firme");
     });
 }
@@ -5409,24 +5602,26 @@ async function importaDateSaga(tipImport = 'clienti') {
 
                         try {
                             if (isFurnizori) {
+                                const autoStatusFurn = _detectaStatusPlata(csvFact, true);
                                 await ZFlowDB.insertFacturaPlatit({
                                     furnizor_id: realEntityId,
                                     numar_factura: csvFact.nr_factura,
                                     valoare: csvFact.suma,
                                     data_emiterii: csvFact.data_emitere,
                                     data_scadenta: csvFact.data_scadenta,
-                                    status_plata: (csvFact.status_plata === 'Incasat' || csvFact.status_plata === 'Platit') ? 'Platit' : 'Neplatit',
+                                    status_plata: autoStatusFurn,
                                     is_imported: true,
                                     note: csvFact.descriere || ''
                                 }, true);
                             } else {
+                                const autoStatusClient = _detectaStatusPlata(csvFact, false);
                                 await ZFlowDB.insertFactura({
                                     client_id: realEntityId,
                                     numar_factura: csvFact.nr_factura,
                                     valoare: csvFact.suma,
                                     data_emiterii: csvFact.data_emitere,
                                     data_scadenta: csvFact.data_scadenta,
-                                    status_plata: (csvFact.status_plata === 'Incasat' || csvFact.status_plata === 'Platit') ? 'Incasat' : 'Neincasat',
+                                    status_plata: autoStatusClient,
                                     is_imported: true,
                                     note: csvFact.descriere || ''
                                 }, true);
@@ -6089,6 +6284,66 @@ async function autoCautareCUI() {
     showNotification("Serviciul ANAF nu răspunde. Dacă eroarea persistă, contactează administratorul.", "error", 6000);
 }
 
+/**
+ * Caută CUI furnizor la ANAF și completează modalul furnizor
+ */
+async function autoCautareCUIFurnizor() {
+    const cuiRaw = document.getElementById("in-furn-cui")?.value || "";
+    const cui = cuiRaw.replace(/\D/g, "");
+
+    if (!cui || cui.length < 2) return showNotification("Introdu un CUI valid (doar cifrele)!", "warning");
+
+    const anafUrl = "https://webservicesp.anaf.ro/PlatitorTvaRest/api/v8/ws/tva";
+    const dataAzi = new Date().toISOString().split("T")[0];
+    const body = JSON.stringify([{ cui: parseInt(cui), data: dataAzi }]);
+    const jsonHeaders = { "Content-Type": "application/json", Accept: "application/json" };
+
+    const aplicaDate = (d) => {
+        const numeEl = document.getElementById("in-furn-nume");
+        const adresaEl = document.getElementById("in-furn-adresa");
+        const orasEl = document.getElementById("in-furn-oras");
+        if (numeEl) numeEl.value = d.date_generale?.denumire || "";
+        if (adresaEl) adresaEl.value = d.adresa_domiciliu_fiscal?.adresa || "";
+        if (orasEl) orasEl.value = d.adresa_domiciliu_fiscal?.localitate || "";
+    };
+
+    setLoader(true);
+
+    try {
+        const r = await fetch(anafUrl, { method: "POST", headers: jsonHeaders, body, signal: AbortSignal.timeout(5000) });
+        if (r.ok) {
+            const res = await r.json();
+            if (res.found?.[0]?.date_generale) { aplicaDate(res.found[0]); setLoader(false); return; }
+        }
+    } catch (_) {}
+
+    const edgeFnUrl = `${URL_Z}/functions/v1/anaf-proxy`;
+    try {
+        const r = await fetch(edgeFnUrl, { method: "POST", headers: { ...jsonHeaders, "Authorization": `Bearer ${KEY_Z}` }, body, signal: AbortSignal.timeout(8000) });
+        if (r.ok) {
+            const res = await r.json();
+            if (res.found?.[0]?.date_generale) { aplicaDate(res.found[0]); setLoader(false); return; }
+        }
+    } catch (_) {}
+
+    const proxies = [
+        `https://corsproxy.io/?${encodeURIComponent(anafUrl)}`,
+        `https://api.allorigins.win/raw?url=${encodeURIComponent(anafUrl)}`,
+    ];
+    for (const proxyUrl of proxies) {
+        try {
+            const r = await fetch(proxyUrl, { method: "POST", headers: jsonHeaders, body, signal: AbortSignal.timeout(8000) });
+            if (!r.ok) continue;
+            const res = await r.json();
+            if (res.found?.[0]?.date_generale) { aplicaDate(res.found[0]); setLoader(false); return; }
+            else { showNotification(`CUI-ul ${cui} nu a fost găsit în baza ANAF.`, "warning"); setLoader(false); return; }
+        } catch (e) { console.warn("Proxy eșuat:", proxyUrl, e.message); }
+    }
+
+    setLoader(false);
+    showNotification("Serviciul ANAF nu răspunde.", "error", 6000);
+}
+
 // ==========================================
 // TRANSPORTURI & MAP
 // ==========================================
@@ -6107,8 +6362,11 @@ function renderTransportTab() {
                 <div>
                     <p class="text-[11px] font-extrabold text-slate-800 uppercase">${t.firma}</p>
                     <p class="text-[9px] font-bold text-blue-600 mt-1 uppercase">🚚 Camion: ${t.numar_auto}</p>
+                    ${t.uit_code ? `<p class="text-[9px] font-bold text-green-600 mt-0.5 uppercase">📋 UIT: ${t.uit_code}</p>` : ''}
                 </div>
-                <span class="text-[8px] font-extrabold uppercase px-3 py-1 rounded-full bg-amber-100 text-amber-700">WAIT UIT</span>
+                ${t.uit_code
+                    ? `<span class="text-[8px] font-extrabold uppercase px-3 py-1 rounded-full bg-green-100 text-green-700">${t.uit_code}</span>`
+                    : `<span class="text-[8px] font-extrabold uppercase px-3 py-1 rounded-full bg-amber-100 text-amber-700">WAIT UIT</span>`}
             </div>`
         )
         .join("");
@@ -6190,7 +6448,13 @@ function actualizaMarkerePeHarta() {
 function initScanner() {
     if (!ZFlowStore.scanner) {
         ZFlowStore.scanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
-        ZFlowStore.scanner.render((t) => (document.getElementById("barcode-value").innerText = t));
+        ZFlowStore.scanner.render((t) => {
+            // Afișare cod scanat (comportament original)
+            const barcodeEl = document.getElementById("barcode-value");
+            if (barcodeEl) barcodeEl.innerText = t;
+            // Procesare smart: produs / recepție / livrare / comandă (features.js)
+            if (typeof processScanResult === 'function') processScanResult(t);
+        });
     }
 }
 
@@ -6338,8 +6602,95 @@ function stergeToateDateleAdmin() {
 window.stergeToateDateleAdmin = stergeToateDateleAdmin;
 
 // ==========================================
-// EXPORT / IMPORT BACKUP DATE ADMIN (Task 11)
+// RESET DATE USER (disponibil oricui)
 // ==========================================
+
+/**
+ * Șterge toate datele utilizatorului curent (local + Supabase dacă e conectat).
+ * Fără dependența de rol admin.
+ */
+async function resetCompletDateUser() {
+    showConfirmModal(
+        'ATENȚIE: Se vor șterge TOATE datele (clienți, facturi, furnizori, produse, comenzi).\n\nAceastă acțiune este ireversibilă. Continui?',
+        async () => {
+            setLoader(true);
+            try {
+                // 1) Curăță localStorage (prefixe cunoscute)
+                const prefixe = ['zflow_ad_', 'zflow_demo_', 'zflow_local_'];
+                Object.keys(localStorage)
+                    .filter(k => prefixe.some(p => k.startsWith(p)))
+                    .forEach(k => localStorage.removeItem(k));
+
+                // 2) Curăță IndexedDB
+                if (typeof ZFlowIDB !== 'undefined') await ZFlowIDB.clearAll();
+
+                // 3) Curăță Supabase dacă e sesiune reală
+                if (ZFlowStore.userSession && !ZFlowStore.userSession.isDemo) {
+                    try {
+                        const listeStergere = [
+                            ZFlowStore.dateFacturiBI || [],
+                            ZFlowStore.dateFacturiPlatit || []
+                        ];
+                        for (const lista of listeStergere) {
+                            for (const item of lista) {
+                                if (item.id) {
+                                    try { await ZFlowDB.deleteFactura?.(item.id); } catch(_) {}
+                                    try { await ZFlowDB.deleteFacturaPlatit?.(item.id); } catch(_) {}
+                                }
+                            }
+                        }
+                        for (const c of (ZFlowStore.dateLocal || [])) {
+                            if (c.id) try { await ZFlowDB.deleteClient?.(c.id); } catch(_) {}
+                        }
+                        for (const f of (ZFlowStore.dateFurnizori || [])) {
+                            if (f.id) try { await ZFlowDB.deleteFurnizor?.(f.id); } catch(_) {}
+                        }
+                    } catch (supErr) {
+                        console.warn('[Reset] Eroare parțială Supabase:', supErr.message);
+                    }
+                }
+
+                // 4) Resetează store în memorie
+                const listeCheie = ['dateLocal','dateFacturiBI','dateFurnizori','dateFacturiPlatit',
+                    'dateProduse','dateMiscariStoc','dateReceptii','dateLivrari',
+                    'dateSoferi','dateVehicule','dateComenziTransport'];
+                listeCheie.forEach(k => { ZFlowStore[k] = []; });
+
+                // 5) Re-render UI
+                if (typeof renderMain === 'function') renderMain();
+                if (typeof renderFurnizori === 'function') renderFurnizori();
+                if (typeof renderDepozit === 'function') renderDepozit();
+                if (typeof renderLogistic === 'function') renderLogistic();
+                if (typeof incarcaDashboard === 'function') incarcaDashboard();
+
+                showNotification('Toate datele au fost șterse și resetate', 'success');
+            } catch (err) {
+                showNotification('Eroare la reset: ' + err.message, 'error');
+            } finally {
+                setLoader(false);
+            }
+        }
+    );
+}
+window.resetCompletDateUser = resetCompletDateUser;
+
+// ==========================================
+// HELPER: firmă duplicată (client + furnizor)
+// ==========================================
+
+/**
+ * Returnează true dacă CUI-ul apare atât în clienți cât și în furnizori
+ * @param {string} cui
+ * @returns {boolean}
+ */
+function esteSiClientSiFurnizor(cui) {
+    if (!cui) return false;
+    const cuiCurat = String(cui).replace(/\D/g, '').toLowerCase();
+    const inClienti   = (ZFlowStore.dateLocal || []).some(c => String(c.cui||'').replace(/\D/g,'').toLowerCase() === cuiCurat);
+    const inFurnizori = (ZFlowStore.dateFurnizori || []).some(f => String(f.cui||'').replace(/\D/g,'').toLowerCase() === cuiCurat);
+    return inClienti && inFurnizori;
+}
+window.esteSiClientSiFurnizor = esteSiClientSiFurnizor;
 
 /**
  * Exportă toate datele contului admin ca fișier JSON descărcabil.
@@ -6676,6 +7027,22 @@ function swipeStergeFactura(facturaId) {
 
 // Inițializăm SwipeHandler după DOM ready
 document.addEventListener('DOMContentLoaded', () => {
+    // ── Z-FLOW Changelog ────────────────────────────────────────
+    console.groupCollapsed('%c Z-FLOW v2.1 — Changelog', 'color:#3b82f6;font-weight:bold;font-size:13px');
+    console.log('%c[UI] Eliminat grupul butoane (Client/Furnizor nou, Doc nou, Import) din listele de clienți și furnizori', 'color:#64748b');
+    console.log('%c[UI] Buton "DOC NOU" în bara de navigare de jos, contextual: client → factură incasare | furnizor → factură plată', 'color:#64748b');
+    console.log('%c[FIX] Buton "Editare Profil" client — funcțional acum direct din HTML (onclick inline)', 'color:#16a34a');
+    console.log('%c[FIX] Home KPIs: "Facturat luna" = luna curentă | "De Încasat" & "De Plătit" = total restant ALL TIME', 'color:#16a34a');
+    console.log('%c[FIX] Furnizori: KPI Restante sincronizat cu totalul banneru-ului (updateFurnizoriKPI la fiecare render)', 'color:#16a34a');
+    console.log('%c[FIX] Analiza BI furnizori: eliminat butonul de check ✓ (neadecvat în modul analiză)', 'color:#16a34a');
+    console.log('%c[FIX] Analiza BI: paginare clienți sub lista clienți, paginare furnizori sub lista furnizori', 'color:#16a34a');
+    console.log('%c[UI]  Depozit sub-nav Stoc/Documente: rezolvat conflict Tailwind hidden+flex', 'color:#64748b');
+    console.log('%c[FEAT] Badge "Client + Furnizor" pe carduri dacă același CUI apare la ambii', 'color:#9333ea');
+    console.log('%c[FEAT] Detectare automată status plată la import CSV (platit/neplatit din câmpuri)', 'color:#9333ea');
+    console.log('%c[FEAT] Ștergere completă date utilizator cu confirmare (buton Reset în profil)', 'color:#9333ea');
+    console.log('%c[FEAT] Hartă GPS mutată în secțiunea Vehicule (Logistic)', 'color:#9333ea');
+    console.groupEnd();
+    // ────────────────────────────────────────────────────────────
     // Inițializăm pe listele de facturi
     SwipeHandler.init('#lista-facturi-content');
     SwipeHandler.init('#rezultat-analiza');
@@ -6806,6 +7173,7 @@ window.removePendingPDF = removePendingPDF;
 window.stergeAtasamentPDF = stergeAtasamentPDF;
 window.printInvoice = printInvoice;
 window.autoCautareCUI = autoCautareCUI;
+window.autoCautareCUIFurnizor = autoCautareCUIFurnizor;
 window.deschideFirmaNou = deschideFirmaNou;
 window.selectTipFirmaNou = selectTipFirmaNou;
 window.autoCautareCUIFirmaNou = autoCautareCUIFirmaNou;

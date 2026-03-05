@@ -91,6 +91,17 @@ function renderComenziTransport() {
               <div class="flex flex-col items-end gap-1.5 flex-shrink-0">
                 <span class="text-[9px] font-black uppercase px-2.5 py-1 rounded-full ${stCls}">${c.status || 'Draft'}</span>
                 <span class="text-[10px] text-slate-400">${c.data_plecare ? new Date(c.data_plecare).toLocaleDateString('ro-RO') : '—'}</span>
+                <div class="flex gap-1 mt-1">
+                  <button onclick="event.stopPropagation(); deschideModalComandaTransport('${c.id}')" title="Editează comandă"
+                      class="w-7 h-7 flex items-center justify-center rounded-xl bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-500 transition-all border border-blue-100 hover:border-blue-600" data-permission="edit">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"/></svg>
+                  </button>
+
+                  <button onclick="event.stopPropagation(); stergeComandaTransport('${c.id}')" title="Șterge comandă"
+                      class="w-7 h-7 flex items-center justify-center rounded-xl bg-red-50 hover:bg-red-600 hover:text-white text-red-400 transition-all border border-red-100 hover:border-red-600" data-permission="delete">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                  </button>
+                </div>
               </div>
             </div>`;
         } catch (itemErr) {
@@ -110,7 +121,10 @@ function renderComenziTransport() {
 function renderSoferi() {
     const container = document.getElementById('logistic-soferi-list');
     if (!container) return;
-    const all = ZFlowStore.dateSoferi || [];
+    const q = (ZFlowStore.soferiQuery || '').toLowerCase().trim();
+    const all = (ZFlowStore.dateSoferi || []).filter(s =>
+        !q || (s.nume||'').toLowerCase().includes(q) || (s.telefon||'').includes(q)
+    );
     ZFlowStore._soferiFiltrati = all;
     const ps  = ZFlowStore.soferiPageSize ?? 10;
     const pg  = ZFlowStore.soferiCurrentPage || 1;
@@ -162,7 +176,12 @@ function renderSoferi() {
 function renderVehicule() {
     const container = document.getElementById('logistic-vehicule-list');
     if (!container) return;
-    const all = ZFlowStore.dateVehicule || [];
+    const q = (ZFlowStore.vehiculeQuery || '').toLowerCase().trim();
+    const all = (ZFlowStore.dateVehicule || []).filter(v =>
+        !q || (v.nr_inmatriculare||'').toLowerCase().includes(q) ||
+              (v.marca||'').toLowerCase().includes(q) ||
+              (v.model||'').toLowerCase().includes(q)
+    );
     ZFlowStore._vehiculeFiltrate = all;
     const ps  = ZFlowStore.vehiculePageSize ?? 10;
     const pg  = ZFlowStore.vehiculeCurrentPage || 1;
@@ -231,7 +250,7 @@ function deschideModalComandaTransport(id, opts) {
     const vhSel = f('ct-vehicul-select');
     if (vhSel) vhSel.innerHTML = '<option value="">— Vehicul —</option>' + (ZFlowStore.dateVehicule||[]).map(v => `<option value="${v.id}">${v.nr_inmatriculare} ${v.marca||''} ${v.model||''}</option>`).join('');
 
-    ['ct-ruta-de','ct-ruta-la','ct-data-plecare','ct-data-livrare','ct-tracking','ct-valoare','ct-obs'].forEach(el => { const e = f(el); if (e) e.value = ''; });
+    ['ct-ruta-de','ct-ruta-la','ct-data-plecare','ct-data-livrare','ct-tracking','ct-valoare','ct-km','ct-obs'].forEach(el => { const e = f(el); if (e) e.value = ''; });
     if (f('ct-status')) f('ct-status').value = 'Planificat';
 
     if (id) {
@@ -246,6 +265,7 @@ function deschideModalComandaTransport(id, opts) {
             if (f('ct-data-livrare')) f('ct-data-livrare').value  = c.data_livrare || '';
             if (f('ct-status'))        f('ct-status').value       = c.status || 'Planificat';
             if (f('ct-tracking'))      f('ct-tracking').value     = c.tracking_code || '';
+            if (f('ct-km'))            f('ct-km').value            = c.numar_km || '';
             if (f('ct-valoare'))       f('ct-valoare').value      = c.valoare || '';
             if (f('ct-obs'))           f('ct-obs').value          = c.observatii || '';
         }
@@ -281,6 +301,7 @@ async function salveazaComandaTransport() {
             tracking_code: fv('ct-tracking') || (
                 `ZF-${new Date().getFullYear()}-${String(Math.floor(Math.random()*9000)+1000)}`
             ),
+            numar_km:      Number(fv('ct-km')) || 0,
             valoare:       Number(fv('ct-valoare')) || 0,
             observatii:    fv('ct-obs') || null
         };
@@ -473,12 +494,61 @@ async function initLogistic() {
 // ==========================================
 // EXPORT GLOBAL
 // ==========================================
+function filtreazaSoferi(q) {
+    ZFlowStore.soferiQuery = q || '';
+    ZFlowStore.soferiCurrentPage = 1;
+    renderSoferi();
+}
+function filtreazaVehicule(q) {
+    ZFlowStore.vehiculeQuery = q || '';
+    ZFlowStore.vehiculeCurrentPage = 1;
+    renderVehicule();
+}
 window.calculeazaKPILogistic          = calculeazaKPILogistic;
 window.renderLogistic                 = renderLogistic;
 window.schimbaViewLogistic            = schimbaViewLogistic;
+
+/**
+ * Afișează ruta unei comenzi de transport pe hartă GPS.
+ * Comută automat la tab-ul Vehicule și centrează harta.
+ */
+function afiseazaRutaComandaPeHarta(id) {
+    const c = (window.ZFlowStore?.dateComenziTransport || []).find(x => String(x.id) === String(id));
+    if (!c) return;
+    // Comută la tab-ul Vehicule care conține harta
+    schimbaViewLogistic('vehicule', true);
+    setTimeout(() => {
+        const mapEl = document.getElementById('map');
+        if (mapEl) mapEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Re-render markere și adaugă popup pentru rută
+        if (typeof actualizaMarkerePeHarta === 'function') actualizaMarkerePeHarta();
+        setTimeout(() => {
+            if (!window.ZFlowStore?.map) return;
+            // Marker special pentru această rută
+            const statusCul = { 'Planificat': '#3b82f6', 'In curs': '#f59e0b', 'Livrat': '#10b981', 'Anulat': '#ef4444' };
+            const col = statusCul[c.status] || '#64748b';
+            const icon = window.L?.divIcon({
+                html: `<div style="background:${col};color:#fff;padding:4px 10px;border-radius:10px;font-size:11px;font-weight:900;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.25);border:2px solid white">🚚 ${c.ruta_de} → ${c.ruta_la}</div>`,
+                className: ''
+            });
+            // Poziție centrală România cu mic offset aleatoriu
+            const lat = 45.9432 + (Math.random() - 0.5) * 0.5;
+            const lng = 24.9668 + (Math.random() - 0.5) * 0.5;
+            const m = window.L?.marker([lat, lng], { icon })
+                .addTo(ZFlowStore.map)
+                .bindPopup(`<b>${c.ruta_de} → ${c.ruta_la}</b><br>Status: ${c.status}${c.numar_km ? '<br>Km: ' + c.numar_km : ''}${c.tracking_code ? '<br>Tracking: ' + c.tracking_code : ''}`)
+                .openPopup();
+            if (m && ZFlowStore._gpsMarcatori) ZFlowStore._gpsMarcatori.push(m);
+            ZFlowStore.map.setView([lat, lng], 10);
+        }, 500);
+    }, 350);
+}
+window.afiseazaRutaComandaPeHarta = afiseazaRutaComandaPeHarta;
 window.renderComenziTransport         = renderComenziTransport;
 window.renderSoferi                   = renderSoferi;
 window.renderVehicule                 = renderVehicule;
+window.filtreazaSoferi                = filtreazaSoferi;
+window.filtreazaVehicule              = filtreazaVehicule;
 window.deschideModalComandaTransport  = deschideModalComandaTransport;
 window.inchideModalComandaTransport   = inchideModalComandaTransport;
 window.salveazaComandaTransport       = salveazaComandaTransport;
@@ -503,20 +573,25 @@ window.syncSafefleetVehicule          = syncSafefleetVehicule;
  * @param {string} vehiculId
  */
 function trackeazaVehicul(vehiculId) {
-    // Comutăm pe view Comenzi (harta este acolo)
-    schimbaViewLogistic('comenzi', true);
+    // Comutăm pe view Vehicule (în care este afișată harta)
+    schimbaViewLogistic('vehicule', true);
     // Inițializăm / actualizăm harta
     if (typeof window.initMap === 'function') window.initMap();
-    // Centram pe vehicul după ce markele sunt plasate
+    // Scrolām la hartă
     setTimeout(() => {
-        const marcatori = ZFlowStore._gpsMarcatori || [];
-        const vehicule  = ZFlowStore.dateVehicule   || [];
-        const idx = vehicule.findIndex(v => String(v.id) === String(vehiculId));
-        if (idx >= 0 && marcatori[idx]) {
-            marcatori[idx].openPopup();
-            ZFlowStore.map?.panTo(marcatori[idx].getLatLng());
-        }
-    }, 700);
+        const mapEl = document.getElementById('map');
+        if (mapEl) mapEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Centrăm pe vehicul după ce markerele sunt plasate
+        setTimeout(() => {
+            const marcatori = ZFlowStore._gpsMarcatori || [];
+            const vehicule  = ZFlowStore.dateVehicule   || [];
+            const idx = vehicule.findIndex(v => String(v.id) === String(vehiculId));
+            if (idx >= 0 && marcatori[idx]) {
+                marcatori[idx].openPopup();
+                ZFlowStore.map?.panTo(marcatori[idx].getLatLng());
+            }
+        }, 400);
+    }, 350);
 }
 window.trackeazaVehicul = trackeazaVehicul;
 

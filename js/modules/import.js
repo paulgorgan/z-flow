@@ -176,9 +176,13 @@ const ZFlowImport = {
                 // Status plată opțional în CSV (SAGA poate conține sold zero = achitat)
                 const statusRaw = _col(row,
                     'STATUS', 'status', 'STATUS PLATA', 'status_plata', 'STATUS PLATĂ',
-                    'ACHITAT', 'achitat', 'INCASAT', 'incasat', 'PLATIT', 'platit').toLowerCase();
+                    'ACHITAT', 'achitat', 'INCASAT', 'incasat', 'PLATIT', 'platit').toLowerCase().trim();
                 let statusPlata = 'Neincasat'; // default pentru clienți (furnizori: Neplatit—detectat în app.js)
-                if (statusRaw.includes('incasat') || statusRaw.includes('achitat') || statusRaw === 'da' || statusRaw === 'yes' || statusRaw === '1' || statusRaw.includes('platit')) {
+                // Verificare exactă pentru a evita false positive pe "Neincasat", "Neplatit"
+                const isPaid = statusRaw === 'incasat' || statusRaw === 'platit' || statusRaw === 'achitat'
+                             || statusRaw === 'da' || statusRaw === 'yes' || statusRaw === '1'
+                             || statusRaw === 'paid' || statusRaw === 'p';
+                if (isPaid) {
                     statusPlata = 'Incasat'; // normalizat la inserare: furnizori → 'Platit' în app.js
                 }
                 

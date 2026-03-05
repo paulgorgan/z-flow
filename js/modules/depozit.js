@@ -35,7 +35,18 @@ function calcStocCurent(produsId) {
 
 function renderDepozit() {
     calculeazaKPIDepozit();
-    schimbaViewDepozit(ZFlowStore.depozitView || 'produse', false);
+    const view = ZFlowStore.depozitView || 'produse';
+    // ensure correct group sub-nav visible on initial render
+    const subnavStoc = document.getElementById('depozit-subnav-stoc');
+    const subnavDoc  = document.getElementById('depozit-subnav-documente');
+    if (['produse','miscari'].includes(view)) {
+        if (subnavStoc) { subnavStoc.classList.remove('hidden'); subnavStoc.classList.add('flex'); }
+        if (subnavDoc)  { subnavDoc.classList.add('hidden'); subnavDoc.classList.remove('flex'); }
+    } else if (['receptii','livrari'].includes(view)) {
+        if (subnavStoc) { subnavStoc.classList.add('hidden'); subnavStoc.classList.remove('flex'); }
+        if (subnavDoc)  { subnavDoc.classList.remove('hidden'); subnavDoc.classList.add('flex'); }
+    }
+    schimbaViewDepozit(view, false);
 }
 
 function schimbaViewDepozit(view, updateStore = true) {
@@ -45,13 +56,49 @@ function schimbaViewDepozit(view, updateStore = true) {
         if (el) el.classList.toggle('hidden', v !== view);
     });
     document.querySelectorAll('.depozit-pill').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.view === view);
+        const gr = btn.dataset.view;
+        const grupActiv = ['produse','miscari'].includes(view) ? 'stoc' : ['receptii','livrari'].includes(view) ? 'documente' : view;
+        btn.classList.toggle('active', gr === grupActiv);
+    });
+    // Sub-nav highlight
+    document.querySelectorAll('.depozit-subbtn-stoc').forEach(b => {
+        b.classList.toggle('bg-blue-900', b.dataset.sub === view);
+        b.classList.toggle('text-white', b.dataset.sub === view);
+        b.classList.toggle('bg-slate-100', b.dataset.sub !== view);
+        b.classList.toggle('text-slate-600', b.dataset.sub !== view);
+    });
+    document.querySelectorAll('.depozit-subbtn-doc').forEach(b => {
+        b.classList.toggle('bg-emerald-700', b.dataset.sub === view);
+        b.classList.toggle('text-white', b.dataset.sub === view);
+        b.classList.toggle('bg-slate-100', b.dataset.sub !== view);
+        b.classList.toggle('text-slate-600', b.dataset.sub !== view);
     });
     if (view === 'produse')  renderProduse();
     else if (view === 'miscari')   renderMiscariStoc();
     else if (view === 'receptii')  renderReceptiiDepozit();
     else if (view === 'livrari')   renderLivrariDepozit();
     else if (view === 'scanner')  { if (typeof initScanner === 'function') initScanner(); }
+}
+
+/**
+ * Comută grupul principal Stoc / Documente și afișează sub-nav
+ */
+function schimbaViewDepozitGrup(grup) {
+    const subnavStoc = document.getElementById('depozit-subnav-stoc');
+    const subnavDoc  = document.getElementById('depozit-subnav-documente');
+    if (grup === 'stoc') {
+        if (subnavStoc) { subnavStoc.classList.remove('hidden'); subnavStoc.classList.add('flex'); }
+        if (subnavDoc)  { subnavDoc.classList.add('hidden'); subnavDoc.classList.remove('flex'); }
+        schimbaViewDepozit('produse', true);
+    } else if (grup === 'documente') {
+        if (subnavStoc) { subnavStoc.classList.add('hidden'); subnavStoc.classList.remove('flex'); }
+        if (subnavDoc)  { subnavDoc.classList.remove('hidden'); subnavDoc.classList.add('flex'); }
+        schimbaViewDepozit('receptii', true);
+    } else {
+        if (subnavStoc) { subnavStoc.classList.add('hidden'); subnavStoc.classList.remove('flex'); }
+        if (subnavDoc)  { subnavDoc.classList.add('hidden'); subnavDoc.classList.remove('flex'); }
+        schimbaViewDepozit(grup, true);
+    }
 }
 
 // ==========================================
@@ -132,8 +179,17 @@ function renderProduse() {
 function renderMiscariStoc() {
     const container = document.getElementById('depozit-lista-miscari');
     if (!container) return;
+    const q = (ZFlowStore.miscariQuery || '').toLowerCase().trim();
     const all = (ZFlowStore.dateMiscariStoc || [])
-        .slice().sort((a, b) => new Date(b.data || b.created_at || 0) - new Date(a.data || a.created_at || 0));
+        .slice().sort((a, b) => new Date(b.data || b.created_at || 0) - new Date(a.data || a.created_at || 0))
+        .filter(m => {
+            if (!q) return true;
+            const p = (ZFlowStore.dateProduse || []).find(x => String(x.id) === String(m.produs_id));
+            return (p?.nume||'').toLowerCase().includes(q) ||
+                   (p?.sku||'').toLowerCase().includes(q) ||
+                   (m.observatii||'').toLowerCase().includes(q) ||
+                   (m.tip||'').toLowerCase().includes(q);
+        });
     ZFlowStore._miscariFiltrate = all;
     const ps  = ZFlowStore.miscariPageSize ?? 10;
     const pg  = ZFlowStore.miscariCurrentPage || 1;
@@ -181,8 +237,15 @@ function renderMiscariStoc() {
 function renderReceptiiDepozit() {
     const container = document.getElementById('depozit-lista-receptii');
     if (!container) return;
+    const q = (ZFlowStore.receptiiQuery || '').toLowerCase().trim();
     const list = (ZFlowStore.dateReceptii || [])
-        .slice().sort((a, b) => new Date(b.data || b.created_at || 0) - new Date(a.data || a.created_at || 0));
+        .slice().sort((a, b) => new Date(b.data || b.created_at || 0) - new Date(a.data || a.created_at || 0))
+        .filter(r => {
+            if (!q) return true;
+            const furn = (ZFlowStore.dateFurnizori || []).find(f => String(f.id) === String(r.furnizor_id));
+            return (furn?.nume_firma||'').toLowerCase().includes(q) ||
+                   (r.observatii||'').toLowerCase().includes(q);
+        });
 
     if (!list.length) {
         container.innerHTML = `<div class="text-center py-10 text-slate-400 text-sm font-bold">Nicio recepție înregistrată</div>`;
@@ -217,8 +280,16 @@ function renderReceptiiDepozit() {
 function renderLivrariDepozit() {
     const container = document.getElementById('depozit-lista-livrari');
     if (!container) return;
+    const q = (ZFlowStore.livrariQuery || '').toLowerCase().trim();
     const list = (ZFlowStore.dateLivrari || [])
-        .slice().sort((a, b) => new Date(b.data || b.created_at || 0) - new Date(a.data || a.created_at || 0));
+        .slice().sort((a, b) => new Date(b.data || b.created_at || 0) - new Date(a.data || a.created_at || 0))
+        .filter(l => {
+            if (!q) return true;
+            const cl = (ZFlowStore.dateLocal || []).find(c => String(c.id) === String(l.client_id));
+            return (cl?.nume_firma||'').toLowerCase().includes(q) ||
+                   (l.nr_bon||'').toLowerCase().includes(q) ||
+                   (l.observatii||'').toLowerCase().includes(q);
+        });
 
     if (!list.length) {
         container.innerHTML = `<div class="text-center py-10 text-slate-400 text-sm font-bold">Niciun bon de livrare emis</div>`;
@@ -718,6 +789,9 @@ function _renderItemsLivrare() {
     }
     container.innerHTML = _livrareItems.map((item, idx) => {
         const stoc = calcStocCurent(item.produs_id);
+        const cantSet = Number(item.cantitate) || 0;
+        const stocCls = !item.produs_id ? 'bg-slate-100 text-slate-400' : cantSet > stoc ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-700';
+        const stocLabel = !item.produs_id ? '—' : cantSet > stoc ? `‼ ${stoc}` : String(stoc);
         return `<div class="flex gap-2 items-center mb-1">
           <select class="flex-1 min-w-0 p-2 bg-slate-50 rounded-xl text-xs font-bold border border-slate-200"
             onchange="_livrareItems[${idx}].produs_id=this.value; _renderItemsLivrare()">
@@ -725,7 +799,8 @@ function _renderItemsLivrare() {
           </select>
           <input type="number" min="0.001" step="any" placeholder="Cant." value="${item.cantitate||''}"
             class="w-20 p-2 bg-slate-50 rounded-xl text-xs font-bold border border-slate-200"
-            oninput="_livrareItems[${idx}].cantitate=Number(this.value); recalcTotalLivrare()"/>
+            oninput="_livrareItems[${idx}].cantitate=Number(this.value); recalcTotalLivrare(); _renderItemsLivrare()"/>
+          <span class="text-[9px] font-black px-2 py-1.5 rounded-lg ${stocCls}" title="Stoc disponibil">${stocLabel}</span>
           <input type="number" min="0" step="any" placeholder="Preț/U" value="${item.pret_unitar||''}"
             class="w-20 p-2 bg-slate-50 rounded-xl text-xs font-bold border border-slate-200"
             oninput="_livrareItems[${idx}].pret_unitar=Number(this.value); recalcTotalLivrare()"/>
@@ -845,10 +920,24 @@ function exportMiscariStocCSV() {
 // ==========================================
 // EXPORT GLOBAL
 // ==========================================
+function filtreazaMiscari(q) {
+    ZFlowStore.miscariQuery = q || '';
+    ZFlowStore.miscariCurrentPage = 1;
+    renderMiscariStoc();
+}
+function filtreazaReceptii(q) {
+    ZFlowStore.receptiiQuery = q || '';
+    renderReceptiiDepozit();
+}
+function filtreazaLivrari(q) {
+    ZFlowStore.livrariQuery = q || '';
+    renderLivrariDepozit();
+}
 window.calcStocCurent          = calcStocCurent;
 window.calculeazaKPIDepozit    = calculeazaKPIDepozit;
 window.renderDepozit           = renderDepozit;
 window.schimbaViewDepozit      = schimbaViewDepozit;
+window.schimbaViewDepozitGrup  = schimbaViewDepozitGrup;
 window.renderProduse           = renderProduse;
 window.renderMiscariStoc       = renderMiscariStoc;
 window.renderReceptiiDepozit   = renderReceptiiDepozit;
@@ -878,6 +967,9 @@ window.stergeItemLivrare       = stergeItemLivrare;
 window.recalcTotalLivrare      = recalcTotalLivrare;
 window.salveazaLivrare         = salveazaLivrare;
 // Task 8 — Export
+window.filtreazaMiscari        = filtreazaMiscari;
+window.filtreazaReceptii       = filtreazaReceptii;
+window.filtreazaLivrari        = filtreazaLivrari;
 window.exportProduseCSV        = exportProduseCSV;
 window.exportMiscariStocCSV    = exportMiscariStocCSV;
 
