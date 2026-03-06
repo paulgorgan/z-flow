@@ -3,12 +3,12 @@
   "short_name": "Z-FLOW V2",
   "description": "Enterprise Business Support App - Refactored Modular Version",
   "version": "8.0.0",
-  "start_url": "/index.html",
+  "start_url": "/z-flow/index.html",
   "display": "standalone",
   "background_color": "#f1f5f9",
   "theme_color": "#1e3a8a",
   "orientation": "any",
-  "scope": "/",
+  "scope": "/z-flow/",
   "lang": "ro",
   "categories": ["business", "finance", "productivity"],
   "icons": [
@@ -85,13 +85,13 @@
     {
       "name": "Dashboard",
       "short_name": "Home",
-      "url": "/index.html",
+      "url": "/z-flow/index.html",
       "icons": [{ "src": "icons/icon-96.png", "sizes": "96x96" }]
     },
     {
       "name": "Clienți",
       "short_name": "Clienți",
-      "url": "/index.html#financiar",
+      "url": "/z-flow/index.html#financiar",
       "icons": [{ "src": "icons/icon-96.png", "sizes": "96x96" }]
     }
   ]
