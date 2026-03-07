@@ -4,6 +4,9 @@
  */
 
 const URL_Z = "https://exrypxknksgrtrwnbtrl.supabase.co";
+// KEY_Z este cheia "publishable" (anon/public) — intenționat vizibilă pe client.
+// Securitatea datelor este asigurată prin politicile RLS (Row Level Security) din Supabase,
+// nu prin ascunderea acestei chei. Fiecare utilizator vede strict propriile rânduri (user_id = auth.uid()).
 const KEY_Z = "sb_publishable_nKFEv_6AOyKBFp3f_AnZmw_MMZ9MXl5";
 
 // Inițializăm clientul Supabase
@@ -56,7 +59,13 @@ const _demoOps = {
     /** true DOAR pentru contul demo user/pass (date volatile, se șterg la logout) */
     isDemo() { return window.ZFlowStore?.userSession?.isDemo === true; },
     /** true DOAR pentru contul admin/1234 (date persistate în localStorage) */
-    isAdminLocal() { return window.ZFlowStore?.userSession?.user?.email === 'admin'; },
+    isAdminLocal() {
+        const email = window.ZFlowStore?.userSession?.user?.email;
+        const storedUser = localStorage.getItem('zflow_ad_admin_username') || 'admin';
+        return email === storedUser || email === 'admin';
+    },
+    /** Generează ID unic fără coliziuni — evită race condition Date.now() în bucle rapide */
+    _uid() { return Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 8); },
 
     /**
      * Restaurează din localStorage în memorie (o singură dată per sesiune).
@@ -246,7 +255,7 @@ Object.assign(_demoOps, {
     // ---- VEHICULE ----
     insertVehicul(p) {
         this._restore('vehicule','_demoVehicule');
-        window.ZFlowStore._demoVehicule.push({...p,id:'veh'+Date.now(),created_at:new Date().toISOString()});
+        window.ZFlowStore._demoVehicule.push({...p, id:'veh_'+this._uid(), created_at:new Date().toISOString()});
         this._persist('vehicule','_demoVehicule');
     },
     updateVehicul(id,p) {
@@ -263,7 +272,7 @@ Object.assign(_demoOps, {
     // ---- COMENZI TRANSPORT ----
     insertComanda(p) {
         this._restore('comenzi_transport','_demoComenziTransport');
-        window.ZFlowStore._demoComenziTransport.push({...p,id:'ct'+Date.now(),created_at:new Date().toISOString()});
+        window.ZFlowStore._demoComenziTransport.push({...p, id:'ct_'+this._uid(), created_at:new Date().toISOString()});
         this._persist('comenzi_transport','_demoComenziTransport');
     },
     updateComanda(id,p) {
@@ -288,6 +297,22 @@ Object.assign(_demoOps, {
 });
 
 /**
+ * Normalizează câmpurile facturilor pentru compatibilitate cu ambele convenții de denumire
+ * (DB: numar_factura/valoare/data_emiterii  ↔  legacy: nr_factura/suma/data_emitere)
+ */
+function _normalizeFacturi(arr) {
+    return (arr || []).map(f => ({
+        ...f,
+        numar_factura:  f.numar_factura  || f.nr_factura    || '',
+        nr_factura:     f.nr_factura     || f.numar_factura  || '',
+        valoare:        f.valoare        != null ? f.valoare        : (f.suma        != null ? f.suma        : 0),
+        suma:           f.suma           != null ? f.suma           : (f.valoare     != null ? f.valoare     : 0),
+        data_emiterii:  f.data_emiterii  || f.data_emitere  || '',
+        data_emitere:   f.data_emitere   || f.data_emiterii || '',
+    }));
+}
+
+/**
  * Încarcă toți clienții din baza de date
  */
 async function fetchClienti() {
@@ -295,10 +320,10 @@ async function fetchClienti() {
         _demoOps._restore('clienti', '_demoClienti');
         return (window.ZFlowStore._demoClienti || []).map(c => ({...c}));
     }
-    const { data, error } = await zf
-        .from("clienti")
-        .select("*")
-        .order("nume_firma");
+    const uid = _getCurrentUserId();
+    let query = zf.from("clienti").select("*").order("nume_firma");
+    if (uid) query = query.eq('user_id', uid);
+    const { data, error } = await query;
     if (error) throw error;
     return data || [];
 }
@@ -309,14 +334,14 @@ async function fetchClienti() {
 async function fetchFacturi() {
     if (_demoOps.isLocal()) {
         _demoOps._restore('facturi', '_demoFacturi');
-        return (window.ZFlowStore._demoFacturi || []).map(f => ({...f}));
+        return _normalizeFacturi(window.ZFlowStore._demoFacturi || []);
     }
-    const { data, error } = await zf
-        .from("facturi")
-        .select("*")
-        .order("created_at", { ascending: false });
+    const uid = _getCurrentUserId();
+    let query = zf.from("facturi").select("*").order("created_at", { ascending: false });
+    if (uid) query = query.eq('user_id', uid);
+    const { data, error } = await query;
     if (error) throw error;
-    return data || [];
+    return _normalizeFacturi(data || []);
 }
 
 /**
@@ -330,25 +355,21 @@ async function fetchFacturi() {
 async function fetchFacturiPaginated(limit = 50, offset = 0, clientId = null) {
     // Local check — admin și demo user folosesc stocul in-memory exclusiv, fără acces Supabase
     if (_demoOps.isLocal()) {
-        const all = (window.ZFlowStore._demoFacturi || []).map(f => ({...f}));
+        const all = _normalizeFacturi(window.ZFlowStore._demoFacturi || []);
         const filtered = clientId ? all.filter(f => String(f.client_id) === String(clientId)) : all;
         return { data: filtered, count: filtered.length };
     }
+    const uid = _getCurrentUserId();
     let query = zf
         .from("facturi")
         .select("*", { count: 'exact' })
         .order("created_at", { ascending: false })
         .range(offset, offset + limit - 1);
-    
-    // Filtrare opțională după client
-    if (clientId) {
-        query = query.eq("client_id", clientId);
-    }
-    
+    if (uid) query = query.eq('user_id', uid);
+    if (clientId) query = query.eq("client_id", clientId);
     const { data, error, count } = await query;
-    
     if (error) throw error;
-    return { data: data || [], count: count || 0 };
+    return { data: _normalizeFacturi(data || []), count: count || 0 };
 }
 
 /**
@@ -374,7 +395,10 @@ async function insertFactura(payload, strict = false) {
  */
 async function updateFactura(id, payload) {
     if (_demoOps.isLocal()) { _demoOps.updateFactura(id, payload); return; }
-    const { error } = await zf.from("facturi").update(payload).eq("id", id);
+    const uid = _getCurrentUserId();
+    let query = zf.from("facturi").update(payload).eq("id", id);
+    if (uid) query = query.eq('user_id', uid);
+    const { error } = await query;
     if (error) throw error;
 }
 
@@ -383,7 +407,10 @@ async function updateFactura(id, payload) {
  */
 async function deleteFactura(id) {
     if (_demoOps.isLocal()) { _demoOps.deleteFactura(id); return; }
-    const { error } = await zf.from("facturi").delete().eq("id", id);
+    const uid = _getCurrentUserId();
+    let query = zf.from("facturi").delete().eq("id", id);
+    if (uid) query = query.eq('user_id', uid);
+    const { error } = await query;
     if (error) throw error;
 }
 
@@ -420,7 +447,10 @@ async function insertClient(payload, strict = false) {
  */
 async function updateClient(id, payload) {
     if (_demoOps.isLocal()) { _demoOps.updateClient(id, payload); return; }
-    const { error } = await zf.from("clienti").update(payload).eq("id", id);
+    const uid = _getCurrentUserId();
+    let query = zf.from("clienti").update(payload).eq("id", id);
+    if (uid) query = query.eq('user_id', uid);
+    const { error } = await query;
     if (error) throw error;
 }
 
@@ -429,7 +459,10 @@ async function updateClient(id, payload) {
  */
 async function deleteClient(id) {
     if (_demoOps.isLocal()) { _demoOps.deleteClient(id); return; }
-    const { error } = await zf.from("clienti").delete().eq("id", id);
+    const uid = _getCurrentUserId();
+    let query = zf.from("clienti").delete().eq("id", id);
+    if (uid) query = query.eq('user_id', uid);
+    const { error } = await query;
     if (error) throw error;
 }
 
@@ -598,7 +631,7 @@ async function upsertProfile(payload) {
             .from("profiles")
             .upsert({ ...payload, id: user.id, user_id: user.id, updated_at: new Date().toISOString() }, { onConflict: 'id' });
         if (!error) saved = true;
-    } catch(e) {}
+    } catch(e) { console.warn('[Profile] upsert payload complet eșuat, încerc minimal:', e.message); }
     if (!saved) {
         const { error } = await zf
             .from("profiles")
@@ -619,10 +652,10 @@ async function fetchFurnizori() {
         _demoOps._restore('furnizori', '_demoFurnizori');
         return (window.ZFlowStore._demoFurnizori || []).map(f => ({...f}));
     }
-    const { data, error } = await zf
-        .from("furnizori")
-        .select("*")
-        .order("nume_firma");
+    const uid = _getCurrentUserId();
+    let query = zf.from("furnizori").select("*").order("nume_firma");
+    if (uid) query = query.eq('user_id', uid);
+    const { data, error } = await query;
     if (error) throw error;
     return data || [];
 }
@@ -660,7 +693,10 @@ async function insertFurnizor(payload, strict = false) {
  */
 async function updateFurnizor(id, payload) {
     if (_demoOps.isLocal()) { _demoOps.updateFurnizor(id, payload); return; }
-    const { error } = await zf.from("furnizori").update(payload).eq("id", id);
+    const uid = _getCurrentUserId();
+    let query = zf.from("furnizori").update(payload).eq("id", id);
+    if (uid) query = query.eq('user_id', uid);
+    const { error } = await query;
     if (error) throw error;
 }
 
@@ -669,7 +705,10 @@ async function updateFurnizor(id, payload) {
  */
 async function deleteFurnizor(id) {
     if (_demoOps.isLocal()) { _demoOps.deleteFurnizor(id); return; }
-    const { error } = await zf.from("furnizori").delete().eq("id", id);
+    const uid = _getCurrentUserId();
+    let query = zf.from("furnizori").delete().eq("id", id);
+    if (uid) query = query.eq('user_id', uid);
+    const { error } = await query;
     if (error) throw error;
 }
 
@@ -683,14 +722,14 @@ async function deleteFurnizor(id) {
 async function fetchFacturiPlatit() {
     if (_demoOps.isLocal()) {
         _demoOps._restore('facturi_platit', '_demoFacturiPlatit');
-        return (window.ZFlowStore._demoFacturiPlatit || []).map(f => ({...f}));
+        return _normalizeFacturi(window.ZFlowStore._demoFacturiPlatit || []);
     }
-    const { data, error } = await zf
-        .from("facturi_platit")
-        .select("*")
-        .order("created_at", { ascending: false });
+    const uid = _getCurrentUserId();
+    let query = zf.from("facturi_platit").select("*").order("created_at", { ascending: false });
+    if (uid) query = query.eq('user_id', uid);
+    const { data, error } = await query;
     if (error) throw error;
-    return data || [];
+    return _normalizeFacturi(data || []);
 }
 
 /**
@@ -716,7 +755,10 @@ async function insertFacturaPlatit(payload, strict = false) {
  */
 async function updateFacturaPlatit(id, payload) {
     if (_demoOps.isLocal()) { _demoOps.updateFacturaPlatit(id, payload); return; }
-    const { error } = await zf.from("facturi_platit").update(payload).eq("id", id);
+    const uid = _getCurrentUserId();
+    let query = zf.from("facturi_platit").update(payload).eq("id", id);
+    if (uid) query = query.eq('user_id', uid);
+    const { error } = await query;
     if (error) throw error;
 }
 
@@ -725,7 +767,10 @@ async function updateFacturaPlatit(id, payload) {
  */
 async function deleteFacturaPlatit(id) {
     if (_demoOps.isLocal()) { _demoOps.deleteFacturaPlatit(id); return; }
-    const { error } = await zf.from("facturi_platit").delete().eq("id", id);
+    const uid = _getCurrentUserId();
+    let query = zf.from("facturi_platit").delete().eq("id", id);
+    if (uid) query = query.eq('user_id', uid);
+    const { error } = await query;
     if (error) throw error;
 }
 
@@ -734,9 +779,86 @@ async function deleteFacturaPlatit(id) {
  */
 async function resetPassword(email) {
     const { error } = await zf.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin + '/reset-password'
+        redirectTo: window.location.origin + (window.location.pathname.includes('/z-flow') ? '/z-flow/' : '/') + 'index.html'
     });
     if (error) throw error;
+}
+
+/**
+ * Actualizează email-ul sau parola utilizatorului curent
+ * @param {Object} updates - { email: string } | { password: string }
+ */
+async function updateUser(updates) {
+    const { data, error } = await zf.auth.updateUser(updates);
+    if (error) throw error;
+    return data;
+}
+
+/**
+ * Actualizează metadata utilizatorului autentificat (ex: maintenance_mode)
+ * @param {Object} meta - cheie-valoare de adăugat în user_metadata
+ */
+async function updateUserMeta(meta) {
+    const { data, error } = await zf.auth.updateUser({ data: meta });
+    if (error) throw error;
+    return data;
+}
+
+/**
+ * Citește/scrie configurația globală a aplicației (tabel app_config)
+ * Rulați setup_maintenance.sql în Supabase pentru a crea tabelul + RLS policies.
+ * @param {string} key
+ * @param {*} value - dacă undefined, doar citire
+ */
+async function getSetAppConfig(key, value) {
+    if (value !== undefined) {
+        const { error } = await zf.from('app_config').upsert({ key, value: JSON.stringify(value), updated_at: new Date().toISOString() });
+        if (error) throw error;
+        return value;
+    }
+    const { data, error } = await zf.from('app_config').select('value').eq('key', key).single();
+    if (error) return null;
+    try { return JSON.parse(data.value); } catch(e) { return data.value; }
+}
+
+/**
+ * Validează un token de abonament din tabelul subscription_tokens
+ * Returnează true dacă tokenul există, este activ și nefolosit
+ * @param {string} token
+ * @returns {Promise<boolean>}
+ */
+async function validateSubscriptionToken(token) {
+    if (!token || token.trim().length < 6) return false;
+    try {
+        const { data, error } = await zf
+            .from('subscription_tokens')
+            .select('id, used, expires_at')
+            .eq('token', token.trim().toUpperCase())
+            .single();
+        if (error || !data) return false;
+        if (data.used) return false;
+        if (data.expires_at && new Date(data.expires_at) < new Date()) return false;
+        return true;
+    } catch(e) {
+        console.warn('[validateSubscriptionToken]', e.message);
+        return false;
+    }
+}
+
+/**
+ * Marchează un token de abonament ca folosit după înregistrare
+ * @param {string} token
+ * @param {string} email - Email-ul utilizatorului nou
+ */
+async function consumeSubscriptionToken(token, email) {
+    try {
+        await zf
+            .from('subscription_tokens')
+            .update({ used: true, used_by: email, used_at: new Date().toISOString() })
+            .eq('token', token.trim().toUpperCase());
+    } catch(e) {
+        console.warn('[consumeSubscriptionToken]', e.message);
+    }
 }
 
 // ==========================================
@@ -745,7 +867,14 @@ async function resetPassword(email) {
 async function fetchProduse() {
     if (_demoOps.isDemo() && _demoOps.initializedDepozit()) return _demoOps.fetchProduse();
     if (_demoOps.isLocal()) return _demoOps.fetchProduse();
-    try { const { data, error } = await zf.from('produse').select('*').order('nume'); if (error) throw error; return data || []; } catch(e) { return []; }
+    const uid = _getCurrentUserId();
+    try {
+        let q = zf.from('produse').select('*').order('nume');
+        if (uid) q = q.eq('user_id', uid);
+        const { data, error } = await q;
+        if (error) throw error;
+        return data || [];
+    } catch(e) { console.warn('[DB] fetchProduse:', e.message); return []; }
 }
 async function insertProdus(payload) {
     if (_demoOps.isLocal()) { _demoOps.insertProdus(payload); return; }
@@ -755,11 +884,13 @@ async function insertProdus(payload) {
 }
 async function updateProdus(id, payload) {
     if (_demoOps.isLocal()) { _demoOps.updateProdus(id, payload); return; }
-    try { const { error } = await zf.from('produse').update(payload).eq('id', id); if (error) throw error; } catch(e) { _demoOps.updateProdus(id, payload); }
+    const uid = _getCurrentUserId();
+    try { let q = zf.from('produse').update(payload).eq('id', id); if (uid) q = q.eq('user_id', uid); const { error } = await q; if (error) throw error; } catch(e) { _demoOps.updateProdus(id, payload); }
 }
 async function deleteProdus(id) {
     if (_demoOps.isLocal()) { _demoOps.deleteProdus(id); return; }
-    try { const { error } = await zf.from('produse').delete().eq('id', id); if (error) throw error; } catch(e) { _demoOps.deleteProdus(id); }
+    const uid = _getCurrentUserId();
+    try { let q = zf.from('produse').delete().eq('id', id); if (uid) q = q.eq('user_id', uid); const { error } = await q; if (error) throw error; } catch(e) { _demoOps.deleteProdus(id); }
 }
 
 // ==========================================
@@ -767,7 +898,14 @@ async function deleteProdus(id) {
 // ==========================================
 async function fetchMiscariStoc() {
     if (_demoOps.isLocal()) return _demoOps.fetchMiscariStoc();
-    try { const { data, error } = await zf.from('miscari_stoc').select('*').order('data', {ascending:false}).order('created_at', {ascending:false}); if (error) throw error; return data || []; } catch(e) { return []; }
+    const uid = _getCurrentUserId();
+    try {
+        let q = zf.from('miscari_stoc').select('*').order('data', {ascending:false}).order('created_at', {ascending:false});
+        if (uid) q = q.eq('user_id', uid);
+        const { data, error } = await q;
+        if (error) throw error;
+        return data || [];
+    } catch(e) { console.warn('[DB] fetchMiscariStoc:', e.message); return []; }
 }
 async function insertMiscare(payload) {
     if (_demoOps.isLocal()) { _demoOps.insertMiscare(payload); return; }
@@ -812,8 +950,14 @@ function initRealtimeSubscriptions() {
                 if (typeof renderFurnizori === 'function') renderFurnizori();
             }).catch(() => {});
         })
-        .subscribe(status => {
-            console.info('[Realtime] status:', status);
+        .subscribe((status, err) => {
+            if (status === 'SUBSCRIBED') {
+                console.info('[Realtime] Canal activ — schimbările din DB vor apărea în timp real');
+            } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+                console.error('[Realtime] Eroare canal:', status, err?.message || '');
+            } else {
+                console.info('[Realtime] status:', status);
+            }
         });
 }
 
@@ -829,7 +973,8 @@ function stopRealtimeSubscriptions() {
 // ==========================================
 async function fetchReceptii() {
     if (_demoOps.isLocal()) return _demoOps.fetchReceptii();
-    try { const { data, error } = await zf.from('receptii').select('*').order('created_at', {ascending:false}); if (error) throw error; return data || []; } catch(e) { return []; }
+    const uid = _getCurrentUserId();
+    try { let q = zf.from('receptii').select('*').order('created_at', {ascending:false}); if (uid) q = q.eq('user_id', uid); const { data, error } = await q; if (error) throw error; return data || []; } catch(e) { console.warn('[DB] fetchReceptii:', e.message); return []; }
 }
 async function insertReceptie(payload) {
     if (_demoOps.isLocal()) { _demoOps.insertReceptie(payload); return; }
@@ -843,7 +988,8 @@ async function insertReceptie(payload) {
 // ==========================================
 async function fetchLivrari() {
     if (_demoOps.isLocal()) return _demoOps.fetchLivrari();
-    try { const { data, error } = await zf.from('livrari').select('*').order('created_at', {ascending:false}); if (error) throw error; return data || []; } catch(e) { return []; }
+    const uid = _getCurrentUserId();
+    try { let q = zf.from('livrari').select('*').order('created_at', {ascending:false}); if (uid) q = q.eq('user_id', uid); const { data, error } = await q; if (error) throw error; return data || []; } catch(e) { console.warn('[DB] fetchLivrari:', e.message); return []; }
 }
 async function insertLivrare(payload) {
     if (_demoOps.isLocal()) { _demoOps.insertLivrare(payload); return; }
@@ -857,7 +1003,8 @@ async function insertLivrare(payload) {
 // ==========================================
 async function fetchSoferi() {
     if (_demoOps.isLocal()) return _demoOps.fetchSoferi();
-    try { const { data, error } = await zf.from('soferi').select('*').order('nume'); if (error) throw error; return data || []; } catch(e) { return []; }
+    const uid = _getCurrentUserId();
+    try { let q = zf.from('soferi').select('*').order('nume'); if (uid) q = q.eq('user_id', uid); const { data, error } = await q; if (error) throw error; return data || []; } catch(e) { console.warn('[DB] fetchSoferi:', e.message); return []; }
 }
 async function insertSofer(payload) {
     if (_demoOps.isLocal()) { _demoOps.insertSofer(payload); return; }
@@ -867,11 +1014,13 @@ async function insertSofer(payload) {
 }
 async function updateSofer(id, payload) {
     if (_demoOps.isLocal()) { _demoOps.updateSofer(id, payload); return; }
-    try { const { error } = await zf.from('soferi').update(payload).eq('id', id); if (error) throw error; } catch(e) { _demoOps.updateSofer(id, payload); }
+    const uid = _getCurrentUserId();
+    try { let q = zf.from('soferi').update(payload).eq('id', id); if (uid) q = q.eq('user_id', uid); const { error } = await q; if (error) throw error; } catch(e) { _demoOps.updateSofer(id, payload); }
 }
 async function deleteSofer(id) {
     if (_demoOps.isLocal()) { _demoOps.deleteSofer(id); return; }
-    try { const { error } = await zf.from('soferi').delete().eq('id', id); if (error) throw error; } catch(e) { _demoOps.deleteSofer(id); }
+    const uid = _getCurrentUserId();
+    try { let q = zf.from('soferi').delete().eq('id', id); if (uid) q = q.eq('user_id', uid); const { error } = await q; if (error) throw error; } catch(e) { _demoOps.deleteSofer(id); }
 }
 
 // ==========================================
@@ -879,7 +1028,8 @@ async function deleteSofer(id) {
 // ==========================================
 async function fetchVehicule() {
     if (_demoOps.isLocal()) return _demoOps.fetchVehicule();
-    try { const { data, error } = await zf.from('vehicule').select('*').order('nr_inmatriculare'); if (error) throw error; return data || []; } catch(e) { return []; }
+    const uid = _getCurrentUserId();
+    try { let q = zf.from('vehicule').select('*').order('nr_inmatriculare'); if (uid) q = q.eq('user_id', uid); const { data, error } = await q; if (error) throw error; return data || []; } catch(e) { console.warn('[DB] fetchVehicule:', e.message); return []; }
 }
 async function insertVehicul(payload) {
     if (_demoOps.isLocal()) { _demoOps.insertVehicul(payload); return; }
@@ -889,11 +1039,13 @@ async function insertVehicul(payload) {
 }
 async function updateVehicul(id, payload) {
     if (_demoOps.isLocal()) { _demoOps.updateVehicul(id, payload); return; }
-    try { const { error } = await zf.from('vehicule').update(payload).eq('id', id); if (error) throw error; } catch(e) { _demoOps.updateVehicul(id, payload); }
+    const uid = _getCurrentUserId();
+    try { let q = zf.from('vehicule').update(payload).eq('id', id); if (uid) q = q.eq('user_id', uid); const { error } = await q; if (error) throw error; } catch(e) { _demoOps.updateVehicul(id, payload); }
 }
 async function deleteVehicul(id) {
     if (_demoOps.isLocal()) { _demoOps.deleteVehicul(id); return; }
-    try { const { error } = await zf.from('vehicule').delete().eq('id', id); if (error) throw error; } catch(e) { _demoOps.deleteVehicul(id); }
+    const uid = _getCurrentUserId();
+    try { let q = zf.from('vehicule').delete().eq('id', id); if (uid) q = q.eq('user_id', uid); const { error } = await q; if (error) throw error; } catch(e) { _demoOps.deleteVehicul(id); }
 }
 
 // ==========================================
@@ -901,21 +1053,31 @@ async function deleteVehicul(id) {
 // ==========================================
 async function fetchComenziTransport() {
     if (_demoOps.isLocal()) return _demoOps.fetchComenzi();
-    try { const { data, error } = await zf.from('comenzi_transport').select('*').order('created_at', {ascending:false}); if (error) throw error; return data || []; } catch(e) { return []; }
+    const uid = _getCurrentUserId();
+    try { let q = zf.from('comenzi_transport').select('*').order('created_at', {ascending:false}); if (uid) q = q.eq('user_id', uid); const { data, error } = await q; if (error) throw error; return data || []; } catch(e) { console.warn('[DB] fetchComenziTransport:', e.message); return []; }
 }
 async function insertComandaTransport(payload) {
     if (_demoOps.isLocal()) { _demoOps.insertComanda(payload); return; }
     const uid = _getCurrentUserId();
     const p = uid ? { ...payload, user_id: uid } : payload;
-    try { const { error } = await zf.from('comenzi_transport').insert([p]); if (error) throw error; } catch(e) { _demoOps.insertComanda(payload); }
+    const { error } = await zf.from('comenzi_transport').insert([p]);
+    if (error) throw new Error(error.message || 'Eroare salvare comandă transport');
 }
 async function updateComandaTransport(id, payload) {
     if (_demoOps.isLocal()) { _demoOps.updateComanda(id, payload); return; }
-    try { const { error } = await zf.from('comenzi_transport').update(payload).eq('id', id); if (error) throw error; } catch(e) { _demoOps.updateComanda(id, payload); }
+    const uid = _getCurrentUserId();
+    let q = zf.from('comenzi_transport').update(payload).eq('id', id);
+    if (uid) q = q.eq('user_id', uid);
+    const { error } = await q;
+    if (error) throw new Error(error.message || 'Eroare actualizare comandă transport');
 }
 async function deleteComandaTransport(id) {
     if (_demoOps.isLocal()) { _demoOps.deleteComanda(id); return; }
-    try { const { error } = await zf.from('comenzi_transport').delete().eq('id', id); if (error) throw error; } catch(e) { _demoOps.deleteComanda(id); }
+    const uid = _getCurrentUserId();
+    let q = zf.from('comenzi_transport').delete().eq('id', id);
+    if (uid) q = q.eq('user_id', uid);
+    const { error } = await q;
+    if (error) throw new Error(error.message || 'Eroare ștergere comandă transport');
 }
 
 // Export pentru utilizare globală (fără module ES6 native în browser)
@@ -983,5 +1145,12 @@ window.ZFlowDB = {
     fetchComenziTransport,
     insertComandaTransport,
     updateComandaTransport,
-    deleteComandaTransport
+    deleteComandaTransport,
+    // Cont utilizator
+    updateUser,
+    validateSubscriptionToken,
+    consumeSubscriptionToken,
+    // Config aplicație (mentenanță)
+    updateUserMeta,
+    getSetAppConfig
 };

@@ -3,9 +3,6 @@
  * Module: Utils - Funcții utilitare generale
  */
 
-// Timer debounce pentru căutări
-let debounceSearchTimer = null;
-
 /**
  * Funcție utilHelper: debounce
  * @param {Function} func - Funcția de executat
@@ -13,9 +10,10 @@ let debounceSearchTimer = null;
  * @returns {Function}
  */
 function debounce(func, delay) {
+    let _timer = null;  // timer per-funcție, nu global partajat
     return function (...args) {
-        clearTimeout(debounceSearchTimer);
-        debounceSearchTimer = setTimeout(() => func.apply(this, args), delay);
+        clearTimeout(_timer);
+        _timer = setTimeout(() => func.apply(this, args), delay);
     };
 }
 
@@ -238,6 +236,7 @@ window.ZFlowUtils = {
 // Export individual
 window.validareCUI  = validareCUI;
 window.validareIBAN = validareIBAN;
+window.escapeHTML   = escapeHTML;
 
 // Export individual pentru compatibilitate cu codul existent
 window.debounce = debounce;

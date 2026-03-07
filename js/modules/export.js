@@ -44,11 +44,11 @@ const ZFlowExport = {
             const client = window.ZFlowClients?.findById(f.client_id);
             const furnizor = window.ZFlowSuppliers?.findById(f.furnizor_id);
             return [
-                f.nr_factura || '-',
+                f.numar_factura || f.nr_factura || '-',
                 client?.nume_firma || furnizor?.nume_firma || '-',
-                this.formatData(f.data_emitere),
+                this.formatData(f.data_emiterii || f.data_emitere),
                 this.formatData(f.data_scadenta),
-                this.formatSuma(f.suma),
+                this.formatSuma(f.valoare || f.suma),
                 f.status_plata || 'Neincasat'
             ];
         });
@@ -114,12 +114,12 @@ const ZFlowExport = {
             const client = window.ZFlowClients?.findById(f.client_id);
             const furnizor = window.ZFlowSuppliers?.findById(f.furnizor_id);
             return {
-                'Nr. Factură': f.nr_factura || '',
+                'Nr. Factură': f.numar_factura || f.nr_factura || '',
                 'Client/Furnizor': client?.nume_firma || furnizor?.nume_firma || '',
                 'CUI': client?.cui || furnizor?.cui || '',
-                'Data Emitere': f.data_emitere || '',
+                'Data Emitere': f.data_emiterii || f.data_emitere || '',
                 'Data Scadență': f.data_scadenta || '',
-                'Sumă': parseFloat(f.suma) || 0,
+                'Sumă': parseFloat(f.valoare || f.suma) || 0,
                 'Status': f.status_plata || 'Neincasat',
                 'Descriere': f.descriere || '',
                 'Observații': f.observatii || ''
@@ -153,7 +153,22 @@ const ZFlowExport = {
      */
     saveExcel(facturi, filename = 'raport-facturi.xlsx') {
         const result = this.generateExcel(facturi, { filename });
-        if (result && window.XLSX) {
+        if (!result || !window.XLSX) return;
+        try {
+            // Blob download — compatible cross-browser (incl. Safari)
+            const wbout = window.XLSX.write(result.workbook, { bookType: 'xlsx', type: 'array' });
+            const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = result.filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        } catch(e) {
+            console.error('[ZFlowExport] saveExcel error:', e);
+            // Fallback la writeFile dacă Blob nu funcționează
             window.XLSX.writeFile(result.workbook, result.filename);
         }
     },
@@ -172,12 +187,12 @@ const ZFlowExport = {
             const client = window.ZFlowClients?.findById(f.client_id);
             const furnizor = window.ZFlowSuppliers?.findById(f.furnizor_id);
             const row = [
-                `"${f.nr_factura || ''}"`,
+                `"${f.numar_factura || f.nr_factura || ''}"`,
                 `"${(client?.nume_firma || furnizor?.nume_firma || '').replace(/"/g, '""')}"`,
                 `"${client?.cui || furnizor?.cui || ''}"`,
-                f.data_emitere || '',
+                f.data_emiterii || f.data_emitere || '',
                 f.data_scadenta || '',
-                f.suma || 0,
+                f.valoare || f.suma || 0,
                 f.status_plata || 'Neincasat'
             ];
             csv += row.join(',') + '\n';
@@ -245,7 +260,7 @@ function exportComenziTransportCSV() {
     a.href     = URL.createObjectURL(blob);
     a.download = `comenzi_transport_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
-    if (typeof showNotification === 'function') showNotification('✅ Export comenzi finalizat', 'success');
+    if (typeof showNotification === 'function') showNotification('Export comenzi finalizat', 'success');
 }
 
 function exportSoferiCSV() {
@@ -263,7 +278,7 @@ function exportSoferiCSV() {
     a.href     = URL.createObjectURL(blob);
     a.download = `soferi_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
-    if (typeof showNotification === 'function') showNotification('✅ Export șoferi finalizat', 'success');
+    if (typeof showNotification === 'function') showNotification('Export șoferi finalizat', 'success');
 }
 
 function exportVehiculeCSV() {
@@ -280,7 +295,7 @@ function exportVehiculeCSV() {
     a.href     = URL.createObjectURL(blob);
     a.download = `vehicule_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
-    if (typeof showNotification === 'function') showNotification('✅ Export vehicule finalizat', 'success');
+    if (typeof showNotification === 'function') showNotification('Export vehicule finalizat', 'success');
 }
 
 window.exportComenziTransportCSV = exportComenziTransportCSV;

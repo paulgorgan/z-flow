@@ -121,12 +121,12 @@ const ZFlowAnalytics = {
         const facturiPlat = window.ZFlowStore?.dateFacturiPlatit || [];
         
         const filteredInc = facturiInc.filter(f => {
-            const data = new Date(f.data_emitere || f.created_at);
+            const data = new Date(f.data_emiterii || f.data_emitere || f.created_at);
             return data >= startDate && data <= endDate;
         });
         
         const filteredPlat = facturiPlat.filter(f => {
-            const data = new Date(f.data_emitere || f.created_at);
+            const data = new Date(f.data_emiterii || f.data_emitere || f.created_at);
             return data >= startDate && data <= endDate;
         });
         
@@ -229,7 +229,7 @@ const ZFlowAnalytics = {
         
         let totalZile = 0;
         incasate.forEach(f => {
-            const emitere = new Date(f.data_emitere);
+            const emitere = new Date(f.data_emiterii || f.data_emitere);
             const incasare = new Date(f.data_incasare);
             totalZile += Math.abs(incasare - emitere) / (1000 * 60 * 60 * 24);
         });

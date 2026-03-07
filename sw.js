@@ -3,35 +3,35 @@
  * Versiune Refactorizată cu Arhitectură Modulară
  */
 
-const CACHE_NAME = 'zflow-v49.0';
+const CACHE_NAME = 'zflow-v58.0';
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/css/styles.css',
-  '/js/app.js',
-  '/js/store.js',
-  '/js/services/idb.js',
-  '/js/services/supabase.js',
-  '/js/modules/index.js',
-  '/js/modules/utils.js',
-  '/js/modules/auth.js',
-  '/js/modules/ui.js',
-  '/js/modules/clients.js',
-  '/js/modules/suppliers.js',
-  '/js/modules/invoices.js',
-  '/js/modules/analytics.js',
-  '/js/modules/export.js',
-  '/js/modules/import.js',
-  '/js/modules/notifications.js',
-  '/js/modules/attachments.js',
-  '/js/modules/mobile.js',
-  '/js/modules/bulk.js',
-  '/js/modules/anaf.js',
-  '/js/modules/depozit.js',
-  '/js/modules/logistic.js',
-  '/js/modules/features.js',
-  '/manifest.json',
-  '/icons/icon.svg'
+  '/z-flow/',
+  '/z-flow/index.html',
+  '/z-flow/css/styles.css',
+  '/z-flow/js/app.js',
+  '/z-flow/js/store.js',
+  '/z-flow/js/services/idb.js',
+  '/z-flow/js/services/supabase.js',
+  '/z-flow/js/modules/index.js',
+  '/z-flow/js/modules/utils.js',
+  '/z-flow/js/modules/auth.js',
+  '/z-flow/js/modules/ui.js',
+  '/z-flow/js/modules/clients.js',
+  '/z-flow/js/modules/suppliers.js',
+  '/z-flow/js/modules/invoices.js',
+  '/z-flow/js/modules/analytics.js',
+  '/z-flow/js/modules/export.js',
+  '/z-flow/js/modules/import.js',
+  '/z-flow/js/modules/notifications.js',
+  '/z-flow/js/modules/attachments.js',
+  '/z-flow/js/modules/mobile.js',
+  '/z-flow/js/modules/bulk.js',
+  '/z-flow/js/modules/anaf.js',
+  '/z-flow/js/modules/depozit.js',
+  '/z-flow/js/modules/logistic.js',
+  '/z-flow/js/modules/features.js',
+  '/z-flow/manifest.json',
+  '/z-flow/icons/icon.svg'
 ];
 
 const CDN_ASSETS = [

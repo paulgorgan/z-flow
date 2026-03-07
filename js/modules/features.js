@@ -33,7 +33,7 @@ async function verificaEFactura(cui) {
         return;
     }
 
-    if (typeof showNotification === 'function') showNotification('⏳ Verificare ANAF...', 'info', 3000);
+    if (typeof showNotification === 'function') showNotification('Verificare ANAF...', 'info', 3000);
 
     const azi = new Date().toISOString().split('T')[0];
     let rezultat = null;
@@ -101,7 +101,7 @@ function _buildEFacturaHTML(info) {
     if (info.eroare) {
         return `<div class="bg-white rounded-[28px] p-6 w-full max-w-sm shadow-2xl space-y-3">
             <div class="flex items-center gap-3">
-                <span class="text-2xl">⚠️</span>
+                <svg class="w-6 h-6 text-amber-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
                 <div>
                     <p class="text-[11px] font-black text-slate-800 uppercase">Verificare ANAF</p>
                     <p class="text-[9px] text-slate-400">CUI: ${info.cui}</p>
@@ -116,17 +116,17 @@ function _buildEFacturaHTML(info) {
         </div>`;
     }
     const eFacturaLabel = info.eFactura === true
-        ? '<span class="text-emerald-700 font-black">✅ DA — Înscris în RO e-Factura</span>'
+        ? '<span class="text-emerald-700 font-black">DA — Înscris în RO e-Factura</span>'
         : info.eFactura === false
-        ? '<span class="text-red-600 font-black">❌ NU — Neînscris în RO e-Factura</span>'
+        ? '<span class="text-red-600 font-black">NU — Neînscris în RO e-Factura</span>'
         : '<span class="text-slate-400">— informație indisponibilă</span>';
     const tvaLabel = info.platitorTVA
-        ? '<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[9px] font-black rounded-full uppercase">✅ Platitor TVA activ</span>'
+        ? '<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[9px] font-black rounded-full uppercase">Platitor TVA activ</span>'
         : '<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-slate-500 text-[9px] font-black rounded-full uppercase">Neplatitor TVA</span>';
-    const inactiv = info.statusInactiv ? '<span class="text-[9px] text-red-600 font-bold">⚠️ Firmă INACTIVĂ ANAF</span>' : '';
+    const inactiv = info.statusInactiv ? '<span class="text-[9px] text-red-600 font-bold">Firmă INACTIVĂ ANAF</span>' : '';
     return `<div class="bg-white rounded-[28px] p-6 w-full max-w-sm shadow-2xl space-y-4" onclick="event.stopPropagation()">
         <div class="flex items-start gap-3">
-            <span class="text-3xl mt-0.5">${info.eFactura ? '🟢' : '🔴'}</span>
+            <span class="w-4 h-4 rounded-full flex-shrink-0 mt-1 ${info.eFactura ? 'bg-emerald-500' : 'bg-red-500'}"></span>
             <div class="flex-1 min-w-0">
                 <p class="text-sm font-black text-slate-800 truncate">${info.denumire || 'CUI: ' + info.cui}</p>
                 <p class="text-[9px] text-slate-400">CUI ${info.cui} · ${info.stare}</p>
@@ -192,10 +192,10 @@ function exportBridgeXML(tip) {
             const cl = clienti.find(c => String(c.id) === String(f.client_id));
             lines.push('    <Factura>');
             lines.push('      <ID>' + _escXML(String(f.id || '')) + '</ID>');
-            lines.push('      <NrFactura>' + _escXML(f.nr_factura || '') + '</NrFactura>');
-            lines.push('      <DataEmitere>' + (f.data_emitere || '') + '</DataEmitere>');
+            lines.push('      <NrFactura>' + _escXML(f.numar_factura || f.nr_factura || '') + '</NrFactura>');
+            lines.push('      <DataEmitere>' + (f.data_emiterii || f.data_emitere || '') + '</DataEmitere>');
             lines.push('      <DataScadenta>' + (f.data_scadenta || '') + '</DataScadenta>');
-            lines.push('      <Suma>' + (parseFloat(f.suma) || 0).toFixed(2) + '</Suma>');
+            lines.push('      <Suma>' + (parseFloat(f.valoare || f.suma) || 0).toFixed(2) + '</Suma>');
             lines.push('      <TVA>' + (parseFloat(f.tva) || 0).toFixed(2) + '</TVA>');
             lines.push('      <StatusPlata>' + _escXML(f.status_plata || 'Neincasat') + '</StatusPlata>');
             lines.push('      <UIT>' + _escXML(f.uit || '') + '</UIT>');
@@ -219,10 +219,10 @@ function exportBridgeXML(tip) {
             const furn = furnizori.find(x => String(x.id) === String(f.furnizor_id));
             lines.push('    <Factura>');
             lines.push('      <ID>' + _escXML(String(f.id || '')) + '</ID>');
-            lines.push('      <NrFactura>' + _escXML(f.nr_factura || '') + '</NrFactura>');
-            lines.push('      <DataEmitere>' + (f.data_emitere || '') + '</DataEmitere>');
+            lines.push('      <NrFactura>' + _escXML(f.numar_factura || f.nr_factura || '') + '</NrFactura>');
+            lines.push('      <DataEmitere>' + (f.data_emiterii || f.data_emitere || '') + '</DataEmitere>');
             lines.push('      <DataScadenta>' + (f.data_scadenta || '') + '</DataScadenta>');
-            lines.push('      <Suma>' + (parseFloat(f.suma) || 0).toFixed(2) + '</Suma>');
+            lines.push('      <Suma>' + (parseFloat(f.valoare || f.suma) || 0).toFixed(2) + '</Suma>');
             lines.push('      <TVA>' + (parseFloat(f.tva) || 0).toFixed(2) + '</TVA>');
             lines.push('      <StatusPlata>' + _escXML(f.status_plata || 'Neplatit') + '</StatusPlata>');
             lines.push('      <Descriere>' + _escXML(f.descriere || '') + '</Descriere>');
@@ -247,11 +247,16 @@ function exportBridgeXML(tip) {
     a.href = URL.createObjectURL(blob);
     a.download = 'zflow_bridge_' + new Date().toISOString().split('T')[0] + '.xml';
     a.click();
-    if (typeof showNotification === 'function') showNotification('✅ Export XML Bridge finalizat', 'success');
+    if (typeof showNotification === 'function') showNotification('Export XML Bridge finalizat', 'success');
 }
 
 function _escXML(s) {
-    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');
+    // Stripuiește caracterele de control invalide în XML (U+0000–U+0008, U+000B–U+000C, U+000E–U+001F)
+    // și escapează entitățile XML standard
+    return String(s || '')
+        .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '')
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;').replace(/'/g,'&apos;');
 }
 
 window.exportBridgeXML = exportBridgeXML;
@@ -271,7 +276,7 @@ const ZFlowSafeFleet = {
     saveConfig(webhookUrl, apiKey) {
         const cfg = { webhookUrl: webhookUrl || '', apiKey: apiKey || '', savedAt: new Date().toISOString() };
         localStorage.setItem(this._LS_KEY, JSON.stringify(cfg));
-        if (typeof showNotification === 'function') showNotification('✅ Configurație SafeFleet salvată', 'success');
+        if (typeof showNotification === 'function') showNotification('Configurație SafeFleet salvată', 'success');
         this.renderPanel();
     },
 
@@ -285,7 +290,7 @@ const ZFlowSafeFleet = {
             if (typeof showNotification === 'function') showNotification('Configurați mai întâi URL-ul webhook', 'error');
             return;
         }
-        if (typeof showNotification === 'function') showNotification('⏳ Testare webhook...', 'info', 3000);
+        if (typeof showNotification === 'function') showNotification('Testare webhook...', 'info', 3000);
         try {
             const r = await fetch(cfg.webhookUrl, {
                 method: 'POST',
@@ -293,12 +298,12 @@ const ZFlowSafeFleet = {
                 body: JSON.stringify({ test: true, source: 'Z-FLOW', timestamp: Date.now() })
             });
             if (r.ok) {
-                if (typeof showNotification === 'function') showNotification('✅ Webhook răspunde corect!', 'success');
+                if (typeof showNotification === 'function') showNotification('Webhook răspunde corect!', 'success');
             } else {
-                if (typeof showNotification === 'function') showNotification('⚠️ Webhook accesibil dar status: ' + r.status, 'warning');
+                if (typeof showNotification === 'function') showNotification('Webhook accesibil dar status: ' + r.status, 'warning');
             }
         } catch(e) {
-            if (typeof showNotification === 'function') showNotification('❌ Webhook inaccesibil: ' + e.message, 'error');
+            if (typeof showNotification === 'function') showNotification('Webhook inaccesibil: ' + e.message, 'error');
         }
     },
 
@@ -318,7 +323,7 @@ const ZFlowSafeFleet = {
         }));
         const now = new Date().toISOString();
         localStorage.setItem('zflow_safefleet_lastsync', JSON.stringify({ ts: now, vehicule: updated.length }));
-        if (typeof showNotification === 'function') showNotification(`🛰️ Sync manual: ${updated.length} vehicule procesate`, 'success');
+        if (typeof showNotification === 'function') showNotification(`Sync manual: ${updated.length} vehicule procesate`, 'success');
         this.renderPanel();
     },
 
@@ -338,7 +343,7 @@ const ZFlowSafeFleet = {
                         class="w-full p-2.5 bg-white rounded-lg text-[10px] font-bold border border-slate-200 outline-none"/>
                 </div>
                 ${sync ? `<div class="flex items-center gap-2 bg-emerald-50 rounded-xl p-2.5">
-                    <span class="text-emerald-600 text-xs">🛰️</span>
+                    <svg class="w-4 h-4 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.142 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"/></svg>
                     <span class="text-[9px] text-emerald-700 font-bold">Ultimul sync: ${new Date(sync.ts).toLocaleString('ro-RO')} (${sync.vehicule} vehicule)</span>
                 </div>` : `<p class="text-[9px] text-slate-400 italic text-center">Niciun sync efectuat încă</p>`}
                 <div class="grid grid-cols-3 gap-2">
@@ -406,7 +411,7 @@ function processScanResult(cod) {
         _renderScanComanda(comanda, resultEl);
     } else {
         resultEl.innerHTML = `<div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-center">
-            <p class="text-2xl mb-2">🔍</p>
+            <p class="text-2xl mb-2"><svg class="w-8 h-8 mx-auto text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 15.803 7.5 7.5 0 0016.803 15.803z"/></svg></p>
             <p class="text-[11px] font-black text-amber-800 uppercase">Cod neregsit</p>
             <p class="text-[9px] text-amber-600 mt-1 font-mono break-all">${_escXML(cod)}</p>
             <p class="text-[8px] text-slate-400 mt-2">Verificat: produse · recepții · livrări · comenzi transport</p>
@@ -425,7 +430,7 @@ function _renderScanProdus(p, el) {
     const stocColor = stoc <= 0 ? 'text-red-600' : (p.stoc_min && stoc < Number(p.stoc_min)) ? 'text-amber-600' : 'text-emerald-600';
     el.innerHTML = `<div class="bg-white rounded-2xl p-4 border-2 border-blue-200 space-y-3">
         <div class="flex items-start gap-3">
-            <span class="text-3xl">📦</span>
+            <span class="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0"><svg class="w-4 h-4 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m8.25 3v6.75m0 0l-3-3m3 3l3-3M3.75 7.5h16.5M13.5 3.75h-3a1.5 1.5 0 00-1.5 1.5v2.25h6V5.25a1.5 1.5 0 00-1.5-1.5z"/></svg></span>
             <div class="flex-1 min-w-0">
                 <p class="text-sm font-black text-blue-900 truncate">${_escXML(p.denumire || p.nume || '')}</p>
                 <p class="text-[9px] text-slate-400">SKU: ${_escXML(p.sku || p.cod || '—')}</p>
@@ -452,7 +457,7 @@ function _renderScanProdus(p, el) {
 function _renderScanReceptie(r, el) {
     el.innerHTML = `<div class="bg-white rounded-2xl p-4 border-2 border-emerald-200 space-y-3">
         <div class="flex items-center gap-3">
-            <span class="text-3xl">📥</span>
+            <div class="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center flex-shrink-0"><svg class="w-5 h-5 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg></div>
             <div>
                 <p class="text-sm font-black text-emerald-900">Recepție ${_escXML(r.nr_doc || '')}</p>
                 <p class="text-[9px] text-slate-400">${r.data || ''} · ${r.status || 'Activ'}</p>
@@ -469,7 +474,7 @@ function _renderScanReceptie(r, el) {
 function _renderScanLivrare(l, el) {
     el.innerHTML = `<div class="bg-white rounded-2xl p-4 border-2 border-purple-200 space-y-3">
         <div class="flex items-center gap-3">
-            <span class="text-3xl">📤</span>
+            <div class="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center flex-shrink-0"><svg class="w-5 h-5 text-purple-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 11V7l-3 3m0 0l3 3m-3-3h12M15 13v4a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h10a2 2 0 012 2v2"/></svg></div>
             <div>
                 <p class="text-sm font-black text-purple-900">Livrare ${_escXML(l.nr_doc || '')}</p>
                 <p class="text-[9px] text-slate-400">${l.data || ''} · ${l.status || 'Activ'}</p>
@@ -486,7 +491,7 @@ function _renderScanLivrare(l, el) {
 function _renderScanComanda(c, el) {
     el.innerHTML = `<div class="bg-white rounded-2xl p-4 border-2 border-slate-200 space-y-3">
         <div class="flex items-center gap-3">
-            <span class="text-3xl">🚛</span>
+            <div class="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center flex-shrink-0"><svg class="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10l1 1h1m8-1h-2m0 0V9m0 7h-1a2 2 0 00-2 2H7m5-2v-4h5l3 3v4h-1m-1-4h-4"/></svg></div>
             <div>
                 <p class="text-sm font-black text-slate-900">${_escXML(c.tracking_code || '')}</p>
                 <p class="text-[9px] text-slate-400">${c.ruta_de || ''} → ${c.ruta_la || ''}</p>
@@ -533,7 +538,7 @@ async function _inregistreazaMiscareRapida(produsId, cantitate, tip) {
         if (window.ZFlowStore?.dateMiscariStoc) {
             window.ZFlowStore.dateMiscariStoc.push({ ...miscare, id: Date.now() });
         }
-        if (typeof showNotification === 'function') showNotification(`✅ ${tip} ${cantitate} buc înregistrată`, 'success');
+        if (typeof showNotification === 'function') showNotification(`${tip} ${cantitate} buc înregistrată`, 'success');
         // Re-render dacă suntem în view scanner
         if (typeof renderDepozit === 'function') renderDepozit();
     } catch(e) {
@@ -666,11 +671,11 @@ function renderCashflowForecast(zile) {
         <!-- Scadente urgente -->
         ${urgente.length ? `
         <div>
-            <p class="text-[8px] font-black text-amber-600 uppercase tracking-widest mb-2">⚡ Scadențe în 7 zile</p>
+            <p class="text-[8px] font-black text-amber-600 uppercase tracking-widest mb-2">Scadențe în 7 zile</p>
             <div class="space-y-1">
                 ${urgente.map(d => `
                 <div class="flex justify-between items-center py-1.5 px-2 bg-amber-50 rounded-lg">
-                    <span class="text-[9px] font-bold text-slate-700">${d.tip === 'intrare' ? '💚' : '🔴'} ${d.nr || '—'}</span>
+                    <span class="text-[9px] font-bold text-slate-700"><span class="inline-block w-2 h-2 rounded-full mr-1 ${d.tip === 'intrare' ? 'bg-emerald-500' : 'bg-red-500'}"></span>${d.nr || '—'}</span>
                     <span class="text-[9px] text-slate-500">${d.scadenta}</span>
                     <span class="text-[9px] font-black ${d.tip === 'intrare' ? 'text-emerald-700' : 'text-red-600'}">${fmt(d.suma)} RON</span>
                 </div>`).join('')}
@@ -744,7 +749,7 @@ const ZFlowMultiFirma = {
         const noua = { id: 'firma_' + Date.now(), cui: cuiCurat, denumire, ...extra, adaugatLa: new Date().toISOString() };
         firme.push(noua);
         this.saveFirme(firme);
-        if (typeof showNotification === 'function') showNotification(`✅ Firma ${denumire} adăugată`, 'success');
+        if (typeof showNotification === 'function') showNotification(`Firma ${denumire} adăugată`, 'success');
         this.renderPanel();
     },
 
@@ -769,7 +774,7 @@ const ZFlowMultiFirma = {
                 oras: firma.oras || window.ZFlowUserProfile.oras
             });
         }
-        if (typeof showNotification === 'function') showNotification(`🔄 Comutat la: ${firma.denumire}`, 'success');
+        if (typeof showNotification === 'function') showNotification(`Comutaț la: ${firma.denumire}`, 'success');
         // Actualizează switcher-ul din header
         const sw = document.getElementById('multifirma-switcher-label');
         if (sw) sw.innerText = firma.denumire.length > 18 ? firma.denumire.slice(0,16) + '…' : firma.denumire;
@@ -929,7 +934,7 @@ function exportRaportKmCSV() {
     a.href = URL.createObjectURL(blob);
     a.download = `raport_km_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
-    if (typeof showNotification === 'function') showNotification('✅ Export CSV raport km finalizat', 'success');
+    if (typeof showNotification === 'function') showNotification('Export CSV raport km finalizat', 'success');
 }
 
 window.calculeazaRaportKm  = calculeazaRaportKm;

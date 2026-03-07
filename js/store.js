@@ -45,7 +45,7 @@ const ZFlowStore = Vue.reactive({
     // Paginare Listă Clienți
     clientiPageSize: 10,
     clientiCurrentPage: 1,
-    facturiPerPage: 20,         // Facturi de încasat afișate inițial per client (lazy loading)
+
     _clientiFiltrati: [],   // Lista curentă filtrată — pentru paginare
     
     // Paginare Listă Furnizori
@@ -91,9 +91,10 @@ const ZFlowStore = Vue.reactive({
     // Chart
     chartInstance: null,
     
-    // Map & Scanner
+    // Map, Scanner & GPS
     map: null,
     scanner: null,
+    _gpsMarcatori: [],  // Markere Leaflet active pe hartă (GPS logistic)
     
     // User session
     userSession: null,
@@ -193,9 +194,13 @@ function updateUIForRole() {
 }
 
 /**
- * Salvează datele în localStorage
+ * Salvează datele în localStorage — DOAR pentru utilizatori locali (admin/1234 și demo).
+ * Utilizatorii Supabase au datele în baza de date + cache IDB; nu scriem redundant în localStorage.
  */
 function saveZFlowData() {
+    const session = ZFlowStore.userSession;
+    const isLocalUser = session?.user?.email === 'admin' || session?.isDemo === true;
+    if (!isLocalUser) return;
     try {
         localStorage.setItem("zflow_data", JSON.stringify({
             dateLocal: ZFlowStore.dateLocal,

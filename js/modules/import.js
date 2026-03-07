@@ -240,11 +240,22 @@ const ZFlowImport = {
         // Format DD.MM.YYYY sau DD/MM/YYYY
         const match = dateStr.match(/(\d{1,2})[.\/](\d{1,2})[.\/](\d{2,4})/);
         if (match) {
-            const zi = match[1].padStart(2, '0');
-            const luna = match[2].padStart(2, '0');
+            const zi = parseInt(match[1], 10);
+            const luna = parseInt(match[2], 10);
             let an = match[3];
             if (an.length === 2) an = '20' + an;
-            return `${an}-${luna}-${zi}`;
+            // Validare intervaliditate: zi/lună imposibilă → log și ignoră
+            if (zi < 1 || zi > 31 || luna < 1 || luna > 12) {
+                console.warn(`[Import] Dată invalidă ignorată: "${dateStr}" (zi=${zi}, luna=${luna})`);
+                return null;
+            }
+            // Verificare cu obiect Date (prinde 31 februarire etc.)
+            const testDate = new Date(parseInt(an), luna - 1, zi);
+            if (testDate.getDate() !== zi || testDate.getMonth() !== luna - 1) {
+                console.warn(`[Import] Dată inexistentă ignorată: "${dateStr}"`);
+                return null;
+            }
+            return `${an}-${String(luna).padStart(2,'0')}-${String(zi).padStart(2,'0')}`;
         }
         
         // Format ISO

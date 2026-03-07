@@ -252,6 +252,10 @@ function deschideModalComandaTransport(id, opts) {
 
     ['ct-ruta-de','ct-ruta-la','ct-data-plecare','ct-data-livrare','ct-tracking','ct-valoare','ct-km','ct-obs'].forEach(el => { const e = f(el); if (e) e.value = ''; });
     if (f('ct-status')) f('ct-status').value = 'Planificat';
+    // Default dată azi pentru comenzi noi (suprascrisa la editare)
+    const _aziCT = typeof getDataImplicita === 'function' ? getDataImplicita() : new Date().toISOString().split('T')[0];
+    if (f('ct-data-plecare')) f('ct-data-plecare').value = _aziCT;
+    if (f('ct-data-livrare')) f('ct-data-livrare').value = _aziCT;
 
     if (id) {
         const c = (ZFlowStore.dateComenziTransport||[]).find(x => String(x.id) === String(id));
@@ -285,7 +289,7 @@ async function salveazaComandaTransport() {
     const fv = el => document.getElementById(el)?.value?.trim() || '';
     const id = document.getElementById('ct-id-hidden')?.value;
     const rutaDe = fv('ct-ruta-de'), rutaLa = fv('ct-ruta-la');
-    if (!rutaDe || !rutaLa) { showNotification('❌ Completează ruta (plecare și destinație)', 'error'); return; }
+    if (!rutaDe || !rutaLa) { showNotification('Completează ruta (plecare și destinație)', 'error'); return; }
 
     setLoader(true);
     try {
@@ -317,9 +321,9 @@ async function salveazaComandaTransport() {
         inchideModalComandaTransport();
         calculeazaKPILogistic();
         renderComenziTransport();
-        showNotification('✅ Comandă salvată!', 'success');
+        showNotification('Comandă salvată!', 'success');
     } catch (err) {
-        showNotification('❌ Eroare: ' + err.message, 'error');
+        showNotification('Eroare: ' + err.message, 'error');
     } finally { setLoader(false); }
 }
 
@@ -331,9 +335,9 @@ async function stergeComandaTransport(id) {
         ZFlowStore.dateComenziTransport = ZFlowStore.dateComenziTransport.filter(x => String(x.id) !== String(id));
         calculeazaKPILogistic();
         renderComenziTransport();
-        showNotification('✅ Comandă ștearsă', 'success');
+        showNotification('Comandă ștearsă', 'success');
     } catch (err) {
-        showNotification('❌ Eroare: ' + err.message, 'error');
+        showNotification('Eroare: ' + err.message, 'error');
     } finally { setLoader(false); }
 }
 
@@ -366,7 +370,7 @@ async function salveazaSofer() {
     const fv = el => document.getElementById(el)?.value?.trim() || '';
     const id = document.getElementById('sofer-id-hidden')?.value;
     const name = fv('sofer-name');
-    if (!name) { showNotification('❌ Completează numele șoferului', 'error'); return; }
+    if (!name) { showNotification('Completează numele șoferului', 'error'); return; }
     setLoader(true);
     try {
         const payload = { nume: name, telefon: fv('sofer-tel')||null, nr_permis: fv('sofer-permis')||null, cnp: fv('sofer-cnp')||null };
@@ -378,8 +382,8 @@ async function salveazaSofer() {
             ZFlowStore.dateSoferi = await ZFlowDB.fetchSoferi();
         }
         inchideModalSofer(); calculeazaKPILogistic(); renderSoferi();
-        showNotification('✅ Șofer salvat!', 'success');
-    } catch (err) { showNotification('❌ Eroare: '+err.message,'error'); } finally { setLoader(false); }
+        showNotification('Șofer salvat!', 'success');
+    } catch (err) { showNotification('Eroare: '+err.message,'error'); } finally { setLoader(false); }
 }
 
 async function stergeSofer(id) {
@@ -389,8 +393,8 @@ async function stergeSofer(id) {
         await ZFlowDB.deleteSofer(id);
         ZFlowStore.dateSoferi = ZFlowStore.dateSoferi.filter(x=>String(x.id)!==String(id));
         calculeazaKPILogistic(); renderSoferi();
-        showNotification('✅ Șofer șters','success');
-    } catch (err) { showNotification('❌ Eroare: '+err.message,'error'); } finally { setLoader(false); }
+        showNotification('Șofer șters','success');
+    } catch (err) { showNotification('Eroare: '+err.message,'error'); } finally { setLoader(false); }
 }
 
 // ==========================================
@@ -424,7 +428,7 @@ async function salveazaVehicul() {
     const fv = el => document.getElementById(el)?.value?.trim() || '';
     const id = document.getElementById('vehicul-id-hidden')?.value;
     const nr = fv('vehicul-nr');
-    if (!nr) { showNotification('❌ Completează nr. de înmatriculare', 'error'); return; }
+    if (!nr) { showNotification('Completează nr. de înmatriculare', 'error'); return; }
     setLoader(true);
     try {
         const latVal = document.getElementById('vehicul-gps-lat')?.value;
@@ -453,8 +457,8 @@ async function salveazaVehicul() {
             ZFlowStore.dateVehicule = await ZFlowDB.fetchVehicule();
         }
         inchideModalVehicul(); calculeazaKPILogistic(); renderVehicule();
-        showNotification('✅ Vehicul salvat!', 'success');
-    } catch (err) { showNotification('❌ Eroare: '+err.message,'error'); } finally { setLoader(false); }
+        showNotification('Vehicul salvat!', 'success');
+    } catch (err) { showNotification('Eroare: '+err.message,'error'); } finally { setLoader(false); }
 }
 
 async function stergeVehicul(id) {
@@ -464,8 +468,8 @@ async function stergeVehicul(id) {
         await ZFlowDB.deleteVehicul(id);
         ZFlowStore.dateVehicule = ZFlowStore.dateVehicule.filter(x=>String(x.id)!==String(id));
         calculeazaKPILogistic(); renderVehicule();
-        showNotification('✅ Vehicul șters','success');
-    } catch (err) { showNotification('❌ Eroare: '+err.message,'error'); } finally { setLoader(false); }
+        showNotification('Vehicul șters','success');
+    } catch (err) { showNotification('Eroare: '+err.message,'error'); } finally { setLoader(false); }
 }
 
 // ==========================================
@@ -527,8 +531,12 @@ function afiseazaRutaComandaPeHarta(id) {
             // Marker special pentru această rută
             const statusCul = { 'Planificat': '#3b82f6', 'In curs': '#f59e0b', 'Livrat': '#10b981', 'Anulat': '#ef4444' };
             const col = statusCul[c.status] || '#64748b';
+            const esc = typeof escapeHTML === 'function' ? escapeHTML : (s => String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])));
+            const rutaDe = esc(c.ruta_de || '');
+            const rutaLa = esc(c.ruta_la || '');
+            const statusEsc = esc(c.status || '');
             const icon = window.L?.divIcon({
-                html: `<div style="background:${col};color:#fff;padding:4px 10px;border-radius:10px;font-size:11px;font-weight:900;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.25);border:2px solid white">🚚 ${c.ruta_de} → ${c.ruta_la}</div>`,
+                html: `<div style="background:${col};color:#fff;padding:4px 10px;border-radius:10px;font-size:11px;font-weight:900;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.25);border:2px solid white">${rutaDe} → ${rutaLa}</div>`,
                 className: ''
             });
             // Poziție centrală România cu mic offset aleatoriu
@@ -536,7 +544,7 @@ function afiseazaRutaComandaPeHarta(id) {
             const lng = 24.9668 + (Math.random() - 0.5) * 0.5;
             const m = window.L?.marker([lat, lng], { icon })
                 .addTo(ZFlowStore.map)
-                .bindPopup(`<b>${c.ruta_de} → ${c.ruta_la}</b><br>Status: ${c.status}${c.numar_km ? '<br>Km: ' + c.numar_km : ''}${c.tracking_code ? '<br>Tracking: ' + c.tracking_code : ''}`)
+                .bindPopup(`<b>${rutaDe} → ${rutaLa}</b><br>Status: ${statusEsc}${c.numar_km ? '<br>Km: ' + Number(c.numar_km) : ''}${c.tracking_code ? '<br>Tracking: ' + esc(c.tracking_code) : ''}`)
                 .openPopup();
             if (m && ZFlowStore._gpsMarcatori) ZFlowStore._gpsMarcatori.push(m);
             ZFlowStore.map.setView([lat, lng], 10);
@@ -563,7 +571,7 @@ window.salveazaVehicul                = salveazaVehicul;
 window.stergeVehicul                  = stergeVehicul;
 window.initLogistic                   = initLogistic;
 window.initSafefleet                  = initSafefleet;
-window.importaComenziTransport        = importaComenziCSV;  // alias pentru butonul din HTML
+window.importaComenziTransport        = importaComenziCSV;  // alias pentru butonul din HTML — folosește funcția completă
 window.syncSafefleetVehicule          = syncSafefleetVehicule;
 
 /**
@@ -646,55 +654,8 @@ async function syncSafefleetVehicule() {
 // ==========================================
 // IMPORT COMENZI TRANSPORT (CSV extern)
 // ==========================================
-async function importaComenziTransport() {
-    return new Promise(resolve => {
-        const input = document.createElement('input');
-        input.type = 'file'; input.accept = '.csv,text/csv';
-        input.onchange = async e => {
-            const file = e.target.files[0];
-            if (!file) return resolve();
-            const text = await file.text();
-            const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
-            if (lines.length < 2) { alert('CSV gol sau fără date'); return resolve(); }
-            const delim = lines[0].includes(';') ? ';' : ',';
-            const headers = lines[0].split(delim).map(h => h.trim().toLowerCase().replace(/^"(.*)"$/, '$1'));
-            const get = (row, col) => { const i = headers.indexOf(col); return i >= 0 ? (row[i]||'').trim().replace(/^"(.*)"$/, '$1') : ''; };
-            const existente = ZFlowStore.dateComenziTransport || [];
-            let importate = 0, sarite = 0, erori = 0;
-            for (const line of lines.slice(1)) {
-                const row = line.split(delim);
-                const tracking  = get(row, 'tracking_code');
-                const ruta_de   = get(row, 'ruta_de');
-                const ruta_la   = get(row, 'ruta_la');
-                const data_plic = get(row, 'data_plecare');
-                const isDup = tracking
-                    ? existente.some(c => c.tracking_code === tracking)
-                    : existente.some(c => c.ruta_de === ruta_de && c.ruta_la === ruta_la && c.data_plecare === data_plic);
-                if (isDup) { sarite++; continue; }
-                try {
-                    await ZFlowDB.insertComanda({
-                        ruta_de, ruta_la,
-                        data_plecare:  data_plic || null,
-                        data_livrare:  get(row, 'data_livrare') || null,
-                        tracking_code: tracking || null,
-                        valoare:       Number(get(row, 'valoare')) || null,
-                        status:        get(row, 'status') || 'Planificat',
-                        observatii:    get(row, 'observatii') || null,
-                    });
-                    importate++;
-                } catch (err) {
-                    console.warn('[ImportComenzi] rând eroare:', err.message); erori++;
-                }
-            }
-            ZFlowStore.dateComenziTransport = await ZFlowDB.fetchComenzi().catch(() => ZFlowStore.dateComenziTransport);
-            renderComenziTransport();
-            alert(`Import finalizat: ${importate} importate, ${sarite} sărite (duplicate), ${erori} erori.`);
-            resolve();
-        };
-        input.click();
-    });
-}
-window.importaComenziTransport = importaComenziTransport;
+// Notă: Funcția activă este importaComenziCSV (definită mai jos).
+// Aceasta are suport complet pentru numar_km, vehicul_id și date flexibile.
 // ==========================================
 // IMPORT CSV ȘOFERI (Task 4)
 // ==========================================
@@ -830,6 +791,7 @@ async function importaComenziCSV() {
                     data_plecare:   parsaData(get(row, 'data_plecare', 'data_start', 'data')) || null,
                     data_livrare:   parsaData(get(row, 'data_livrare', 'data_sosire', 'data_end')) || null,
                     status:         get(row, 'status') || 'Planificat',
+                    numar_km:       parseFloat((get(row, 'numar_km', 'km', 'distanta_km', 'km_parcursi') || '0').replace(',', '.')) || 0,
                     valoare:        parseFloat((get(row, 'valoare', 'pret', 'tarif') || '0').replace(',', '.')) || null,
                     observatii:     get(row, 'observatii', 'obs', 'note', 'descriere') || null,
                 };
