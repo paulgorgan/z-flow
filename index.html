@@ -1,0 +1,3335 @@
+<!doctype html>
+<html lang="ro">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content"
+    />
+    <title>Z-FLOW | Business Support</title>
+
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#1e3a8a" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="Z-FLOW" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="apple-touch-icon" href="icons/icon.svg" />
+    <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- External Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <script src="https://unpkg.com/html5-qrcode@2.3.4/html5-qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Vue.js 3 CDN -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <!-- Z-FLOW Custom Styles -->
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+
+  <body class="bg-slate-50">
+    <!-- BANNER OFFLINE -->
+    <div
+      id="offline-banner"
+      class="hidden fixed top-0 left-0 right-0 z-[9999] bg-red-600 text-white text-center text-[11px] font-black uppercase tracking-widest py-2 px-4 flex items-center justify-center gap-2 shadow-lg"
+    >
+      <svg
+        class="w-3.5 h-3.5 flex-shrink-0"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        stroke-width="2.5"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M18.364 5.636a9 9 0 010 12.728M15.536 8.464a5 5 0 010 7.072M3 3l18 18M10.584 10.587a2 2 0 002.828 2.83"
+        />
+      </svg>
+      Fără conexiune la internet — datele afișate pot fi neactualizate
+    </div>
+    <div
+      id="loader-global"
+      class="fixed inset-0 bg-white/90 backdrop-blur-md z-[100] flex flex-col items-center justify-center hidden"
+    >
+      <div
+        class="w-12 h-12 border-4 border-blue-900 border-t-transparent rounded-full animate-spin"
+      ></div>
+      <p
+        class="mt-4 text-[10px] font-black text-slate-400 uppercase tracking-widest"
+      >
+        Sincronizare...
+      </p>
+    </div>
+
+    <header
+      class="glass-header sticky top-0 z-40 px-4 py-4 flex items-center justify-between"
+    >
+      <div
+        class="flex items-center gap-3 cursor-pointer select-none active:opacity-70 transition-opacity"
+        onclick="schimbaTab('home', document.getElementById('nav-btn-home'))"
+        title="Acasă"
+        role="button"
+        aria-label="Mergi la Home"
+      >
+        <div
+          class="w-9 h-9 bg-blue-900 rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/30"
+        >
+          <span class="text-white font-black text-xs italic">ZF</span>
+        </div>
+        <div>
+          <h1
+            class="text-[13px] font-black text-blue-900 uppercase tracking-tight leading-none"
+          >
+            Z-Flow
+          </h1>
+          <p
+            class="text-[8px] font-bold text-slate-400 uppercase tracking-widest"
+          >
+            Business Support
+          </p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <!-- Buton unificat: Firmă + Rol utilizator -->
+        <button onclick="deschideProfilFirma()" title="Profil firmă & cont" id="multifirma-switcher-btn"
+            class="flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-200 transition-all max-w-[200px]">
+            <svg class="w-3.5 h-3.5 text-blue-700 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21"/></svg>
+            <div class="flex flex-col items-start min-w-0">
+                <span id="multifirma-switcher-label" class="text-[8px] font-black text-blue-800 truncate leading-none">Firma mea</span>
+                <span id="user-role-badge" class="text-[7px] font-semibold text-blue-500 leading-none mt-0.5">Vizualizare</span>
+            </div>
+        </button>
+        <button
+          onclick="init(false)"
+          class="p-2 text-slate-400 hover:text-blue-900 transition-colors active:rotate-180"
+          aria-label="Reîncarcă datele"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="2"
+            stroke="currentColor"
+            class="w-5 h-5"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"
+            />
+          </svg>
+        </button>
+        <!-- Buton Dark Mode -->
+        <button
+          onclick="toggleDarkMode()"
+          class="p-2 text-slate-400 hover:text-blue-900 transition-colors"
+          aria-label="Toggle Dark Mode"
+          title="Schimbă tema (Ctrl+D)"
+        >
+          <svg id="dark-mode-svg" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+            <path id="dark-mode-icon" stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z"/>
+          </svg>
+        </button>
+        <button
+          onclick="confirmaLogout()"
+          class="p-2 text-slate-400 hover:text-red-500 transition-colors"
+          aria-label="Deconectare"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="2"
+            stroke="currentColor"
+            class="w-5 h-5"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9"
+            />
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Banner Offline (main — la body start) -->
+
+    <main
+      class="p-4 max-w-md md:max-w-screen-xl mx-auto transition-all duration-300"
+    >
+      <!-- ==================== TAB HOME / DASHBOARD ==================== -->
+      <section id="home" class="tab-content active space-y-4">
+        <!-- Firma Header Card -->
+        <div
+          class="bg-gradient-to-br from-blue-900 to-blue-800 rounded-[32px] p-6 text-white shadow-xl shadow-blue-900/30 relative overflow-hidden"
+        >
+          <div
+            class="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-8 translate-x-8 pointer-events-none"
+          ></div>
+          <div class="flex items-center gap-4 mb-4">
+            <div
+              class="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm flex-shrink-0 border border-white/20"
+            >
+              <span
+                id="home-firma-initiale"
+                class="text-white font-black text-xl tracking-tight"
+                >ZF</span
+              >
+            </div>
+            <div class="flex-1 min-w-0">
+              <p
+                id="home-firma-nume"
+                class="text-base font-black leading-tight truncate"
+              >
+                —
+              </p>
+              <p
+                id="home-firma-cui"
+                class="text-[9px] font-bold opacity-60 uppercase mt-0.5"
+              >
+                CUI: —
+              </p>
+              <p
+                id="home-firma-oras"
+                class="text-[9px] font-bold opacity-50 uppercase"
+              >
+                —
+              </p>
+            </div>
+            <button
+              onclick="deschideProfilFirma()"
+              class="flex-shrink-0 text-[8px] font-black uppercase tracking-widest bg-white/10 px-3 py-1.5 rounded-xl hover:bg-white/20 transition-all border border-white/20"
+            >
+              Editează
+            </button>
+          </div>
+          <div
+            class="flex items-center justify-between border-t border-white/10 pt-3"
+          >
+            <p
+              id="home-data-azi"
+              class="text-[9px] font-bold opacity-50 capitalize"
+            >
+              —
+            </p>
+            <div class="flex items-center gap-1.5">
+              <span
+                class="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"
+              ></span>
+              <span class="text-[8px] font-bold text-blue-200">Z-FLOW</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4 KPI Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div
+            class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100"
+          >
+            <div class="flex items-center gap-2 mb-2">
+              <div
+                class="w-6 h-6 bg-blue-100 rounded-lg flex items-center justify-center"
+              >
+                <svg
+                  class="w-3.5 h-3.5 text-blue-700"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  stroke-width="2.5"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
+                  />
+                </svg>
+              </div>
+              <span
+                class="text-[8px] font-black text-slate-400 uppercase tracking-wider leading-none"
+                >Facturat luna</span
+              >
+            </div>
+            <p
+              id="home-kpi-facturat"
+              class="text-lg font-black text-blue-900 tabular-nums truncate"
+            >
+              — lei
+            </p>
+            <div class="flex items-center gap-1.5 mt-0.5">
+              <p class="text-[7px] font-bold text-slate-400 uppercase tracking-wide">Luna crt.</p>
+              <span id="home-kpi-facturat-trend" class="text-[7px] font-black"></span>
+            </div>
+          </div>
+          <div
+            class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100"
+          >
+            <div class="flex items-center gap-2 mb-2">
+              <div
+                class="w-6 h-6 bg-orange-100 rounded-lg flex items-center justify-center"
+              >
+                <svg
+                  class="w-3.5 h-3.5 text-orange-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  stroke-width="2.5"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </div>
+              <span
+                class="text-[8px] font-black text-slate-400 uppercase tracking-wider leading-none"
+                >De încasat</span
+              >
+            </div>
+            <p
+              id="home-kpi-neincasat"
+              class="text-lg font-black text-orange-600 tabular-nums truncate"
+            >
+              — lei
+            </p>
+            <div class="flex items-center gap-1.5 mt-0.5">
+              <p class="text-[7px] font-bold text-slate-400 uppercase tracking-wide">Restant total</p>
+              <span id="home-kpi-neincasat-trend" class="text-[7px] font-black"></span>
+            </div>
+          </div>
+          <div
+            class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100"
+          >
+            <div class="flex items-center gap-2 mb-2">
+              <div
+                class="w-6 h-6 bg-red-100 rounded-lg flex items-center justify-center"
+              >
+                <svg
+                  class="w-3.5 h-3.5 text-red-700"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  stroke-width="2.5"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12"
+                  />
+                </svg>
+              </div>
+              <span
+                class="text-[8px] font-black text-slate-400 uppercase tracking-wider leading-none"
+                >De plătit</span
+              >
+            </div>
+            <p
+              id="home-kpi-neplatit"
+              class="text-lg font-black text-red-700 tabular-nums truncate"
+            >
+              — lei
+            </p>
+            <div class="flex items-center gap-1.5 mt-0.5">
+              <p class="text-[7px] font-bold text-slate-400 uppercase tracking-wide">Total datorii</p>
+              <span id="home-kpi-neplatit-trend" class="text-[7px] font-black"></span>
+            </div>
+          </div>
+          <div
+            class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100"
+          >
+            <div class="flex items-center gap-2 mb-2">
+              <div
+                class="w-6 h-6 bg-slate-100 rounded-lg flex items-center justify-center"
+              >
+                <svg
+                  class="w-3.5 h-3.5 text-slate-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  stroke-width="2.5"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M7.5 14.25v2.25m3-4.5v4.5m3-6.75v6.75m3-9v9M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z"
+                  />
+                </svg>
+              </div>
+              <span
+                class="text-[8px] font-black text-slate-400 uppercase tracking-wider leading-none"
+                >Cashflow net</span
+              >
+            </div>
+            <p
+              id="home-kpi-net"
+              class="text-lg font-black tabular-nums truncate text-slate-500"
+            >
+              — lei
+            </p>
+            <div class="flex items-center gap-1.5 mt-0.5">
+              <p class="text-[7px] font-bold text-slate-400 uppercase tracking-wide">Net total</p>
+              <span id="home-kpi-net-trend" class="text-[7px] font-black"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Alerte Urgențe -->
+        <div id="home-alerte" class="hidden space-y-2">
+          <p
+            class="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1 flex items-center gap-1"
+          >
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="text-amber-500" style="color:#f59e0b"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            Urgențe
+          </p>
+          <div id="home-alerte-list" class="space-y-2"></div>
+        </div>
+
+        <!-- Cashflow Chart - 30 zile -->
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+          <div class="flex items-center justify-between mb-1">
+            <div>
+              <p class="text-[9px] font-black text-slate-700 uppercase tracking-widest">
+                Cashflow · 30 zile
+              </p>
+              <p id="home-chart-period" class="text-[8px] text-slate-400 font-medium mt-0.5">—</p>
+            </div>
+            <div class="flex items-center gap-2.5">
+              <span class="flex items-center gap-1 text-[8px] font-bold text-emerald-600">
+                <span class="w-2 h-2 rounded-sm bg-emerald-400 inline-block"></span>Intrări
+              </span>
+              <span class="flex items-center gap-1 text-[8px] font-bold text-red-500">
+                <span class="w-2 h-2 rounded-sm bg-red-400 inline-block"></span>Ieșiri
+              </span>
+              <span class="flex items-center gap-1 text-[8px] font-bold text-indigo-500">
+                <span class="w-2 h-2 rounded-full bg-indigo-400 inline-block"></span>Net
+              </span>
+            </div>
+          </div>
+          <div style="position: relative; height: 220px; width: 100%" class="mt-3">
+            <canvas id="home-chart-cashflow"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== TAB FINANCIAR ==================== -->
+      <section id="financiar" class="tab-content">
+        <div class="pill-nav mb-6">
+          <button
+            id="btn-firme"
+            onclick="comutaVedereFin('firme')"
+            class="pill-btn active"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="2"
+              stroke="currentColor"
+              class="w-4 h-4"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"
+              />
+            </svg>
+            Clienți
+          </button>
+          <button
+            id="btn-furnizori"
+            onclick="comutaVedereFin('furnizori')"
+            class="pill-btn"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="2"
+              stroke="currentColor"
+              class="w-4 h-4"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12"
+              />
+            </svg>
+            Furnizori
+          </button>
+          <button
+            id="btn-analiza"
+            onclick="comutaVedereFin('analiza')"
+            class="pill-btn"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="2"
+              stroke="currentColor"
+              class="w-4 h-4"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 21h16.5M16.5 3.75h2.25M16.5 3.75v16.5M16.5 21h2.25m-2.25-16.5H14.25M14.25 3.75v16.5M14.25 21h2.25m-12-3h2.25m0 0V12.75m0 16.5h2.25m0 0V12.75m-2.25 0H12"
+              />
+            </svg>
+            Analiză
+          </button>
+        </div>
+
+        <!-- VIEW: LISTA CLIENȚI -->
+        <div id="view-firme" class="space-y-6">
+          <div class="relative text-slate-400">
+            <input
+              type="text"
+              id="search-firme"
+              oninput="filtreazaListaFirme()"
+              placeholder="Căutare client..."
+              class="w-full h-14 pl-12 pr-4 bg-white rounded-2xl shadow-sm border-none outline-none text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-blue-100 transition-all"
+            />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="1.5"
+              stroke="currentColor"
+              class="absolute left-4 top-4 w-6 h-6"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
+              />
+            </svg>
+          </div>
+
+          <div
+            class="bg-blue-900 rounded-[32px] p-6 text-white shadow-xl shadow-blue-900/20 relative overflow-hidden flex flex-col items-center justify-center text-center"
+          >
+            <p
+              class="text-[10px] font-bold uppercase opacity-60 mb-1 tracking-widest"
+            >
+              FACTURI DE ÎNCASAT
+            </p>
+            <h2
+              id="total-general"
+              class="text-3xl font-extrabold tracking-tighter"
+            >
+              0 lei
+            </h2>
+            <div class="flex items-center justify-center gap-1 mt-2 opacity-80">
+              <span
+                class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"
+              ></span>
+              <span class="text-[7px] font-bold text-blue-100 italic"
+                >Z-FLOW V2 Modular</span
+              >
+            </div>
+          </div>
+
+          <!-- MINI DASHBOARD KPI -->
+          <div class="grid grid-cols-4 gap-2">
+            <div
+              class="bg-white rounded-xl p-3 shadow-sm border border-slate-100 text-center"
+            >
+              <div
+                class="w-7 h-7 rounded-lg bg-emerald-100 flex items-center justify-center mx-auto mb-1"
+              >
+                <svg
+                  class="w-4 h-4 text-emerald-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  stroke-width="2.5"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M4.5 12.75l6 6 9-13.5"
+                  />
+                </svg>
+              </div>
+              <p
+                id="kpi-incasat"
+                class="text-sm font-black text-emerald-600 truncate"
+              >
+                0
+              </p>
+              <span class="text-[7px] font-bold text-slate-400 uppercase"
+                >Încasat</span
+              >
+            </div>
+            <div
+              class="bg-white rounded-xl p-3 shadow-sm border border-slate-100 text-center"
+            >
+              <div
+                class="w-7 h-7 rounded-lg bg-red-100 flex items-center justify-center mx-auto mb-1"
+              >
+                <svg
+                  class="w-4 h-4 text-red-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  stroke-width="2"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
+                  />
+                </svg>
+              </div>
+              <p
+                id="kpi-restante"
+                class="text-sm font-black text-red-600 truncate"
+              >
+                0
+              </p>
+              <span class="text-[7px] font-bold text-slate-400 uppercase"
+                >Restanțe</span
+              >
+            </div>
+            <div
+              class="bg-white rounded-xl p-3 shadow-sm border border-slate-100 text-center"
+            >
+              <div
+                class="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center mx-auto mb-1"
+              >
+                <svg
+                  class="w-4 h-4 text-blue-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  stroke-width="2"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"
+                  />
+                </svg>
+              </div>
+              <p id="kpi-clienti" class="text-sm font-black text-blue-900">0</p>
+              <span class="text-[7px] font-bold text-slate-400 uppercase"
+                >Clienți</span
+              >
+            </div>
+            <div
+              class="bg-white rounded-xl p-3 shadow-sm border border-slate-100 text-center"
+            >
+              <div
+                class="w-7 h-7 rounded-lg bg-purple-100 flex items-center justify-center mx-auto mb-1"
+              >
+                <svg
+                  class="w-4 h-4 text-purple-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  stroke-width="2"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"
+                  />
+                </svg>
+              </div>
+              <p
+                id="kpi-luna"
+                class="text-sm font-black text-purple-600 truncate"
+              >
+                0
+              </p>
+              <span class="text-[7px] font-bold text-slate-400 uppercase"
+                >Luna</span
+              >
+            </div>
+          </div>
+
+          <div
+            id="lista-firme-global"
+          ></div>
+          <!-- Paginare Clienți -->
+          <div id="clienti-pagination"></div>
+        </div>
+
+        <!-- VIEW: ANALIZĂ BI -->
+        <div id="view-analiza" class="hidden space-y-3 w-full">
+          <!-- Hidden cashflow helpers -->
+          <span id="cf-intrari" class="hidden"></span>
+          <span id="cf-iesiri" class="hidden"></span>
+
+          <!-- CARD UNIFICAT: Interval + Status + Totale + Firme collapsible -->
+          <div class="bi-left-panel space-y-3">
+          <div class="card-flow">
+            <!-- Filtrare dupa data — direct din input, fara interval rapid -->
+            <div class="grid grid-cols-2 gap-2 mb-3">
+              <div
+                class="relative p-3 bg-slate-50 rounded-xl cursor-pointer border border-transparent hover:border-slate-200 transition-all"
+                onclick="this.querySelector('input').showPicker()"
+              >
+                <input
+                  type="date"
+                  id="data-start"
+                  class="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                />
+                <div
+                  class="flex justify-between items-center pointer-events-none"
+                >
+                  <span
+                    class="text-[10px] font-black text-slate-800 uppercase"
+                    id="label-start"
+                    >De la: --</span
+                  >
+                  <svg
+                    class="w-4 h-4 text-slate-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                </div>
+              </div>
+              <div
+                class="relative p-3 bg-slate-50 rounded-xl cursor-pointer border border-transparent hover:border-slate-200 transition-all"
+                onclick="this.querySelector('input').showPicker()"
+              >
+                <input
+                  type="date"
+                  id="data-end"
+                  class="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                />
+                <div
+                  class="flex justify-between items-center pointer-events-none"
+                >
+                  <span
+                    class="text-[10px] font-black text-slate-800 uppercase"
+                    id="label-end"
+                    >Până la: --</span
+                  >
+                  <svg
+                    class="w-4 h-4 text-slate-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <!-- Status facturi — grid 2x2 pentru lizibilitate -->
+            <div class="grid grid-cols-2 gap-1.5 bg-slate-100 p-1.5 rounded-xl mb-3">
+              <button
+                onclick="setFiltruStatusBI('toate', this)"
+                class="bi-status-btn py-2 px-1 text-[9px] font-black uppercase rounded-lg bg-white text-blue-900 shadow-sm transition-all flex items-center justify-center gap-1"
+              >
+                <span class="w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0"></span> Toate
+              </button>
+              <button
+                id="bi-btn-restant"
+                onclick="setFiltruStatusBI('Neincasat', this)"
+                class="bi-status-btn py-2 px-1 text-[9px] font-black uppercase rounded-lg text-slate-500 hover:text-red-600 transition-all flex items-center justify-center gap-1"
+              >
+                <span class="w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0"></span> Restante
+              </button>
+              <button
+                id="bi-btn-incasat"
+                onclick="setFiltruStatusBI('Incasat', this)"
+                class="bi-status-btn py-2 px-1 text-[9px] font-black uppercase rounded-lg text-slate-500 hover:text-emerald-600 transition-all flex items-center justify-center gap-1"
+              >
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0"></span> Încasate
+              </button>
+              <button
+                id="bi-btn-platit"
+                onclick="setFiltruStatusBI('Platit', this)"
+                class="bi-status-btn py-2 px-1 text-[9px] font-black uppercase rounded-lg text-slate-500 hover:text-red-700 transition-all flex items-center justify-center gap-1"
+              >
+                <span class="w-1.5 h-1.5 rounded-full bg-red-600 flex-shrink-0"></span> Neplătite
+              </button>
+            </div>
+
+            <!-- Totale -->
+            <div
+              id="bi-totale-bar"
+              class="flex justify-end gap-6 py-2 border-t border-b border-slate-100 mb-3"
+            >
+              <div id="bi-total-clienti-col" class="flex flex-col items-end">
+                <span
+                  class="text-[7px] font-semibold text-blue-700 uppercase tracking-widest"
+                  >Clienți</span
+                >
+                <span
+                  id="suma-selectata-bi"
+                  class="text-[0.875rem] font-semibold text-blue-900 tabular-nums leading-tight"
+                  >0 lei</span
+                >
+              </div>
+              <div id="bi-total-furnizori-col" class="flex flex-col items-end">
+                <span
+                  class="text-[7px] font-semibold text-red-700 uppercase tracking-widest"
+                  >Furnizori</span
+                >
+                <span
+                  id="suma-platit-bi"
+                  class="text-[0.875rem] font-semibold text-red-700 tabular-nums leading-tight"
+                  >0 lei</span
+                >
+              </div>
+              <div
+                id="bi-total-net-col"
+                class="flex flex-col items-end border-l border-slate-200 pl-6"
+              >
+                <span
+                  class="text-[7px] font-semibold text-slate-400 uppercase tracking-widest"
+                  >Diferență</span
+                >
+                <span
+                  id="cf-net"
+                  class="text-[0.875rem] font-semibold tabular-nums leading-tight text-slate-500"
+                  >0 lei</span
+                >
+              </div>
+            </div>
+
+            <!-- Toggle pentru filtrare firme -->
+            <button
+              onclick="toggleFirmeCollapse()"
+              class="flex items-center justify-between w-full text-[9px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-all"
+            >
+              <span>Filtrează firme</span>
+              <svg
+                id="firme-collapse-icon"
+                class="w-3 h-3 transition-transform duration-200"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                stroke-width="2.5"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </button>
+            <div id="bi-firme-collapse" class="hidden mt-3 space-y-2">
+              <!-- Search firme -->
+              <input
+                type="text"
+                id="search-firme-collapse"
+                oninput="filtreazaFirmeInCollapse(this.value)"
+                placeholder="Caută după nume sau CUI..."
+                class="w-full p-2.5 bg-slate-50 rounded-xl text-[10px] italic outline-none border border-transparent focus:border-blue-200 transition-all"
+              />
+              <div class="flex justify-between items-center">
+                <span
+                  class="text-[9px] font-black text-slate-400 uppercase tracking-widest"
+                  >Selecție</span
+                >
+                <div class="flex gap-3">
+                  <button
+                    onclick="toggleToateBI(true)"
+                    class="text-[10px] text-blue-600 font-extrabold uppercase hover:underline"
+                  >
+                    Toate
+                  </button>
+                  <button
+                    onclick="toggleToateBI(false)"
+                    class="text-[10px] text-slate-400 font-extrabold uppercase hover:underline"
+                  >
+                    Niciuna
+                  </button>
+                </div>
+              </div>
+              <div id="bi-clienti-section">
+                <div class="flex items-center mb-1">
+                  <span
+                    class="text-[9px] font-black text-blue-700 uppercase tracking-widest"
+                    >Clienți</span
+                  >
+                </div>
+                <div
+                  id="container-bi-checks"
+                  class="max-h-44 overflow-y-auto pr-2 custom-scroll space-y-1"
+                ></div>
+              </div>
+              <div id="bi-furnizori-section">
+                <div
+                  class="flex items-center mt-2 mb-1 pt-2 border-t border-red-100"
+                >
+                  <span
+                    class="text-[9px] font-black text-red-700 uppercase tracking-widest"
+                    >Furnizori</span
+                  >
+                </div>
+                <div
+                  id="container-bi-furnizori-checks"
+                  class="max-h-44 overflow-y-auto pr-2 custom-scroll space-y-1"
+                ></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Export — imediat după cardul de filtre, acționează pe selecția curentă -->
+          <div class="export-group flex gap-2">
+            <button
+              id="btn-export-pdf"
+              onclick="exportaPDF()"
+              class="flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-800 text-white rounded-2xl text-[10px] font-black uppercase hover:bg-slate-900 transition-all shadow-sm flex-shrink-0"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="2"
+                stroke="currentColor"
+                class="w-4 h-4 flex-shrink-0"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m.75 12 3 3m0 0 3-3m-3 3v-6m-1.5-9H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"
+                />
+              </svg>
+              Export PDF
+            </button>
+            <button
+              id="btn-export-excel"
+              onclick="exportaExcel()"
+              class="flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase hover:bg-emerald-700 transition-all shadow-sm flex-shrink-0"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="2"
+                stroke="currentColor"
+                class="w-4 h-4 flex-shrink-0"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 0 1-1.125-1.125M3.375 19.5h7.5c.621 0 1.125-.504 1.125-1.125m-9.75 0V5.625m0 12.75v-1.5c0-.621.504-1.125 1.125-1.125m18.375 2.625V5.625m0 12.75c0 .621-.504 1.125-1.125 1.125m1.125-1.125h-7.5a1.125 1.125 0 0 1-1.125-1.125m0 0h7.5m-7.5 0V5.625m0 0h7.5m-7.5 0a1.125 1.125 0 0 1 1.125-1.125h5.25c.621 0 1.125.504 1.125 1.125m-8.25 0h8.25m-8.25 0v1.5c0 .621.504 1.125 1.125 1.125m0 0h7.5m-7.5 0v1.5c0 .621.504 1.125 1.125 1.125m0 0h7.5m-7.5 0V15m0 0h7.5"
+                />
+              </svg>
+              Export Excel
+            </button>
+          </div>
+
+          <!-- Bridge XML + Import XML ANAF -->
+          <div class="export-group flex gap-2">
+            <button onclick="exportBridgeXML('ambele')"
+              class="flex items-center justify-center gap-1.5 px-4 py-2.5 bg-purple-700 text-white rounded-2xl text-[10px] font-black uppercase hover:bg-purple-800 transition-all shadow-sm flex-shrink-0">
+              <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5"/>
+              </svg>
+              Bridge XML
+            </button>
+            <button onclick="importaXMLANAF()"
+              class="flex items-center justify-center gap-1.5 px-4 py-2.5 bg-amber-600 text-white rounded-2xl text-[10px] font-black uppercase hover:bg-amber-700 transition-all shadow-sm flex-shrink-0">
+              <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/>
+              </svg>
+              Import XML ANAF
+            </button>
+          </div>
+
+          </div><!-- /bi-left-panel -->
+
+          <div class="bi-right-panel flex flex-col gap-3">
+          <!-- Bulk inline bar (înlocuiește rândul de căutare când modul bulk e activ) -->
+          <div id="bulk-inline-bar" class="hidden flex gap-2 items-center">
+            <button onclick="toggleBulkMode()" class="p-3 bg-red-50 border border-red-200 text-red-500 rounded-xl hover:bg-red-100 transition-all flex-shrink-0 flex items-center justify-center">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+            <span class="flex-1 text-[10px] font-black text-slate-600 tabular-nums"><span id="bulk-count">0</span> facturi selectate</span>
+            <button id="btn-bulk-select-all" onclick="bulkSelectAll()" class="px-3 py-2 bg-slate-800 text-white rounded-xl text-[10px] font-bold uppercase hover:bg-slate-900 transition-all flex-shrink-0">Selectează toate</button>
+          </div>
+
+          <!-- Câmp căutare + buton selecție multiplă -->
+          <div id="search-bi-row" class="flex gap-2 items-center">
+            <input
+              type="text"
+              id="search-bi"
+              oninput="filtreazaFirmeInBI()"
+              placeholder="Caută în lista de facturi..."
+              class="flex-1 p-3 bg-white rounded-xl text-[10px] italic outline-none border border-slate-200 focus:border-blue-200 shadow-sm transition-all"
+            />
+            <button
+              onclick="toggleBulkMode()"
+              id="btn-toggle-bulk"
+              title="Selecție multiplă"
+              class="p-3 bg-white border border-slate-200 text-slate-400 rounded-xl hover:text-blue-600 hover:border-blue-200 shadow-sm transition-all flex items-center justify-center"
+            >
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                stroke-width="2"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </button>
+          </div>
+
+          <!-- Lista rezultate -->
+          <div
+            id="rezultat-analiza"
+            class="w-full space-y-2"
+          ></div>
+
+          <!-- Paginare (render dinamic inline prin JS) -->
+          </div><!-- /bi-right-panel -->
+        </div>
+
+        <!-- VIEW: DETALII CLIENT -->
+        <div id="view-detalii" class="hidden animate-pop">
+          <div class="flex justify-between items-center mb-6 pl-2 pr-2">
+            <div class="flex items-center gap-2">
+            <button
+              onclick="schimbaTab('home', document.getElementById('nav-btn-home'))"
+              class="p-2 rounded-xl bg-slate-100 text-slate-500 hover:bg-blue-50 hover:text-blue-700 transition-all"
+              aria-label="Acasă"
+              title="Acasă"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+              </svg>
+            </button>
+            <button
+              onclick="comutaVedereFin('firme')"
+              class="text-[10px] font-extrabold uppercase text-blue-900 flex items-center gap-2"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="2"
+                stroke="currentColor"
+                class="w-4 h-4"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"
+                />
+              </svg>
+              Înapoi
+            </button>
+            </div>
+            <button
+              id="btn-edit-client-active"
+              onclick="deschideModal('modal-client', ZFlowStore.selectedClientId)"
+              class="text-[10px] font-extrabold uppercase text-amber-600 flex items-center gap-2 bg-amber-50 px-4 py-2 rounded-xl"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="2"
+                stroke="currentColor"
+                class="w-4 h-4"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"
+                />
+              </svg>
+              Editare Profil
+            </button>
+          </div>
+          <div
+            id="card-detaliu"
+            class="bg-slate-900 text-white p-8 rounded-[32px] shadow-2xl mb-8 relative"
+          ></div>
+          <div id="istoric-plati-client" class="hidden"></div>
+          <!-- Header "Facturi de Încasat" + selector per-page sunt randate dinamic de arataDetalii() -->
+          <div id="lista-facturi-detaliu" class="pb-10"></div>
+        </div>
+
+        <!-- VIEW: LISTA FURNIZORI -->
+        <div id="view-furnizori" class="hidden space-y-6">
+          <div class="relative text-slate-400">
+            <input
+              type="text"
+              id="search-furnizori"
+              oninput="filtreazaListaFurnizori()"
+              placeholder="Căutare furnizor..."
+              class="w-full h-14 pl-12 pr-4 bg-white rounded-2xl shadow-sm border-none outline-none text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-red-100 transition-all"
+            />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="1.5"
+              stroke="currentColor"
+              class="absolute left-4 top-4 w-6 h-6"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
+              />
+            </svg>
+          </div>
+
+          <div
+            class="bg-red-700 rounded-[32px] p-6 text-white shadow-xl shadow-red-700/20 relative overflow-hidden flex flex-col items-center justify-center text-center"
+          >
+            <p
+              class="text-[10px] font-bold uppercase opacity-60 mb-1 tracking-widest"
+            >
+              FACTURI DE PLĂTIT
+            </p>
+            <h2
+              id="total-general-platit"
+              class="text-3xl font-extrabold tracking-tighter"
+            >
+              0 lei
+            </h2>
+          </div>
+          <!-- MINI DASHBOARD KPI FURNIZORI -->
+          <div class="grid grid-cols-4 gap-2">
+            <div
+              class="bg-white rounded-xl p-3 shadow-sm border border-slate-100 text-center"
+            >
+              <div
+                class="w-7 h-7 rounded-lg bg-emerald-100 flex items-center justify-center mx-auto mb-1"
+              >
+                <svg
+                  class="w-4 h-4 text-emerald-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  stroke-width="2.5"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M4.5 12.75l6 6 9-13.5"
+                  />
+                </svg>
+              </div>
+              <p
+                id="kpi-platit"
+                class="text-sm font-black text-emerald-600 truncate"
+              >
+                0
+              </p>
+              <span class="text-[7px] font-bold text-slate-400 uppercase"
+                >Plătit</span
+              >
+            </div>
+            <div
+              class="bg-white rounded-xl p-3 shadow-sm border border-slate-100 text-center"
+            >
+              <div
+                class="w-7 h-7 rounded-lg bg-red-100 flex items-center justify-center mx-auto mb-1"
+              >
+                <svg
+                  class="w-4 h-4 text-red-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  stroke-width="2"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
+                  />
+                </svg>
+              </div>
+              <p
+                id="kpi-restante-furnizori"
+                class="text-sm font-black text-red-600 truncate"
+              >
+                0
+              </p>
+              <span class="text-[7px] font-bold text-slate-400 uppercase"
+                >Neplătit</span
+              >
+            </div>
+            <div
+              class="bg-white rounded-xl p-3 shadow-sm border border-slate-100 text-center"
+            >
+              <div
+                class="w-7 h-7 rounded-lg bg-orange-100 flex items-center justify-center mx-auto mb-1"
+              >
+                <svg
+                  class="w-4 h-4 text-orange-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  stroke-width="2"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12"
+                  />
+                </svg>
+              </div>
+              <p id="kpi-furnizori" class="text-sm font-black text-blue-900">
+                0
+              </p>
+              <span class="text-[7px] font-bold text-slate-400 uppercase"
+                >Furnizori</span
+              >
+            </div>
+            <div
+              class="bg-white rounded-xl p-3 shadow-sm border border-slate-100 text-center"
+            >
+              <div
+                class="w-7 h-7 rounded-lg bg-purple-100 flex items-center justify-center mx-auto mb-1"
+              >
+                <svg
+                  class="w-4 h-4 text-purple-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  stroke-width="2"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"
+                  />
+                </svg>
+              </div>
+              <p
+                id="kpi-luna-furnizori"
+                class="text-sm font-black text-purple-600 truncate"
+              >
+                0
+              </p>
+              <span class="text-[7px] font-bold text-slate-400 uppercase"
+                >Luna</span
+              >
+            </div>
+          </div>
+          <div
+            id="lista-furnizori-global"
+          ></div>
+          <!-- Paginare Furnizori -->
+          <div id="furnizori-pagination"></div>
+        </div>
+        <div id="view-detalii-furnizor" class="hidden animate-pop">
+          <div class="flex justify-between items-center mb-6 pl-2 pr-2">
+            <div class="flex items-center gap-2">
+            <button
+              onclick="schimbaTab('home', document.getElementById('nav-btn-home'))"
+              class="p-2 rounded-xl bg-slate-100 text-slate-500 hover:bg-red-50 hover:text-red-700 transition-all"
+              aria-label="Acasă"
+              title="Acasă"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+              </svg>
+            </button>
+            <button
+              onclick="comutaVedereFin('furnizori')"
+              class="text-[10px] font-extrabold uppercase text-red-700 flex items-center gap-2"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="2"
+                stroke="currentColor"
+                class="w-4 h-4"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"
+                />
+              </svg>
+              Înapoi
+            </button>
+            </div>
+            <button
+              id="btn-edit-furnizor-active"
+              onclick="deschideModalFurnizor(ZFlowStore.selectedFurnizorId)"
+              class="text-[10px] font-extrabold uppercase text-amber-600 flex items-center gap-2 bg-amber-50 px-4 py-2 rounded-xl"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="2"
+                stroke="currentColor"
+                class="w-4 h-4"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"
+                />
+              </svg>
+              Editare Profil
+            </button>
+          </div>
+          <div
+            id="card-detaliu-furnizor"
+            class="bg-red-900 text-white p-8 rounded-[32px] shadow-2xl mb-8 relative"
+          ></div>
+          <div id="lista-facturi-platit-detaliu" class="space-y-4 pb-10"></div>
+        </div>
+      </section>
+
+      <!-- ==================== TAB LOGISTIC ==================== -->
+      <section id="logistic" class="tab-content space-y-4">
+
+        <!-- KPI Row -->
+        <div class="grid grid-cols-3 gap-3">
+          <div class="card-flow text-center py-4">
+            <p class="text-2xl font-black text-blue-900" id="logistic-kpi-comenzi">0</p>
+            <p class="text-[9px] font-bold text-slate-400 uppercase mt-0.5">Comenzi active</p>
+          </div>
+          <div class="card-flow text-center py-4">
+            <p class="text-2xl font-black text-purple-700" id="logistic-kpi-soferi">0</p>
+            <p class="text-[9px] font-bold text-slate-400 uppercase mt-0.5">Șoferi</p>
+          </div>
+          <div class="card-flow text-center py-4">
+            <p class="text-2xl font-black text-slate-700" id="logistic-kpi-vehicule">0</p>
+            <p class="text-[9px] font-bold text-slate-400 uppercase mt-0.5">Vehicule</p>
+          </div>
+        </div>
+
+        <!-- Sub-nav Pilluri -->
+        <div class="pill-nav">
+          <button class="pill-btn logistic-pill active" data-view="comenzi" onclick="schimbaViewLogistic('comenzi', true)">Comenzi</button>
+          <button class="pill-btn logistic-pill" data-view="soferi" onclick="schimbaViewLogistic('soferi', true)">Șoferi</button>
+          <button class="pill-btn logistic-pill" data-view="vehicule" onclick="schimbaViewLogistic('vehicule', true)">Vehicule</button>
+        </div>
+
+        <!-- VIEW: Comenzi -->
+        <div id="logistic-view-comenzi" class="space-y-3">
+          <div class="flex gap-2">
+            <input id="logistic-search" type="text" placeholder="Caută rută sau tracking…" oninput="renderComenziTransportDebounced()"
+              class="flex-1 min-w-0 px-4 py-2.5 bg-slate-50 rounded-2xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200 transition-all"/>
+            <button onclick="importaComenziTransport()" title="Import CSV comenzi transport" class="flex-shrink-0 px-3 py-2.5 bg-slate-100 text-slate-600 rounded-2xl text-xs font-black uppercase shadow-sm border border-slate-200 hover:bg-slate-200 transition-all" data-permission="edit">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
+            </button>
+            <button onclick="exportComenziTransportCSV()" title="Export CSV comenzi" class="flex-shrink-0 px-3 py-2.5 bg-slate-100 text-slate-600 rounded-2xl text-xs font-black uppercase shadow-sm border border-slate-200 hover:bg-slate-200 transition-all">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
+            </button>
+            <button onclick="deschideModalComandaTransport('')" class="flex-shrink-0 px-4 py-2.5 bg-blue-900 text-white rounded-2xl text-xs font-black uppercase shadow-md" data-permission="edit">
+              + Comandă
+            </button>
+          </div>
+          <!-- Comenzi noi (modul logistic) -->
+          <div id="logistic-comenzi-list" class="space-y-2"></div>
+          <div id="comenzi-pagination"></div>
+          <!-- Lista transporturi din facturi (păstrată din funcționalitatea anterioară) -->
+          <div id="lista-transporturi" class="space-y-3 px-2"></div>
+        </div>
+
+        <!-- VIEW: Șoferi -->
+        <div id="logistic-view-soferi" class="hidden space-y-3">
+          <div class="flex justify-between items-center">
+            <p class="text-xs font-black text-slate-500 uppercase">Șoferi înregistrați</p>
+            <div class="flex gap-2">
+              <button onclick="importaSoferiCSV()" title="Import CSV śoferi" class="p-2 bg-slate-100 text-slate-600 rounded-xl border border-slate-200 hover:bg-slate-200 transition-all" data-permission="edit">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
+              </button>
+              <button onclick="exportSoferiCSV()" title="Export CSV śoferi" class="p-2 bg-slate-100 text-slate-600 rounded-xl border border-slate-200 hover:bg-slate-200 transition-all">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
+              </button>
+              <button onclick="deschideModalSofer('')" class="px-4 py-2 bg-purple-700 text-white rounded-2xl text-xs font-black uppercase shadow-md" data-permission="edit">
+                + Șofer
+              </button>
+            </div>
+          </div>
+          <div class="relative text-slate-400">
+            <input type="text" id="search-soferi" oninput="filtreazaSoferi(this.value)" placeholder="Caută șofer după nume..." class="w-full h-10 pl-9 pr-4 bg-white rounded-2xl shadow-sm border border-slate-100 outline-none text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-purple-100 transition-all"/>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="absolute left-3 top-2.5 w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+          </div>
+          <div id="logistic-soferi-list" class="space-y-2"></div>
+          <div id="soferi-pagination"></div>
+        </div>
+
+        <!-- VIEW: Vehicule -->
+        <div id="logistic-view-vehicule" class="hidden space-y-3">
+          <div class="flex justify-between items-center">
+            <p class="text-xs font-black text-slate-500 uppercase">Parc auto</p>
+            <div class="flex gap-2">
+              <button onclick="importaVehiculeCSV()" title="Import CSV vehicule" class="p-2 bg-slate-100 text-slate-600 rounded-xl border border-slate-200 hover:bg-slate-200 transition-all" data-permission="edit">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
+              </button>
+              <button onclick="exportVehiculeCSV()" title="Export CSV vehicule" class="p-2 bg-slate-100 text-slate-600 rounded-xl border border-slate-200 hover:bg-slate-200 transition-all">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
+              </button>
+              <button onclick="deschideModalVehicul('')" class="px-4 py-2 bg-slate-800 text-white rounded-2xl text-xs font-black uppercase shadow-md" data-permission="edit">
+                + Vehicul
+              </button>
+            </div>
+          </div>
+          <div class="relative text-slate-400">
+            <input type="text" id="search-vehicule" oninput="filtreazaVehicule(this.value)" placeholder="Caută după nr. înmatriculare sau marcă..." class="w-full h-10 pl-9 pr-4 bg-white rounded-2xl shadow-sm border border-slate-100 outline-none text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-slate-200 transition-all"/>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="absolute left-3 top-2.5 w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+          </div>
+          <div id="logistic-vehicule-list" class="space-y-2"></div>
+          <div id="vehicule-pagination"></div>
+          <!-- Mapa GPS (Leaflet + OpenStreetMap) -->
+          <div class="card-flow p-3 mt-3">
+            <div class="flex justify-between items-center mb-2">
+              <div>
+                <p class="text-xs font-black text-slate-700 uppercase tracking-wide">Hartă GPS Vehicule</p>
+                <p class="text-[9px] text-slate-400 font-bold">Simulat · Live GPS · Click pe vehicul pentru detalii</p>
+              </div>
+              <button onclick="actualizaMarkerePeHarta()" class="text-[9px] font-black text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg uppercase transition-all">
+                Actualizează
+              </button>
+            </div>
+            <div id="map"></div>
+          </div>
+
+          <!-- SafeFleet / Nexus GPS Integration -->
+          <div class="card-flow mt-3">
+            <div class="flex items-center justify-between mb-3">
+              <div>
+                <p class="text-xs font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5"><svg class="w-3.5 h-3.5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.142 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"/></svg> SafeFleet / Nexus</p>
+                <p class="text-[9px] text-slate-400">Integrare GPS live prin Make.com webhook</p>
+              </div>
+              <button onclick="ZFlowSafeFleet.renderPanel()" class="text-[8px] font-black text-blue-600 hover:underline uppercase">Config</button>
+            </div>
+            <div id="safefleet-panel-content">
+              <p class="text-[9px] text-slate-400 italic text-center py-2">Se inițializează...</p>
+            </div>
+          </div>
+
+          <!-- Raport km vs. Facturi Livrate -->
+          <div class="card-flow mt-3">
+            <div class="flex items-center justify-between mb-3">
+              <div>
+                <p class="text-xs font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5"><svg class="w-4 h-4 text-slate-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/></svg>Raport km vs. Livrări</p>
+                <p class="text-[9px] text-slate-400">km parcurși · valoare transport · facturi livrate</p>
+              </div>
+              <button onclick="renderRaportKm()" class="text-[8px] font-black text-blue-600 hover:underline uppercase">Actualizează</button>
+            </div>
+            <div id="raport-km-panel">
+              <p class="text-[9px] text-slate-400 italic text-center py-2">Apasă Actualizează pentru a genera raportul</p>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ==================== TAB DEPOZIT ==================== -->
+      <section id="depozit" class="tab-content space-y-4">
+
+        <!-- KPI Row -->
+        <div class="grid grid-cols-3 gap-3">
+          <div class="card-flow text-center py-4">
+            <p class="text-2xl font-black text-blue-900" id="depozit-kpi-produse">0</p>
+            <p class="text-[9px] font-bold text-slate-400 uppercase mt-0.5">Produse</p>
+          </div>
+          <div class="card-flow text-center py-4">
+            <p class="text-2xl font-black text-emerald-700 tabular-nums" id="depozit-kpi-valoare">0 lei</p>
+            <p class="text-[9px] font-bold text-slate-400 uppercase mt-0.5">Valoare stoc</p>
+          </div>
+          <div class="card-flow text-center py-4">
+            <p class="text-2xl font-black text-red-500" id="depozit-kpi-alerte">0</p>
+            <p class="text-[9px] font-bold text-slate-400 uppercase mt-0.5">Alerte stoc</p>
+          </div>
+        </div>
+
+        <!-- Sub-nav Pilluri -->
+        <div class="pill-nav">
+          <button class="pill-btn depozit-pill active" data-view="stoc" onclick="schimbaViewDepozitGrup('stoc')">Stoc</button>
+          <button class="pill-btn depozit-pill" data-view="documente" onclick="schimbaViewDepozitGrup('documente')">Documente</button>
+          <button class="pill-btn depozit-pill" data-view="scanner" onclick="schimbaViewDepozit('scanner', true)">Scanner</button>
+        </div>
+        <!-- Sub-nav Stoc -->
+        <div id="depozit-subnav-stoc" class="flex gap-1 mb-1">
+          <button class="px-3 py-1 rounded-full text-[9px] font-black uppercase bg-blue-900 text-white depozit-subbtn-stoc" data-sub="produse" onclick="schimbaViewDepozit('produse',true)">Produse</button>
+          <button class="px-3 py-1 rounded-full text-[9px] font-black uppercase bg-slate-100 text-slate-600 depozit-subbtn-stoc" data-sub="miscari" onclick="schimbaViewDepozit('miscari',true)">Mișcări</button>
+        </div>
+        <!-- Sub-nav Documente -->
+        <div id="depozit-subnav-documente" class="hidden gap-1 mb-1">
+          <button class="px-3 py-1 rounded-full text-[9px] font-black uppercase bg-emerald-700 text-white depozit-subbtn-doc" data-sub="receptii" onclick="schimbaViewDepozit('receptii',true)">Recepții</button>
+          <button class="px-3 py-1 rounded-full text-[9px] font-black uppercase bg-slate-100 text-slate-600 depozit-subbtn-doc" data-sub="livrari" onclick="schimbaViewDepozit('livrari',true)">Livrări</button>
+        </div>
+
+        <!-- VIEW: Produse -->
+        <div id="depozit-view-produse" class="space-y-3">
+          <div class="flex gap-2">
+            <input id="depozit-search-produse" type="text" placeholder="Caută produs sau SKU…" oninput="renderProduseDebounced()"
+              class="flex-1 min-w-0 px-4 py-2.5 bg-slate-50 rounded-2xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200 transition-all"/>
+            <button onclick="importaProduse()" title="Import CSV produse" class="flex-shrink-0 px-3 py-2.5 bg-slate-100 text-slate-600 rounded-2xl text-xs font-black uppercase shadow-sm border border-slate-200 hover:bg-slate-200 transition-all" data-permission="edit">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
+            </button>
+            <button onclick="exportProduseCSV()" title="Export CSV produse" class="flex-shrink-0 px-3 py-2.5 bg-slate-100 text-slate-600 rounded-2xl text-xs font-black uppercase shadow-sm border border-slate-200 hover:bg-slate-200 transition-all">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
+            </button>
+            <button onclick="deschideModalProdus('')" class="flex-shrink-0 px-4 py-2.5 bg-blue-900 text-white rounded-2xl text-xs font-black uppercase shadow-md" data-permission="edit">
+              + Produs
+            </button>
+          </div>
+          <div id="depozit-lista-produse" class="space-y-2"></div>
+          <div id="produse-pagination"></div>
+        </div>
+
+        <!-- VIEW: Mișcări Stoc -->
+        <div id="depozit-view-miscari" class="hidden space-y-3">
+          <div class="flex justify-between items-center">
+            <p class="text-xs font-black text-slate-500 uppercase">Mișcări stoc</p>
+            <button onclick="deschideModalMiscare('')" class="px-4 py-2 bg-blue-900 text-white rounded-2xl text-xs font-black uppercase shadow-md" data-permission="edit">
+              + Mișcare
+            </button>
+          </div>
+          <div class="relative text-slate-400">
+            <input type="text" id="search-miscari" oninput="filtreazaMiscari(this.value)" placeholder="Caută produs sau observații..." class="w-full h-10 pl-9 pr-4 bg-white rounded-2xl shadow-sm border border-slate-100 outline-none text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-blue-100 transition-all"/>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="absolute left-3 top-2.5 w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+          </div>
+          <div id="depozit-lista-miscari" class="space-y-2"></div>
+          <div id="miscari-pagination"></div>
+        </div>
+
+        <!-- VIEW: Recepții -->
+        <div id="depozit-view-receptii" class="hidden space-y-3">
+          <div class="flex justify-between items-center">
+            <p class="text-xs font-black text-slate-500 uppercase">Recepții de la furnizori</p>
+            <div class="flex gap-2">
+              <button onclick="exportProduseCSV()" title="Export CSV produse" class="p-2 bg-slate-100 text-slate-600 rounded-xl border border-slate-200 hover:bg-slate-200 transition-all">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
+              </button>
+              <button onclick="deschideModalReceptie()" class="px-4 py-2 bg-emerald-700 text-white rounded-2xl text-xs font-black uppercase shadow-md" data-permission="edit">
+                + Recepție
+              </button>
+            </div>
+          </div>
+          <div class="relative text-slate-400">
+            <input type="text" id="search-receptii" oninput="filtreazaReceptii(this.value)" placeholder="Caută după furnizor..." class="w-full h-10 pl-9 pr-4 bg-white rounded-2xl shadow-sm border border-slate-100 outline-none text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-100 transition-all"/>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="absolute left-3 top-2.5 w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+          </div>
+          <div id="depozit-lista-receptii" class="space-y-2"></div>
+        </div>
+
+        <!-- VIEW: Livrări -->
+        <div id="depozit-view-livrari" class="hidden space-y-3">
+          <div class="flex justify-between items-center">
+            <p class="text-xs font-black text-slate-500 uppercase">Bonuri de livrare</p>
+            <div class="flex gap-2">
+              <button onclick="exportMiscariStocCSV()" title="Export CSV mișcări stoc" class="p-2 bg-slate-100 text-slate-600 rounded-xl border border-slate-200 hover:bg-slate-200 transition-all">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
+              </button>
+              <button onclick="deschideModalLivrare()" class="px-4 py-2 bg-blue-700 text-white rounded-2xl text-xs font-black uppercase shadow-md" data-permission="edit">
+                + Livrare
+              </button>
+            </div>
+          </div>
+          <div class="relative text-slate-400">
+            <input type="text" id="search-livrari" oninput="filtreazaLivrari(this.value)" placeholder="Caută după client..." class="w-full h-10 pl-9 pr-4 bg-white rounded-2xl shadow-sm border border-slate-100 outline-none text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-blue-100 transition-all"/>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="absolute left-3 top-2.5 w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+          </div>
+          <div id="depozit-lista-livrari" class="space-y-2"></div>
+        </div>
+
+        <!-- VIEW: Scanner (conținut original păstrat + result panel) -->
+        <div id="depozit-view-scanner" class="hidden space-y-4 text-center">
+          <div class="bg-slate-900 p-8 rounded-[40px] text-white shadow-2xl relative overflow-hidden">
+            <h2 class="text-xl font-extrabold mb-4 uppercase italic">Scanner SKU / QR</h2>
+            <p class="text-[9px] text-slate-400 mb-4">Scanează produs · recepție · livrare · comandă transport</p>
+            <div id="reader"></div>
+          </div>
+          <div class="card-flow border-2 border-dashed border-slate-200">
+            <p id="barcode-value" class="text-xl font-extrabold text-blue-900">Așteptare cod...</p>
+          </div>
+          <!-- Panou rezultat scanare -->
+          <div id="scanner-result-panel"></div>
+        </div>
+
+      </section>
+    </main>
+
+    <!-- ==================== BOTTOM NAVIGATION ==================== -->
+    <nav class="bottom-nav">
+      <button
+        id="nav-btn-home"
+        onclick="schimbaTab('home', this)"
+        class="nav-item active"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="1.5"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"
+          />
+        </svg>
+        <span class="text-[9px]">HOME</span>
+      </button>
+      <button
+        id="nav-btn-fin"
+        onclick="schimbaTab('financiar', this)"
+        class="nav-item relative"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="1.5"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+        <span class="text-[9px]">FINANCIAR</span>
+        <span
+          id="nav-badge-financiar"
+          class="hidden absolute top-1 right-2.5 min-w-[16px] h-4 bg-red-500 text-white text-[7px] font-black rounded-full flex items-center justify-center px-0.5"
+          >0</span
+        >
+      </button>
+      <button onclick="schimbaTab('logistic', this); renderLogistic();" class="nav-item">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="1.5"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C2.873 6.063 2.25 6.607 2.25 7.443v10.498c0 .425.24.815.622 1.006l4.875 2.437c.381.19.622.58.622 1.006V21m6 0v-5.25"
+          />
+        </svg>
+        <span class="text-[9px]">LOGISTIC</span>
+      </button>
+      <button onclick="schimbaTab('depozit', this); renderDepozit();" class="nav-item">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="1.5"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9"
+          />
+        </svg>
+        <span class="text-[9px]">DEPOZIT</span>
+      </button>
+      <button
+        id="nav-btn-actions"
+        onclick="toggleFAB()"
+        class="nav-item"
+        style="display: none"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="1.5"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M12 4.5v15m7.5-7.5h-15"
+          />
+        </svg>
+        <span class="text-[9px]">ACȚIUNI</span>
+      </button>
+    </nav>
+
+    <!-- ==================== FAB MENU ==================== -->
+    <div id="fab-menu" class="modal-sheet" onclick="toggleFAB()">
+      <div class="sheet-content" onclick="event.stopPropagation()">
+        <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-8"></div>
+        <h3
+          class="text-xl font-extrabold mb-6 text-center italic text-blue-900"
+        >
+          Z-Flow Tools
+        </h3>
+
+        <div class="grid grid-cols-1 gap-3">
+          <!-- Import Facturi Clienți -->
+          <button
+            onclick="importaDateSaga('clienti'); toggleFAB();"
+            class="w-full min-h-[72px] bg-emerald-50 py-4 px-5 rounded-2xl flex items-start gap-4 active:bg-emerald-100 transition-all border border-emerald-200 hover:border-emerald-300 hover:shadow-md"
+          >
+            <div
+              class="w-10 h-10 mt-0.5 bg-emerald-100 rounded-xl flex items-center justify-center flex-shrink-0"
+            >
+              <svg
+                class="w-5 h-5 text-emerald-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                stroke-width="2"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
+                />
+              </svg>
+            </div>
+            <div class="flex-1 text-left min-w-0">
+              <span class="font-bold text-sm text-emerald-700">Import Facturi Clienți</span>
+              <p class="text-[10px] text-emerald-600 truncate">CSV facturi de încasat (SAGA)</p>
+            </div>
+          </button>
+
+          <!-- Import Facturi Furnizori -->
+          <button
+            onclick="importaDateSaga('furnizori'); toggleFAB();"
+            class="w-full min-h-[72px] bg-orange-50 py-4 px-5 rounded-2xl flex items-start gap-4 active:bg-orange-100 transition-all border border-orange-200 hover:border-orange-300 hover:shadow-md"
+          >
+            <div
+              class="w-10 h-10 mt-0.5 bg-orange-100 rounded-xl flex items-center justify-center flex-shrink-0"
+            >
+              <svg
+                class="w-5 h-5 text-orange-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                stroke-width="2"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
+                />
+              </svg>
+            </div>
+            <div class="flex-1 text-left min-w-0">
+              <span class="font-bold text-sm text-orange-700">Import Facturi Furnizori</span>
+              <p class="text-[10px] text-orange-600 truncate">CSV facturi de plătit (SAGA)</p>
+            </div>
+          </button>
+
+          <button
+            onclick="
+              deschideFirmaNou();
+              toggleFAB();
+            "
+            class="w-full min-h-[72px] bg-blue-900 text-white py-4 px-5 rounded-2xl flex items-start gap-4 active:bg-blue-800 transition-all hover:shadow-md"
+          >
+            <div
+              class="w-10 h-10 mt-0.5 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0"
+            >
+              <svg
+                class="w-5 h-5 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M3 21h18" />
+                <path d="M3 7l9-4 9 4v14H3V7z" />
+                <path d="M9 21v-5h6v5" />
+              </svg>
+            </div>
+            <div class="flex-1 text-left min-w-0">
+              <span class="font-bold text-sm">Adaugă Firmă</span>
+              <p class="text-[10px] text-blue-200 truncate">
+                Client · Furnizor · Ambele
+              </p>
+            </div>
+            <svg
+              class="w-5 h-5 mt-0.5 text-white/40 flex-shrink-0"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M8.25 4.5l7.5 7.5-7.5 7.5"
+              />
+            </svg>
+          </button>
+
+          <button
+            onclick="
+              deschideFacturaNou();
+              toggleFAB();
+            "
+            class="w-full min-h-[72px] bg-white py-4 px-5 rounded-2xl flex items-start gap-4 active:bg-amber-50 transition-all border border-slate-100 hover:border-amber-300 hover:shadow-md"
+          >
+            <div
+              class="w-10 h-10 mt-0.5 bg-amber-50 rounded-xl flex items-center justify-center flex-shrink-0"
+            >
+              <svg
+                class="w-5 h-5 text-amber-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                stroke-width="2"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
+                />
+              </svg>
+            </div>
+            <div class="flex-1 text-left min-w-0">
+              <span class="font-bold text-sm text-slate-800"
+                >Adaugă Factură</span
+              >
+              <p class="text-[10px] text-slate-400 truncate">
+                De încasat · De plătit
+              </p>
+            </div>
+            <svg
+              class="w-5 h-5 mt-0.5 text-slate-300 flex-shrink-0"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M8.25 4.5l7.5 7.5-7.5 7.5"
+              />
+            </svg>
+          </button>
+
+          <!-- Export CSV facturi (export complet) — butoane eliminate: acoperite de PDF/Excel din Analiză -->
+
+          <div
+            class="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3"
+          >
+            <svg
+              class="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
+              />
+            </svg>
+            <p class="text-[11px] font-medium text-amber-700 leading-relaxed">
+              Facturile adăugate manual pot genera diferențe față de soldul
+              oficial din SAGA. Utilizați Importul pentru date exacte.
+            </p>
+          </div>
+        </div>
+
+        <button
+          onclick="toggleFAB()"
+          class="w-full mt-6 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-500 font-bold text-sm rounded-2xl py-4 transition-all"
+        >
+          Închide meniu
+        </button>
+      </div>
+    </div>
+
+    <!-- ==================== MODAL ADAUGĂ FIRMĂ ==================== -->
+    <div id="modal-firma-nou" class="modal-sheet">
+      <div class="sheet-content">
+        <div class="w-12 h-1 bg-slate-100 rounded-full mx-auto mb-6"></div>
+        <h3 class="text-xl font-extrabold mb-4 uppercase italic text-blue-900">
+          Adaugă Firmă
+        </h3>
+
+        <!-- Segmented control: tip firmă -->
+        <div class="flex gap-1 bg-slate-100 p-1 rounded-xl mb-5">
+          <button
+            class="fn-tip-btn flex-1 py-2 text-[11px] font-extrabold rounded-lg transition-all bg-blue-900 text-white shadow"
+            data-tip="client"
+            onclick="selectTipFirmaNou('client')"
+          >
+            Client
+          </button>
+          <button
+            class="fn-tip-btn flex-1 py-2 text-[11px] font-extrabold rounded-lg transition-all text-slate-500"
+            data-tip="furnizor"
+            onclick="selectTipFirmaNou('furnizor')"
+          >
+            Furnizor
+          </button>
+          <button
+            class="fn-tip-btn flex-1 py-2 text-[11px] font-extrabold rounded-lg transition-all text-slate-500"
+            data-tip="ambele"
+            onclick="selectTipFirmaNou('ambele')"
+          >
+            Ambele
+          </button>
+        </div>
+
+        <div class="space-y-4">
+          <div class="relative">
+            <input
+              type="text"
+              id="fn-cui"
+              placeholder="CUI"
+              class="w-full p-5 bg-slate-50 rounded-xl font-bold text-sm border-none outline-none"
+            />
+            <button
+              onclick="autoCautareCUIFirmaNou()"
+              class="absolute right-3 top-3 bg-blue-900 text-white h-10 w-10 rounded-xl flex items-center justify-center shadow-lg hover:bg-blue-800"
+              style="color: white; min-width: 40px; min-height: 40px"
+            >
+              <svg
+                width="20"
+                height="20"
+                fill="none"
+                stroke="white"
+                viewBox="0 0 24 24"
+                stroke-width="2.5"
+                style="display: block; flex-shrink: 0; overflow: visible"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke="white"
+                  d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
+                />
+              </svg>
+            </button>
+          </div>
+          <input
+            type="text"
+            id="fn-nume"
+            placeholder="Denumire Companie"
+            class="w-full p-5 bg-slate-50 rounded-xl font-bold text-sm outline-none"
+          />
+          <input
+            type="text"
+            id="fn-adresa"
+            placeholder="Adresă"
+            class="w-full p-5 bg-slate-50 rounded-xl font-bold text-sm outline-none"
+          />
+          <input
+            type="text"
+            id="fn-contact"
+            placeholder="Persoană de contact"
+            class="w-full p-5 bg-slate-50 rounded-xl font-bold text-sm outline-none"
+          />
+          <div class="grid grid-cols-2 gap-2">
+            <input
+              type="text"
+              id="fn-tel"
+              placeholder="Telefon"
+              class="w-full p-5 bg-slate-50 rounded-xl font-bold text-sm outline-none"
+            />
+            <input
+              type="email"
+              id="fn-email"
+              placeholder="Email"
+              class="w-full p-5 bg-slate-50 rounded-xl font-bold text-sm outline-none"
+            />
+          </div>
+          <input
+            type="text"
+            id="fn-iban"
+            placeholder="IBAN"
+            class="w-full p-5 bg-slate-50 rounded-xl font-bold text-sm outline-none"
+          />
+          <input
+            type="text"
+            id="fn-oras"
+            placeholder="Oraș"
+            class="w-full p-5 bg-slate-50 rounded-xl font-bold text-sm outline-none"
+          />
+          <textarea
+            id="fn-note"
+            rows="2"
+            placeholder="Note..."
+            class="w-full p-4 bg-slate-50 rounded-xl text-sm font-medium border-none outline-none resize-none"
+          ></textarea>
+          <div class="flex flex-col gap-2 pt-4">
+            <button
+              onclick="salveazaFirmaNou()"
+              class="w-full bg-blue-900 text-white btn-action shadow-xl shadow-blue-900/20"
+            >
+              Salvează Firma
+            </button>
+            <button
+              onclick="inchideModal('modal-firma-nou')"
+              class="w-full text-[10px] font-extrabold text-slate-400 uppercase py-3 border border-slate-100 rounded-xl"
+            >
+              Renunță
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== MODAL ADAUGĂ FACTURĂ ==================== -->
+    <div id="modal-factura-nou" class="modal-sheet">
+      <div class="sheet-content">
+        <div class="w-12 h-1 bg-slate-100 rounded-full mx-auto mb-6"></div>
+        <h3 class="text-xl font-extrabold mb-4 uppercase italic text-slate-800">
+          Adaugă Factură
+        </h3>
+
+        <!-- Toggle tip factură -->
+        <div class="flex gap-1 bg-slate-100 p-1 rounded-xl mb-5">
+          <button
+            class="fn-fac-tip-btn flex-1 py-2 text-[11px] font-extrabold rounded-lg transition-all bg-blue-900 text-white shadow"
+            data-tip="incasat"
+            onclick="comutaTipFacturaNou('incasat')"
+          >
+            De Încasat
+          </button>
+          <button
+            class="fn-fac-tip-btn flex-1 py-2 text-[11px] font-extrabold rounded-lg transition-all text-slate-500"
+            data-tip="platit"
+            onclick="comutaTipFacturaNou('platit')"
+          >
+            De Plătit
+          </button>
+        </div>
+
+        <div class="space-y-4">
+          <!-- Select client (De Încasat) -->
+          <div id="fn-fac-client-wrap">
+            <label
+              class="text-[8px] font-bold text-slate-400 uppercase ml-1 mb-1 block"
+              >Client</label
+            >
+            <select
+              id="fn-fac-client"
+              class="w-full p-4 bg-slate-50 rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-blue-100"
+            ></select>
+          </div>
+          <!-- Select furnizor (De Plătit) -->
+          <div id="fn-fac-furnizor-wrap" class="hidden">
+            <label
+              class="text-[8px] font-bold text-slate-400 uppercase ml-1 mb-1 block"
+              >Furnizor</label
+            >
+            <select
+              id="fn-fac-furnizor"
+              class="w-full p-4 bg-slate-50 rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-red-100"
+            ></select>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div class="space-y-1">
+              <label class="text-[8px] font-bold text-slate-400 uppercase ml-1"
+                >Nr. Factură</label
+              >
+              <input
+                type="text"
+                id="fn-fac-nr"
+                placeholder="Ex: 1024"
+                class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm outline-none"
+              />
+            </div>
+            <div class="space-y-1">
+              <label class="text-[8px] font-bold text-slate-400 uppercase ml-1"
+                >Valoare (RON)</label
+              >
+              <input
+                type="number"
+                id="fn-fac-val"
+                placeholder="0.00"
+                class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm outline-none"
+              />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div
+              class="relative p-3 bg-slate-50 rounded-xl cursor-pointer border border-transparent hover:border-blue-200 transition-all shadow-sm"
+              onclick="document.getElementById('fn-fac-emisie').showPicker()"
+            >
+              <input
+                type="date"
+                id="fn-fac-emisie"
+                class="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
+                oninput="
+                  document.getElementById('display-fn-fac-emisie').innerText =
+                    this.value
+                      ? new Date(this.value)
+                          .toLocaleDateString('ro-RO', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric',
+                          })
+                          .toUpperCase()
+                      : 'Alege data'
+                "
+              />
+              <div class="flex flex-col relative z-0">
+                <span
+                  class="text-[8px] font-bold text-slate-400 uppercase tracking-tight leading-none mb-1"
+                  >Data Emiterii</span
+                >
+                <div class="flex justify-between items-center">
+                  <span
+                    class="text-[10px] font-black text-slate-800 uppercase"
+                    id="display-fn-fac-emisie"
+                    >Alege data</span
+                  >
+                  <svg
+                    class="w-3.5 h-3.5 text-blue-900"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    stroke-width="2.5"
+                  >
+                    <path
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                </div>
+              </div>
+            </div>
+            <div
+              class="relative p-3 bg-slate-50 rounded-xl cursor-pointer border border-transparent hover:border-blue-200 transition-all shadow-sm"
+              onclick="document.getElementById('fn-fac-scad').showPicker()"
+            >
+              <input
+                type="date"
+                id="fn-fac-scad"
+                class="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
+                oninput="
+                  document.getElementById('display-fn-fac-scad').innerText =
+                    this.value
+                      ? new Date(this.value)
+                          .toLocaleDateString('ro-RO', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric',
+                          })
+                          .toUpperCase()
+                      : 'Alege data'
+                "
+              />
+              <div class="flex flex-col relative z-0">
+                <span
+                  class="text-[8px] font-bold text-slate-400 uppercase tracking-tight leading-none mb-1"
+                  >Scadență</span
+                >
+                <div class="flex justify-between items-center">
+                  <span
+                    class="text-[10px] font-black text-slate-800 uppercase"
+                    id="display-fn-fac-scad"
+                    >Alege data</span
+                  >
+                  <svg
+                    class="w-3.5 h-3.5 text-blue-900"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    stroke-width="2.5"
+                  >
+                    <path
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-1">
+            <label class="text-[8px] font-bold text-slate-400 uppercase ml-1"
+              >Note</label
+            >
+            <textarea
+              id="fn-fac-note"
+              rows="2"
+              placeholder="Note despre această factură..."
+              class="w-full p-3 bg-slate-50 rounded-xl text-sm font-medium border-none outline-none resize-none"
+            ></textarea>
+          </div>
+
+          <div class="flex flex-col gap-2 pt-4 border-t border-slate-50">
+            <button
+              onclick="salveazaFacturaNou()"
+              class="w-full bg-blue-900 text-white btn-action shadow-xl shadow-blue-900/20"
+            >
+              Salvează Factura
+            </button>
+            <button
+              onclick="inchideModal('modal-factura-nou')"
+              class="w-full text-[10px] font-extrabold text-slate-400 uppercase py-3 hover:text-red-500 transition-colors"
+            >
+              Anulează
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== MODAL CLIENT ==================== -->
+    <div id="modal-client" class="modal-sheet">
+      <div class="sheet-content">
+        <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4"></div>
+        <h2
+          id="modal-client-title"
+          class="text-lg font-black text-blue-900 uppercase tracking-tight text-center mb-4"
+        >
+          Client Bridge
+        </h2>
+        <div
+          id="modal-client-suport-warning"
+          class="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4 hidden"
+        >
+          <p class="text-[10px] font-bold text-amber-700 flex items-start gap-1.5">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:1px"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            Aceasta este o aplicație de suport. Datele pot diferi de
+            programul de contabilitate.
+          </p>
+        </div>
+        <input type="hidden" id="in-client-id" />
+        <div class="space-y-3">
+          <div class="flex gap-2">
+            <input
+              type="text"
+              id="in-cui"
+              placeholder="CUI"
+              class="flex-1 p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
+            />
+            <button
+              onclick="autoCautareCUI()"
+              class="px-4 bg-blue-900 text-white rounded-xl text-[9px] font-black uppercase"
+            >
+              ANAF
+            </button>
+            <button
+              onclick="verificaEFactura(document.getElementById('in-cui').value)"
+              title="Verifică statut e-Factura ANAF"
+              class="px-3 bg-emerald-700 text-white rounded-xl text-[9px] font-black uppercase"
+            >
+              e-Fact
+            </button>
+          </div>
+          <input
+            type="text"
+            id="in-nume"
+            placeholder="Denumire firmă *"
+            class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
+          />
+          <input
+            type="text"
+            id="in-adresa"
+            placeholder="Adresa"
+            class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
+          />
+          <input
+            type="text"
+            id="in-oras"
+            placeholder="Oraș"
+            class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
+          />
+          <input
+            type="text"
+            id="in-contact"
+            placeholder="Persoană contact"
+            class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
+          />
+          <input
+            type="text"
+            id="in-tel"
+            placeholder="Telefon"
+            class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
+          />
+          <input
+            type="email"
+            id="in-email"
+            placeholder="Email"
+            class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
+          />
+          <input
+            type="text"
+            id="in-iban"
+            placeholder="IBAN"
+            class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
+          />
+        </div>
+        <div class="flex gap-3 mt-4">
+          <button
+            onclick="inchideModal('modal-client')"
+            class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase"
+          >
+            Anulează
+          </button>
+          <button
+            onclick="salveazaClient()"
+            class="flex-1 py-3 bg-blue-900 text-white rounded-xl text-[10px] font-black uppercase shadow-lg"
+          >
+            Salvează
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== MODAL FACTURĂ ==================== -->
+    <div id="modal-factura" class="modal-sheet">
+      <div class="sheet-content">
+        <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4"></div>
+        <h2
+          id="modal-factura-title"
+          class="text-lg font-black text-blue-900 uppercase tracking-tight text-center mb-4"
+        >
+          Factură Nouă
+        </h2>
+        <div
+          id="anaf-info-box"
+          class="hidden bg-slate-50 rounded-xl p-3 mb-4 flex justify-between items-center"
+        >
+          <span
+            id="anaf-status-badge"
+            class="text-[9px] font-extrabold uppercase p-1 rounded bg-slate-100 text-slate-400 px-2"
+            >ÎN AȘTEPTARE</span
+          >
+          <span id="anaf-id-display" class="text-[9px] text-slate-400"></span>
+        </div>
+        <input type="hidden" id="in-fac-id" />
+        <div class="space-y-3">
+          <select
+            id="in-fac-client"
+            class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
+          >
+            <option value="">— Alege clientul —</option>
+          </select>
+          <input
+            type="text"
+            id="in-fac-nr"
+            placeholder="Serie / Nr. factură *"
+            class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
+          />
+          <input
+            type="number"
+            id="in-fac-val"
+            placeholder="Valoare (RON) *"
+            oninput="logicUIT(this.value)"
+            class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
+          />
+          <div
+            id="uit-display"
+            class="text-[9px] font-bold text-slate-400 px-1 hidden"
+          >
+            TVA 19%: <span id="uit-value">0</span> lei | Fără TVA:
+            <span id="fara-tva-value">0</span> lei
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label
+                class="text-[9px] font-bold text-slate-400 uppercase block mb-1"
+                >Data Emiterii</label
+              >
+              <div class="relative cursor-pointer" onclick="document.getElementById('in-fac-emisie').showPicker()">
+                <input
+                  type="date"
+                  id="in-fac-emisie"
+                  class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200 opacity-0 absolute inset-0 z-10 cursor-pointer"
+                />
+                <div
+                  class="p-3 bg-slate-50 rounded-xl text-sm font-bold text-slate-600 flex justify-between items-center"
+                >
+                  <span id="display-emisie">Alege data</span>
+                  <svg class="w-4 h-4 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                </div>
+              </div>
+            </div>
+            <div>
+              <label
+                class="text-[9px] font-bold text-slate-400 uppercase block mb-1"
+                >Data Scadență</label
+              >
+              <div class="relative cursor-pointer" onclick="document.getElementById('in-fac-scad').showPicker()">
+                <input
+                  type="date"
+                  id="in-fac-scad"
+                  class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200 opacity-0 absolute inset-0 z-10 cursor-pointer"
+                />
+                <div
+                  class="p-3 bg-slate-50 rounded-xl text-sm font-bold text-slate-600 flex justify-between items-center"
+                >
+                  <span id="display-scadenta">Alege data</span>
+                  <svg class="w-4 h-4 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                </div>
+              </div>
+            </div>
+          </div>
+          <input
+            type="text"
+            id="in-auto"
+            placeholder="Nr. auto (opțional)"
+            class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
+          />
+          <input
+            type="text"
+            id="in-uit"
+            placeholder="Cod UIT e-Transport (opțional)"
+            class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
+          />
+          <textarea
+            id="in-fac-note"
+            placeholder="Note"
+            rows="2"
+            class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200 resize-none"
+          ></textarea>
+          <div
+            class="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center"
+            id="dropzone-factura"
+          >
+            <input
+              type="file"
+              id="in-fac-file"
+              accept=".pdf"
+              class="hidden"
+              multiple
+              onchange="handleFileSelect(this)"
+            />
+            <label for="in-fac-file" class="cursor-pointer">
+              <svg
+                class="w-8 h-8 mx-auto text-slate-300 mb-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                stroke-width="1.5"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m6.75 12l-3-3m0 0l-3 3m3-3v6m-1.5-15H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
+                />
+              </svg>
+              <p class="text-[10px] font-bold text-slate-400">Atașează PDF</p>
+            </label>
+          </div>
+          <div id="pending-pdf-list" class="space-y-2"></div>
+        </div>
+        <div class="flex gap-3 mt-4">
+          <button
+            onclick="inchideModal('modal-factura')"
+            class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase"
+          >
+            Anulează
+          </button>
+          <button
+            onclick="salveazaFacturaOrchestrator()"
+            class="flex-1 py-3 bg-blue-900 text-white rounded-xl text-[10px] font-black uppercase shadow-lg"
+          >
+            Salvează
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== MODAL FACTURĂ PLĂTIT ==================== -->
+    <div id="modal-factura-platit" class="modal-sheet">
+      <div class="sheet-content">
+        <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4"></div>
+        <h2
+          id="modal-fp-title"
+          class="text-lg font-black text-blue-900 uppercase tracking-tight text-center mb-4"
+        >
+          Factură de Plătit
+        </h2>
+        <input type="hidden" id="in-fp-id" />
+        <input type="hidden" id="in-fp-furnizor-id" />
+        <div class="space-y-3">
+          <select
+            id="in-fp-furnizor"
+            class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
+          >
+            <option value="">— Alege furnizorul —</option>
+          </select>
+          <input
+            type="text"
+            id="in-fp-nr"
+            placeholder="Nr. factură *"
+            class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
+          />
+          <input
+            type="number"
+            id="in-fp-val"
+            placeholder="Valoare (RON) *"
+            class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
+          />
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label
+                class="text-[9px] font-bold text-slate-400 uppercase block mb-1"
+                >Data Emiterii</label
+              >
+              <div class="relative cursor-pointer" onclick="document.getElementById('in-fp-emisie').showPicker()">
+                <input
+                  type="date"
+                  id="in-fp-emisie"
+                  class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200 opacity-0 absolute inset-0 z-10 cursor-pointer"
+                />
+                <div
+                  class="p-3 bg-slate-50 rounded-xl text-sm font-bold text-slate-600 flex justify-between items-center"
+                >
+                  <span id="display-fp-emisie">Alege data</span>
+                  <svg class="w-4 h-4 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                </div>
+              </div>
+            </div>
+            <div>
+              <label
+                class="text-[9px] font-bold text-slate-400 uppercase block mb-1"
+                >Data Scadență</label
+              >
+              <div class="relative cursor-pointer" onclick="document.getElementById('in-fp-scad').showPicker()">
+                <input
+                  type="date"
+                  id="in-fp-scad"
+                  class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200 opacity-0 absolute inset-0 z-10 cursor-pointer"
+                />
+                <div
+                  class="p-3 bg-slate-50 rounded-xl text-sm font-bold text-slate-600 flex justify-between items-center"
+                >
+                  <span id="display-fp-scadenta">Alege data</span>
+                  <svg class="w-4 h-4 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                </div>
+              </div>
+            </div>
+          </div>
+          <textarea
+            id="in-fp-note"
+            placeholder="Note"
+            rows="2"
+            class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200 resize-none"
+          ></textarea>
+        </div>
+        <div class="flex gap-3 mt-4">
+          <button
+            onclick="inchideModal('modal-factura-platit')"
+            class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase"
+          >
+            Anulează
+          </button>
+          <button
+            id="btn-sterge-fp"
+            onclick="
+              stergeFacturaPlatit(document.getElementById('in-fp-id').value)
+            "
+            class="py-3 px-4 bg-red-100 text-red-600 rounded-xl text-[10px] font-black uppercase hidden"
+          >
+            Șterge
+          </button>
+          <button
+            onclick="salveazaFacturaPlatit()"
+            class="flex-1 py-3 bg-blue-900 text-white rounded-xl text-[10px] font-black uppercase shadow-lg"
+          >
+            Salvează
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== MODAL FURNIZOR ==================== -->
+    <div id="modal-furnizor" class="modal-sheet">
+      <div class="sheet-content">
+        <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4"></div>
+        <h2
+          id="modal-furnizor-title"
+          class="text-lg font-black text-blue-900 uppercase tracking-tight text-center mb-4"
+        >
+          Furnizor
+        </h2>
+        <input type="hidden" id="in-furn-id" />
+        <div class="space-y-3">
+          <div class="flex gap-2">
+            <input
+              type="text"
+              id="in-furn-cui"
+              placeholder="CUI"
+              class="flex-1 p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
+            />
+            <button
+              onclick="autoCautareCUIFurnizor()"
+              class="px-4 bg-blue-900 text-white rounded-xl text-[9px] font-black uppercase"
+            >
+              ANAF
+            </button>
+            <button
+              onclick="verificaEFactura(document.getElementById('in-furn-cui').value)"
+              title="Verifică statut e-Factura ANAF"
+              class="px-3 bg-emerald-700 text-white rounded-xl text-[9px] font-black uppercase"
+            >
+              e-Fact
+            </button>
+          </div>
+          <input
+            type="text"
+            id="in-furn-nume"
+            placeholder="Denumire firmă *"
+            class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
+          />
+          <input
+            type="text"
+            id="in-furn-adresa"
+            placeholder="Adresa"
+            class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
+          />
+          <input
+            type="text"
+            id="in-furn-oras"
+            placeholder="Oraș"
+            class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
+          />
+          <input
+            type="text"
+            id="in-furn-contact"
+            placeholder="Persoană contact"
+            class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
+          />
+          <input
+            type="text"
+            id="in-furn-tel"
+            placeholder="Telefon"
+            class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
+          />
+          <input
+            type="email"
+            id="in-furn-email"
+            placeholder="Email"
+            class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
+          />
+          <input
+            type="text"
+            id="in-furn-iban"
+            placeholder="IBAN"
+            class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
+          />
+          <input
+            type="text"
+            id="in-furn-note"
+            placeholder="Observații"
+            class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
+          />
+        </div>
+        <div class="flex gap-3 mt-4">
+          <button
+            onclick="inchideModal('modal-furnizor')"
+            class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase"
+          >
+            Anulează
+          </button>
+          <button
+            onclick="salveazaFurnizor()"
+            class="flex-1 py-3 bg-blue-900 text-white rounded-xl text-[10px] font-black uppercase shadow-lg"
+          >
+            Salvează
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== MODAL CONFIRMARE ==================== -->
+    <div id="modal-confirm" class="modal-sheet">
+      <div class="sheet-content text-center">
+        <div
+          class="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4"
+        >
+          <svg
+            class="w-8 h-8 text-amber-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            stroke-width="2"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
+            />
+          </svg>
+        </div>
+        <p id="confirm-message" class="text-sm font-bold text-slate-700 mb-6">
+          Ești sigur?
+        </p>
+        <div class="flex gap-3">
+          <button
+            onclick="inchideModalConfirm()"
+            class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase"
+          >
+            Nu
+          </button>
+          <button
+            id="btn-confirm-action"
+            class="flex-1 py-3 bg-red-600 text-white rounded-xl text-[10px] font-black uppercase shadow-lg"
+          >
+            Da, confirmă
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== MODAL RECEPȚIE (Task 1) ==================== -->
+    <div id="modal-receptie" class="modal-sheet">
+      <div class="sheet-content">
+        <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4"></div>
+        <h2 class="text-lg font-black text-emerald-800 uppercase tracking-tight text-center mb-4 flex items-center justify-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 13.5l3 3m0 0l3-3m-3 3v-6m1.06-4.19l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z"/></svg>Recepție Nouă</h2>
+        <div class="space-y-3">
+          <select id="rec-furnizor-select" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-emerald-200">
+            <option value="">-- Furnizor (opțional) --</option>
+          </select>
+          <input type="date" id="rec-data" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-emerald-200"/>
+          <!-- Items list -->
+          <div class="bg-slate-50 rounded-2xl p-3">
+            <div class="flex justify-between items-center mb-2">
+              <p class="text-xs font-black text-slate-500 uppercase">Produse primite</p>
+              <button onclick="adaugaItemReceptie()" class="text-xs font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-lg uppercase transition-all flex items-center gap-1"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>Adăugați</button>
+            </div>
+            <div id="rec-items-list"></div>
+            <p id="rec-total-display" class="text-xs font-black text-right text-slate-700 mt-2">Total: 0 lei</p>
+          </div>
+          <textarea id="rec-obs" rows="2" placeholder="Observații..." class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-emerald-200 resize-none"></textarea>
+        </div>
+        <div class="flex gap-3 mt-4">
+          <button onclick="inchideModalReceptie()" class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase">Anulare</button>
+          <button onclick="salveazaReceptie()" class="flex-1 py-3 bg-emerald-700 text-white rounded-xl text-[10px] font-black uppercase shadow-lg flex items-center justify-center gap-1.5"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>Salvează Recepție</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== MODAL LIVRARE (Task 1) ==================== -->
+    <div id="modal-livrare" class="modal-sheet">
+      <div class="sheet-content">
+        <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4"></div>
+        <h2 class="text-lg font-black text-blue-800 uppercase tracking-tight text-center mb-4 flex items-center justify-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m8.25 3v6.75m0 0l-3-3m3 3l3-3M3.75 7.5h16.5M13.5 3.75h-3a1.5 1.5 0 00-1.5 1.5v2.25h6V5.25a1.5 1.5 0 00-1.5-1.5z"/></svg>Livrare Nouă</h2>
+        <div class="space-y-3">
+          <select id="liv-client-select" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200">
+            <option value="">-- Client (opțional) --</option>
+          </select>
+          <input type="date" id="liv-data" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
+          <!-- Items list -->
+          <div class="bg-slate-50 rounded-2xl p-3">
+            <div class="flex justify-between items-center mb-2">
+              <p class="text-xs font-black text-slate-500 uppercase">Produse livrate</p>
+              <button onclick="adaugaItemLivrare()" class="text-xs font-black text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg uppercase transition-all flex items-center gap-1"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>Adăugați</button>
+            </div>
+            <div id="liv-items-list"></div>
+            <p id="liv-total-display" class="text-xs font-black text-right text-slate-700 mt-2">Total: 0 lei</p>
+          </div>
+          <textarea id="liv-obs" rows="2" placeholder="Observații..." class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200 resize-none"></textarea>
+        </div>
+        <div class="flex gap-3 mt-4">
+          <button onclick="inchideModalLivrare()" class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase">Anulare</button>
+          <button onclick="salveazaLivrare()" class="flex-1 py-3 bg-blue-700 text-white rounded-xl text-[10px] font-black uppercase shadow-lg flex items-center justify-center gap-1.5"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>Salvează Livrare</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== MODAL PROFIL FIRMĂ ==================== -->
+    <div id="modal-profil-firma" class="modal-sheet">
+      <div class="sheet-content">
+        <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4"></div>
+        <h2
+          class="text-lg font-black text-blue-900 uppercase tracking-tight text-center mb-4"
+        >
+          Profilul Firmei
+        </h2>
+        <div class="space-y-3">
+          <!-- Email display (read-only) -->
+          <p class="text-[10px] font-semibold text-slate-400 text-center">
+            Cont: <span id="profil-email-display" class="text-blue-700 font-bold">—</span>
+          </p>
+          <input
+            type="text"
+            id="pf-nome"
+            placeholder="Denumire firmă *"
+            class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
+          />
+          <input
+            type="text"
+            id="pf-cui"
+            placeholder="CUI"
+            class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
+          />
+          <input
+            type="text"
+            id="pf-regcom"
+            placeholder="Nr. Reg. Com."
+            class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
+          />
+          <input
+            type="text"
+            id="pf-adresa"
+            placeholder="Adresa"
+            class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
+          />
+          <input
+            type="text"
+            id="pf-oras"
+            placeholder="Oraș"
+            class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
+          />
+          <input
+            type="text"
+            id="pf-judet"
+            placeholder="Județ"
+            class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
+          />
+          <input
+            type="text"
+            id="pf-iban"
+            placeholder="IBAN principal"
+            class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
+          />
+          <input
+            type="text"
+            id="pf-banca"
+            placeholder="Bancă"
+            class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
+          />
+          <input
+            type="text"
+            id="pf-tel"
+            placeholder="Telefon"
+            class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
+          />
+          <input
+            type="email"
+            id="pf-email"
+            placeholder="Email"
+            class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
+          />
+        </div>
+        <div class="flex gap-3 mt-4">
+          <button
+            onclick="inchideProfilFirma()"
+            class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase"
+          >
+            Închide
+          </button>
+          <button
+            onclick="salveazaProfilFirma()"
+            class="flex-1 py-3 bg-blue-900 text-white rounded-xl text-[10px] font-black uppercase shadow-lg"
+          >
+            Salvează
+          </button>
+        </div>
+        <!-- Firmele Mele (secțiune integrată în profilul firmei) -->
+        <div class="border-t border-slate-100 pt-3 mt-3">
+          <!-- Preferință: Data implicită = Azi -->
+          <label class="flex items-center justify-between gap-3 py-2 cursor-pointer">
+            <span class="text-[10px] font-black text-slate-600 uppercase">Dată implicită = Azi</span>
+            <div class="relative">
+              <input type="checkbox" id="pref-data-azi" onchange="salveazaPrefDataAzi(this.checked)" class="sr-only peer"/>
+              <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+            </div>
+          </label>
+        </div>
+        <div class="border-t border-slate-100 pt-3 mt-1">
+          <button onclick="const c = document.getElementById('pf-firme-content'); c.classList.toggle('hidden'); this.querySelector('.pf-arrow').innerText = c.classList.contains('hidden') ? '▼' : '▲'; if (!c.classList.contains('hidden') && window.ZFlowMultiFirma) ZFlowMultiFirma.renderPanel('pf-firme-content');"
+            class="w-full flex items-center justify-between py-1.5 text-[9px] font-black text-slate-500 uppercase hover:text-blue-700 transition-all">
+            <span class="flex items-center gap-1.5"><svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21"/></svg>Firmele Mele</span>
+            <span class="pf-arrow text-[10px]">▼</span>
+          </button>
+          <div id="pf-firme-content" class="hidden pt-2"></div>
+        </div>
+        <!-- Acțiuni suplimentare (Task 7 + Task 3) -->
+        <div class="mt-4 space-y-2 border-t border-slate-100 pt-4">
+          <div id="admin-delete-section" class="hidden space-y-2">
+            <!-- Maintenance Mode Toggle — Admin only -->
+            <div data-admin-only class="bg-amber-50 border border-amber-200 rounded-xl p-3">
+              <div class="flex items-center justify-between mb-1.5">
+                <p class="text-[9px] font-black text-amber-800 uppercase">Mod Mentenanță</p>
+                <button id="btn-maintenance-toggle" onclick="toggleMaintenanceMode()"
+                  class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors bg-slate-300"
+                  role="switch" aria-checked="false">
+                  <span id="maintenance-knob" class="inline-block h-3.5 w-3.5 translate-x-0.5 rounded-full bg-white shadow transition-transform"></span>
+                </button>
+              </div>
+              <p class="text-[8px] text-amber-700">Activat: afișează ecran de mentenanță tuturor utilizatorilor care nu sunt admin</p>
+              <p id="maintenance-status-text" class="text-[8px] font-bold text-slate-500 mt-1">Status: Inactiv</p>
+            </div>
+            <button data-admin-only onclick="exportareCompleta()" class="w-full py-2.5 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-xl text-[10px] font-black uppercase hover:bg-indigo-100 transition-all">
+              Export Backup Complet (XLSX + JSON)
+            </button>
+            <button data-admin-only onclick="resetDateUnificat()" class="w-full py-2.5 bg-red-50 text-red-700 border border-red-200 rounded-xl text-[10px] font-black uppercase hover:bg-red-100 transition-all">
+              Resetare Completă Date
+            </button>
+            <button data-account-only onclick="deschideModalSchimbaParola()" class="w-full py-2.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-xl text-[10px] font-black uppercase hover:bg-blue-100 transition-all">
+              <svg class="w-3.5 h-3.5 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/></svg>Schimbă Email / Parolă
+            </button>
+            <!-- Resetare date pt. utilizatori Supabase (înainte era buton separat) -->
+            <button data-supabase-only onclick="resetDateUnificat()" class="w-full py-2.5 bg-red-50 text-red-700 border border-red-200 rounded-xl text-[10px] font-black uppercase hover:bg-red-100 transition-all">
+              Resetare Completă Date Cont
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== MODAL AUTH ==================== -->
+    <div id="modal-auth" class="modal-sheet">
+      <div class="sheet-content">
+        <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-6"></div>
+        <div class="text-center mb-6">
+          <h1 class="text-2xl font-black text-blue-900 tracking-tight">Z-FLOW</h1>
+          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Autentificare</p>
+        </div>
+        <!-- Mesaj eroare dinamic -->
+        <div id="auth-error-msg" class="hidden bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-xs font-bold mb-4 flex items-center gap-2">
+          <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <span id="auth-error-text"></span>
+        </div>
+        <div class="space-y-3">
+          <input
+            type="text"
+            id="auth-username"
+            placeholder="Email sau utilizator"
+            class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm border-2 border-transparent outline-none focus:border-blue-200 transition-all"
+          />
+          <input
+            type="password"
+            id="auth-password"
+            placeholder="Parolă"
+            class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm border-2 border-transparent outline-none focus:border-blue-200 transition-all"
+          />
+          <!-- Reține autentificarea -->
+          <label class="flex items-center gap-2 px-1 cursor-pointer select-none">
+            <input type="checkbox" id="auth-remember" class="w-4 h-4 rounded accent-blue-700">
+            <span class="text-xs font-bold text-slate-500">Reține autentificarea 30 de zile</span>
+          </label>
+          <button
+            onclick="verificaAuth()"
+            class="w-full bg-blue-900 text-white btn-action shadow-xl shadow-blue-900/30 mt-2"
+          >
+            Autentificare
+          </button>
+          <!-- Link-uri secundare -->
+          <div class="flex justify-between items-center pt-1">
+            <button onclick="deschideModalResetParola()" class="text-xs text-slate-400 font-bold hover:text-blue-600 transition-colors">
+              Ai uitat parola?
+            </button>
+            <button onclick="deschideModalInregistrare()" class="text-xs font-black text-blue-900 hover:text-blue-600 transition-colors">
+              Cont nou →
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== MODAL ÎNREGISTRARE ==================== -->
+    <div id="modal-register" class="modal-sheet">
+      <div class="sheet-content">
+        <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-6"></div>
+        <div class="text-center mb-6">
+          <h1 class="text-2xl font-black text-blue-900 tracking-tight">Cont Nou</h1>
+          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Înregistrare Z-FLOW</p>
+        </div>
+        <div id="register-error-msg" class="hidden bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-xs font-bold mb-4 flex items-center gap-2">
+          <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <span id="register-error-text"></span>
+        </div>
+        <div class="space-y-3">
+          <input
+            type="text"
+            id="reg-nume"
+            placeholder="Nume complet (opțional)"
+            class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm border-2 border-transparent outline-none focus:border-blue-200 transition-all"
+          />
+          <input
+            type="email"
+            id="reg-email"
+            placeholder="Email *"
+            class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm border-2 border-transparent outline-none focus:border-blue-200 transition-all"
+          />
+          <input
+            type="password"
+            id="reg-password"
+            placeholder="Parolă (minim 6 caractere) *"
+            class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm border-2 border-transparent outline-none focus:border-blue-200 transition-all"
+          />
+          <input
+            type="password"
+            id="reg-password-confirm"
+            placeholder="Confirmă parola *"
+            class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm border-2 border-transparent outline-none focus:border-blue-200 transition-all"
+          />
+          <input
+            type="text"
+            id="reg-subscription-code"
+            placeholder="Cod Abonament *"
+            class="w-full p-4 bg-amber-50 rounded-xl font-bold text-sm border-2 border-amber-200 outline-none focus:border-amber-400 transition-all"
+          />
+          <p class="text-[10px] text-amber-600 font-bold px-1 flex items-start gap-1.5">
+            <svg class="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
+            Necesită cod de abonament activ. Contactați echipa Z-FLOW pentru achiziție.
+          </p>
+          <p class="text-[10px] text-slate-400 font-bold px-1">
+            Fiecare cont are spațiu propriu de date în Supabase. Datele tale rămân private și izolate complet de alți utilizatori.
+          </p>
+          <button
+            onclick="inregistrareUtilizator()"
+            class="w-full bg-blue-900 text-white btn-action shadow-xl shadow-blue-900/30 mt-2"
+          >
+            Creează cont
+          </button>
+          <button onclick="inchideModalRegister()" class="w-full py-3 bg-slate-100 text-slate-500 rounded-xl text-xs font-black uppercase">
+            ← Înapoi la Login
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== MODAL SCHIMBĂ DATE CONT ==================== -->
+    <div id="modal-schimba-cont" class="modal-sheet">
+      <div class="sheet-content">
+        <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-6"></div>
+        <div class="text-center mb-6">
+          <h1 class="text-2xl font-black text-blue-900 tracking-tight">Date Cont</h1>
+          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Modifică Email / Parolă</p>
+        </div>
+        <div id="schimba-cont-error" class="hidden bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-xs font-bold mb-4 flex items-center gap-2">
+          <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <span id="schimba-cont-error-text"></span>
+        </div>
+        <div class="space-y-3">
+          <p class="text-xs text-slate-500 font-bold px-1">Lasă gol câmpurile pe care nu vrei să le modifici.</p>
+          <div id="cont-email-wrap">
+          <input
+            type="email"
+            id="cont-nou-email"
+            placeholder="Email nou (opțional)"
+            class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm border-2 border-transparent outline-none focus:border-blue-200 transition-all"
+          />
+          </div>
+          <p id="cont-admin-note" class="hidden text-[10px] text-amber-700 font-bold bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+            Admin local — schimbare email nedisponibilă. Poți modifica doar parola de acces.
+          </p>
+          <input
+            type="password"
+            id="cont-nou-parola"
+            placeholder="Parolă nouă (minim 6 caractere)"
+            class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm border-2 border-transparent outline-none focus:border-blue-200 transition-all"
+          />
+          <input
+            type="password"
+            id="cont-nou-parola-confirm"
+            placeholder="Confirmă parola nouă"
+            class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm border-2 border-transparent outline-none focus:border-blue-200 transition-all"
+          />
+          <p class="text-[10px] text-slate-400 font-bold px-1">
+            Dacă schimbi emailul, vei primi un link de confirmare pe noua adresă.
+          </p>
+          <button
+            onclick="schimbaDateCont()"
+            class="w-full bg-blue-900 text-white btn-action shadow-xl shadow-blue-900/30 mt-2"
+          >
+            <svg class="w-4 h-4 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>Salvează modificările
+          </button>
+          <button onclick="document.getElementById('modal-schimba-cont').classList.remove('active')" class="w-full py-3 bg-slate-100 text-slate-500 rounded-xl text-xs font-black uppercase">
+            ✕ Închide
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== MODAL RESET PAROLĂ ==================== -->
+    <div id="modal-reset-password" class="modal-sheet">
+      <div class="sheet-content">
+        <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-6"></div>
+        <div class="text-center mb-6">
+          <h1 class="text-2xl font-black text-blue-900 tracking-tight">Recuperare Parolă</h1>
+          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Trimitem un link pe email</p>
+        </div>
+        <div class="space-y-3">
+          <p class="text-xs text-slate-500 font-bold px-1 mb-2">
+            Introdu adresa de email asociată contului tău. Vei primi un link pentru resetarea parolei.
+          </p>
+          <input
+            type="email"
+            id="reset-email"
+            placeholder="Adresa de email *"
+            class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm border-2 border-transparent outline-none focus:border-blue-200 transition-all"
+          />
+          <button
+            onclick="trimiteResetParola()"
+            class="w-full bg-blue-900 text-white btn-action shadow-xl shadow-blue-900/30 mt-2"
+          >
+            <svg class="w-4 h-4 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/></svg>Trimite link resetare
+          </button>
+          <button onclick="inchideModalResetPassword()" class="w-full py-3 bg-slate-100 text-slate-500 rounded-xl text-xs font-black uppercase">
+            ← Înapoi la Login
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== MODALS — DEPOZIT ==================== -->
+
+    <!-- Modal: Produs Nou / Editare -->
+    <div id="modal-produs" class="modal-sheet">
+      <div class="sheet-content">
+        <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4"></div>
+        <h2 id="produs-modal-title" class="text-lg font-black text-blue-900 uppercase tracking-tight text-center mb-4">Produs Nou</h2>
+        <input type="hidden" id="produs-id-hidden"/>
+        <div class="space-y-3">
+          <input type="text" id="produs-name" placeholder="Denumire produs *" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
+          <div class="grid grid-cols-2 gap-3">
+            <input type="text" id="produs-sku" placeholder="SKU / Cod produs" class="p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
+            <select id="produs-um" class="p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200">
+              <option value="buc">buc</option><option value="kg">kg</option><option value="l">l</option><option value="m">m</option><option value="mp">mp</option><option value="set">set</option>
+            </select>
+          </div>
+          <input type="text" id="produs-cat" placeholder="Categorie" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
+          <div class="grid grid-cols-2 gap-3">
+            <input type="number" id="produs-pret-ach" placeholder="Preț achiziție (lei)" class="p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
+            <input type="number" id="produs-pret-vanz" placeholder="Preț vânzare (lei)" class="p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
+          </div>
+          <input type="number" id="produs-stoc-min" placeholder="Stoc minim alertă" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
+          <div id="produs-stoc-initial-section">
+            <input type="number" id="produs-stoc-initial" placeholder="Stoc inițial (opțional)" class="w-full p-3 bg-emerald-50 rounded-xl text-sm font-bold border-2 border-emerald-100 outline-none focus:border-emerald-300"/>
+          </div>
+          <input type="text" id="produs-obs" placeholder="Observații" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
+        </div>
+        <div class="flex gap-3 mt-4">
+          <button onclick="inchideModalProdus()" class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase">Închide</button>
+          <button onclick="salveazaProdus()" class="flex-1 py-3 bg-blue-900 text-white rounded-xl text-[10px] font-black uppercase shadow-lg">Salvează</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Mișcare Stoc -->
+    <div id="modal-miscare-stoc" class="modal-sheet">
+      <div class="sheet-content">
+        <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4"></div>
+        <h2 class="text-lg font-black text-blue-900 uppercase tracking-tight text-center mb-4">Mișcare Stoc</h2>
+        <div class="space-y-3">
+          <select id="miscare-produs-select" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200">
+            <option value="">— Selectează produs —</option>
+          </select>
+          <div class="grid grid-cols-2 gap-3">
+            <select id="miscare-tip" class="p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200">
+              <option value="Intrare">▲ Intrare (+)</option>
+              <option value="Iesire">▼ Ieșire (−)</option>
+            </select>
+            <input type="number" id="miscare-cantitate" placeholder="Cantitate *" min="0.01" step="0.01" class="p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
+          </div>
+          <input type="date" id="miscare-data" onclick="this.showPicker()" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200 cursor-pointer"/>
+          <input type="text" id="miscare-obs" placeholder="Observații / motiv" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
+        </div>
+        <div class="flex gap-3 mt-4">
+          <button onclick="inchideModalMiscare()" class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase">Închide</button>
+          <button onclick="salveazaMiscare()" class="flex-1 py-3 bg-blue-900 text-white rounded-xl text-[10px] font-black uppercase shadow-lg">Înregistrează</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== MODALS — LOGISTIC ==================== -->
+
+    <!-- Modal: Comandă Transport -->
+    <div id="modal-comanda-transport" class="modal-sheet">
+      <div class="sheet-content">
+        <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4"></div>
+        <h2 id="ct-modal-title" class="text-lg font-black text-blue-900 uppercase tracking-tight text-center mb-4">Comandă Nouă</h2>
+        <input type="hidden" id="ct-id-hidden"/>
+        <div class="space-y-3">
+          <div class="grid grid-cols-2 gap-3">
+            <input type="text" id="ct-ruta-de" placeholder="Plecare *" class="p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
+            <input type="text" id="ct-ruta-la" placeholder="Destinație *" class="p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
+          </div>
+          <select id="ct-client-select" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200">
+            <option value="">— Client —</option>
+          </select>
+          <div class="grid grid-cols-2 gap-3">
+            <select id="ct-sofer-select" class="p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200">
+              <option value="">— Șofer —</option>
+            </select>
+            <select id="ct-vehicul-select" class="p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200">
+              <option value="">— Vehicul —</option>
+            </select>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <input type="date" id="ct-data-plecare" onclick="this.showPicker()" placeholder="Data plecare" class="p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200 cursor-pointer"/>
+            <input type="date" id="ct-data-livrare" onclick="this.showPicker()" placeholder="Data livrare" class="p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200 cursor-pointer"/>
+          </div>
+          <select id="ct-status" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200">
+            <option value="Planificat">Planificat</option>
+            <option value="In curs">În curs</option>
+            <option value="Livrat">Livrat</option>
+            <option value="Anulat">Anulat</option>
+          </select>
+          <input type="text" id="ct-tracking" placeholder="Cod tracking (opțional)" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
+          <input type="number" id="ct-valoare" placeholder="Valoare transport (lei)" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
+          <input type="number" id="ct-km" placeholder="Km rută (opțional)" min="0" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
+          <input type="text" id="ct-obs" placeholder="Observații" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
+        </div>
+        <div class="flex gap-3 mt-4">
+          <button onclick="inchideModalComandaTransport()" class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase">Închide</button>
+          <button onclick="salveazaComandaTransport()" class="flex-1 py-3 bg-blue-900 text-white rounded-xl text-[10px] font-black uppercase shadow-lg">Salvează</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Șofer -->
+    <div id="modal-sofer" class="modal-sheet">
+      <div class="sheet-content">
+        <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4"></div>
+        <h2 id="sofer-modal-title" class="text-lg font-black text-blue-900 uppercase tracking-tight text-center mb-4">Șofer Nou</h2>
+        <input type="hidden" id="sofer-id-hidden"/>
+        <div class="space-y-3">
+          <input type="text" id="sofer-name" placeholder="Nume complet *" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
+          <input type="tel" id="sofer-tel" placeholder="Telefon" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
+          <input type="text" id="sofer-permis" placeholder="Nr. permis conducere" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
+          <input type="text" id="sofer-cnp" placeholder="CNP (opțional)" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
+        </div>
+        <div class="flex gap-3 mt-4">
+          <button onclick="inchideModalSofer()" class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase">Închide</button>
+          <button onclick="salveazaSofer()" class="flex-1 py-3 bg-purple-700 text-white rounded-xl text-[10px] font-black uppercase shadow-lg">Salvează</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Vehicul -->
+    <div id="modal-vehicul" class="modal-sheet">
+      <div class="sheet-content">
+        <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4"></div>
+        <h2 id="vehicul-modal-title" class="text-lg font-black text-blue-900 uppercase tracking-tight text-center mb-4">Vehicul Nou</h2>
+        <input type="hidden" id="vehicul-id-hidden"/>
+        <div class="space-y-3">
+          <input type="text" id="vehicul-nr" placeholder="Nr. înmatriculare *" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200 uppercase"/>
+          <div class="grid grid-cols-2 gap-3">
+            <input type="text" id="vehicul-marca" placeholder="Marcă" class="p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
+            <input type="text" id="vehicul-model" placeholder="Model" class="p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
+          </div>
+          <select id="vehicul-tip" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200">
+            <option value="Camion">Camion</option>
+            <option value="Furgoneta">Furgoneta</option>
+            <option value="Autoturism">Autoturism</option>
+            <option value="Remorca">Remorcă</option>
+            <option value="Utilaj">Utilaj</option>
+          </select>
+          <div class="grid grid-cols-2 gap-3">
+            <input type="number" id="vehicul-gps-lat" placeholder="GPS Lat (ex: 47.1985)" step="0.0001" class="p-3 bg-green-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-green-300"/>
+            <input type="number" id="vehicul-gps-lng" placeholder="GPS Lng (ex: 23.0592)" step="0.0001" class="p-3 bg-green-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-green-300"/>
+          </div>
+          <p class="text-[9px] text-slate-400 text-center -mt-1"><svg class="w-3 h-3 inline-block mr-0.5 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>Coordonate GPS opționale — lasă gol pentru simulare automată</p>
+        </div>
+        <div class="flex gap-3 mt-4">
+          <button onclick="inchideModalVehicul()" class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase">Închide</button>
+          <button onclick="salveazaVehicul()" class="flex-1 py-3 bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase shadow-lg">Salvează</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== MODAL MULTI-FIRMĂ ==================== -->
+    <div id="modal-multifirma" class="modal-sheet">
+      <div class="sheet-content">
+        <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4"></div>
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-black text-blue-900 uppercase tracking-tight">Firmele Mele</h2>
+          <button onclick="document.getElementById('modal-multifirma').classList.remove('active')"
+            class="p-2 text-slate-400 hover:text-red-500 transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <p class="text-[9px] text-slate-400 mb-3">Gestionezi mai multe firme? Adaugă-le și comută rapid între ele.</p>
+        <div id="multifirma-panel-content">
+          <p class="text-[9px] text-slate-400 italic text-center py-4">Se inițializează...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== JAVASCRIPT - ORDINE CORECTĂ ==================== -->
+    <!-- 1. Services (no dependencies) -->
+    <script src="js/services/idb.js"></script>
+    <script src="js/services/supabase.js"></script>
+
+    <!-- 2. Store (depends on Vue) -->
+    <script src="js/store.js"></script>
+
+    <!-- 3. Modules (before app.js so globals are available) -->
+    <script src="js/modules/import.js"></script>
+
+    <!-- 4. Main App (contains all functionality) -->
+    <script src="js/app.js"></script>
+
+    <!-- 4. Module Depozit & Logistic (after app.js, use global functions) -->
+    <script src="js/modules/depozit.js"></script>
+    <script src="js/modules/logistic.js"></script>
+
+    <!-- 5. Features v8.0 — noile funcționalități (ANAF e-Factură, Bridge XML, SafeFleet, Scanner QR, Cashflow Forecast, Multi-firmă, km Report, Import XML ANAF) -->
+    <script src="js/modules/features.js"></script>
+
+    <!-- PWA Service Worker Registration -->
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker
+            .register("/sw.js")
+            .then((reg) =>
+              console.log("Z-FLOW V2 Service Worker registered:", reg.scope),
+            )
+            .catch((err) =>
+              console.warn("Service Worker registration failed:", err),
+            );
+        });
+      }
+    </script>
+
+    <!-- ==================== MODAL MENTENANȚĂ ==================== -->
+    <!-- Afișat utilizatorilor non-admin când modul de mentenanță este activ -->
+    <div id="maintenance-overlay" class="hidden fixed inset-0 z-[9999] bg-blue-950 flex flex-col items-center justify-center p-8 text-center">
+      <svg class="w-16 h-16 text-amber-400 mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l5.653-4.655m5.581-5.58c.317-.14.641-.268.975-.384a2.652 2.652 0 013.587 3.587c-.116.334-.244.658-.384.975M11.42 15.17l-5.581 5.58"/>
+      </svg>
+      <h1 class="text-2xl font-black text-white mb-2 tracking-tight">Aplicație în mentenanță</h1>
+      <p class="text-blue-300 text-sm font-medium max-w-xs" id="maintenance-message-display">
+        Se efectuează actualizări. Vă rugăm să reveniți în câteva minute.
+      </p>
+      <p class="text-blue-500 text-[10px] mt-6 font-bold uppercase tracking-widest">Z-FLOW · Vă mulțumim pentru răbdare</p>
+    </div>
+  </body>
+</html>
