@@ -147,6 +147,7 @@ const ZFlowSuppliers = {
      */
     preparePayload(formData) {
         return {
+            user_id: (typeof _getCurrentUserId === 'function' ? _getCurrentUserId() : null),
             nume_firma: formData.nume_firma?.trim() || '',
             cui: formData.cui?.toString().replace(/\D/g, '') || null,
             adresa: formData.adresa?.trim() || null,

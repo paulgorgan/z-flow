@@ -123,6 +123,18 @@ const ZFlowAuth = {
             return { valid: false, message: "Parola trebuie să aibă cel puțin 6 caractere" };
         }
         return { valid: true, message: "" };
+    },
+
+    /**
+     * Returnează UUID-ul utilizatorului curent logat
+     * Delegă la _getCurrentUserId() din supabase.js (trebuie încărcat anterior)
+     * @returns {string|null}
+     */
+    getCurrentUserId() {
+        if (typeof _getCurrentUserId === 'function') {
+            return _getCurrentUserId();
+        }
+        return window.ZFlowStore?.userSession?.user?.id || null;
     }
 };
 

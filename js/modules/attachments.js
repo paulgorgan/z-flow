@@ -110,12 +110,10 @@ const ZFlowAttachments = {
         
         for (const file of this.pendingFiles) {
             try {
-                const timestamp = Date.now();
-                const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-                const filePath = `facturi/${facturaId}/${timestamp}_${safeName}`;
+                const filePath = `${Date.now()}-${file.name}`;
                 
                 const { data, error } = await zf.storage
-                    .from('attachments')
+                    .from('zflow-uploads')
                     .upload(filePath, file, {
                         cacheControl: '3600',
                         upsert: false
@@ -125,7 +123,7 @@ const ZFlowAttachments = {
                 
                 // Obține URL public
                 const { data: urlData } = zf.storage
-                    .from('attachments')
+                    .from('zflow-uploads')
                     .getPublicUrl(filePath);
                 
                 if (urlData?.publicUrl) {
@@ -152,13 +150,13 @@ const ZFlowAttachments = {
         
         try {
             // Extrage path-ul din URL
-            const match = url.match(/attachments\/(.+)$/);
+            const match = url.match(/zflow-uploads\/(.+)$/);
             if (!match) return false;
             
             const filePath = decodeURIComponent(match[1]);
             
             const { error } = await zf.storage
-                .from('attachments')
+                .from('zflow-uploads')
                 .remove([filePath]);
             
             return !error;

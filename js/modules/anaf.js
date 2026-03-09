@@ -28,6 +28,14 @@ const ZFlowANAF = {
         if (!cuiCurat || cuiCurat.length < 2 || cuiCurat.length > 10) {
             throw new Error('CUI invalid');
         }
+
+        // Verifică conexiunea înainte de orice request
+        if (!navigator.onLine) {
+            const err = new Error('Nu există conexiune la internet. Completați datele manual.');
+            err.name = 'OfflineError';
+            window.ZFlowUI?.showNotification(err.message, 'warning');
+            throw err;
+        }
         
         try {
             // Încearcă prin proxy dacă e configurat
@@ -39,6 +47,18 @@ const ZFlowANAF = {
             return await this.cautaDirectANAF(cuiCurat);
             
         } catch (e) {
+            if (e.name === 'AbortError') {
+                const err = new Error('Serverul ANAF nu a răspuns (întârziere 10s). Completați datele manual.');
+                err.name = 'ANAFTimeoutError';
+                window.ZFlowUI?.showNotification(err.message, 'warning');
+                throw err;
+            }
+            if (!navigator.onLine) {
+                const err = new Error('Conexiune pierdută. Completați datele manual.');
+                err.name = 'OfflineError';
+                window.ZFlowUI?.showNotification(err.message, 'warning');
+                throw err;
+            }
             console.error('Eroare căutare ANAF:', e);
             throw e;
         }
@@ -50,18 +70,25 @@ const ZFlowANAF = {
      * @returns {Promise<Object>}
      */
     async cautaPrinProxy(cui) {
-        const response = await fetch(this.proxyUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ cui })
-        });
-        
-        if (!response.ok) {
-            throw new Error('Eroare la comunicarea cu proxy-ul ANAF');
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        try {
+            const response = await fetch(this.proxyUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cui }),
+                signal: controller.signal
+            });
+            
+            if (!response.ok) {
+                throw new Error('Eroare la comunicarea cu proxy-ul ANAF');
+            }
+            
+            const data = await response.json();
+            return this.parseResponse(data);
+        } finally {
+            clearTimeout(timeoutId);
         }
-        
-        const data = await response.json();
-        return this.parseResponse(data);
     },
 
     /**
@@ -71,19 +98,25 @@ const ZFlowANAF = {
      */
     async cautaDirectANAF(cui) {
         const azi = new Date().toISOString().split('T')[0];
-        
-        const response = await fetch('https://webservicesp.anaf.ro/PlatitorTvaRest/api/v8/ws/tva', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify([{ cui: parseInt(cui), data: azi }])
-        });
-        
-        if (!response.ok) {
-            throw new Error('Eroare la comunicarea cu ANAF');
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        try {
+            const response = await fetch('https://webservicesp.anaf.ro/PlatitorTvaRest/api/v8/ws/tva', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify([{ cui: parseInt(cui), data: azi }]),
+                signal: controller.signal
+            });
+            
+            if (!response.ok) {
+                throw new Error('Eroare la comunicarea cu ANAF');
+            }
+            
+            const data = await response.json();
+            return this.parseResponse(data);
+        } finally {
+            clearTimeout(timeoutId);
         }
-        
-        const data = await response.json();
-        return this.parseResponse(data);
     },
 
     /**
@@ -218,7 +251,9 @@ const ZFlowANAF = {
             return data;
             
         } catch (e) {
-            window.ZFlowUI?.showNotification('Eroare la căutarea în ANAF', 'error');
+            if (e.name !== 'OfflineError' && e.name !== 'ANAFTimeoutError') {
+                window.ZFlowUI?.showNotification('Eroare la căutarea în ANAF', 'error');
+            }
             return null;
         }
     }
