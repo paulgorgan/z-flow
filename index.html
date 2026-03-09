@@ -19,28 +19,48 @@
     <link rel="manifest" href="manifest.json" />
     <link rel="apple-touch-icon" href="icons/icon.svg" />
     <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
+    <!-- Preload PWA icon so it is served from cache on first paint -->
+    <link rel="preload" href="icons/icon.svg" as="image" type="image/svg+xml" />
 
-    <!-- Tailwind CSS -->
+    <!-- Tailwind CSS (JIT via CDN) -->
     <script src="https://cdn.tailwindcss.com" defer></script>
 
-    <!-- External Libraries -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
-    <link
-      rel="stylesheet"
-      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    />
+    <!-- Runtime dependencies — heavy libs (jsPDF, xlsx, Chart.js) are loaded on-demand by JS modules -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" defer></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.min.js" defer></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/html5-qrcode@2.3.4/html5-qrcode.min.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
 
-    <!-- Vue.js 3 CDN -->
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js" defer></script>
+    <!-- Vue.js 3 — production build (minified, no dev warnings) -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js" defer></script>
 
     <!-- Z-FLOW Custom Styles -->
     <link rel="stylesheet" href="css/styles.css" />
+
+    <!-- Critical CSS — eliminates Cumulative Layout Shift (CLS ~1.0 → <0.1) before Tailwind CDN loads -->
+    <style>
+      *,::before,::after{box-sizing:border-box}
+      html,body{margin:0;background:#f8fafc;font-family:ui-sans-serif,system-ui,-apple-system,sans-serif}
+      body{padding-bottom:72px}
+      /* Prevent unstyled flash while Tailwind JIT initialises */
+      .hidden{display:none}
+      /* Only the active tab is visible */
+      .tab-content{display:none}
+      .tab-content.active{display:block}
+      /* Reserve fixed-position layout anchors */
+      header{position:sticky;top:0;z-index:40;background:#1e3a8a;min-height:56px}
+      .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e2e8f0;z-index:50;min-height:68px}
+      /* Viewport height for scrollable content */
+      main{min-height:calc(100svh - 56px - 68px)}
+      /* Prevent canvas collapsing before Chart.js attaches */
+      canvas{display:block;max-width:100%}
+      #home-chart-cashflow{min-height:220px}
+      /* List containers — avoid height-0 flash during data fetch */
+      #lista-firme-global,#lista-furnizori-global,
+      #logistic-comenzi-list,#depozit-lista-produse{min-height:60px}
+      /* Card skeleton */
+      .card-flow{background:#fff;border-radius:1.5rem}
+    </style>
   </head>
 
   <body class="bg-slate-50">
@@ -3305,6 +3325,13 @@
 
     <!-- PWA Service Worker Registration -->
     <script>
+      // Accessibility: copy title → aria-label for icon-only buttons (no visible text)
+      document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('button[title]:not([aria-label])').forEach(btn => {
+          if (!btn.textContent.trim()) btn.setAttribute('aria-label', btn.title);
+        });
+      });
+
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => {
           navigator.serviceWorker

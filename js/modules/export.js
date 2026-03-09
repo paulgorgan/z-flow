@@ -6,6 +6,25 @@
  */
 
 const ZFlowExport = {
+    // ── Lazy-load helpers ────────────────────────────────────────────
+    _loadScript(url) {
+        return new Promise((resolve, reject) => {
+            if (document.querySelector(`script[src="${url}"]`)) { resolve(); return; }
+            const s = document.createElement('script');
+            s.src = url; s.onload = resolve; s.onerror = reject;
+            document.head.appendChild(s);
+        });
+    },
+    async _ensureJsPDF() {
+        if (window.jspdf?.jsPDF) return;
+        await this._loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+        await this._loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js');
+    },
+    async _ensureXLSX() {
+        if (window.XLSX) return;
+        await this._loadScript('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js');
+    },
+
     /**
      * Generează raport PDF din facturi
      * @param {Array} facturi - Lista de facturi
@@ -90,7 +109,8 @@ const ZFlowExport = {
      * @param {Array} facturi 
      * @param {string} filename 
      */
-    savePDF(facturi, filename = 'raport-facturi.pdf') {
+    async savePDF(facturi, filename = 'raport-facturi.pdf') {
+        await this._ensureJsPDF();
         const doc = this.generatePDF(facturi);
         doc.save(filename);
     },
@@ -151,7 +171,8 @@ const ZFlowExport = {
      * @param {Array} facturi 
      * @param {string} filename 
      */
-    saveExcel(facturi, filename = 'raport-facturi.xlsx') {
+    async saveExcel(facturi, filename = 'raport-facturi.xlsx') {
+        await this._ensureXLSX();
         const result = this.generateExcel(facturi, { filename });
         if (!result || !window.XLSX) return;
         try {

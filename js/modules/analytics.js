@@ -235,6 +235,51 @@ const ZFlowAnalytics = {
         });
         
         return Math.round(totalZile / incasate.length);
+    },
+
+    // ── Lazy-load Chart.js on demand ──────────────────────────────────────
+    _loadScript(url) {
+        return new Promise((resolve, reject) => {
+            if (document.querySelector(`script[src="${url}"]`)) { resolve(); return; }
+            const s = document.createElement('script');
+            s.src = url; s.onload = resolve; s.onerror = reject;
+            document.head.appendChild(s);
+        });
+    },
+    async _ensureChartJS() {
+        if (window.Chart) return;
+        await this._loadScript('https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js');
+    },
+
+    /**
+     * Randează cashflow chart pe canvasul dat — încarcă Chart.js la cerere
+     * @param {string} canvasId
+     * @param {number} months
+     */
+    async renderCashflowChart(canvasId, months = 6) {
+        await this._ensureChartJS();
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) return;
+        const { labels, incasari, plati } = this.getCashflowData(months);
+        if (canvas._chartInstance) canvas._chartInstance.destroy();
+        canvas._chartInstance = new window.Chart(canvas, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [
+                    { label: 'Intrări',  data: incasari, backgroundColor: 'rgba(52,211,153,0.7)', borderRadius: 4 },
+                    { label: 'Ieșiri',   data: plati,    backgroundColor: 'rgba(248,113,113,0.7)', borderRadius: 4 }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, ticks: { font: { size: 9 } } },
+                    x: { ticks: { font: { size: 9 } } }
+                }
+            }
+        });
     }
 };
 

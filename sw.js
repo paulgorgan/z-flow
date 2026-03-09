@@ -3,7 +3,7 @@
  * Versiune Refactorizată cu Arhitectură Modulară
  */
 
-const CACHE_NAME = 'zflow-v59.0';
+const CACHE_NAME = 'zflow-v60.0';
 const STATIC_ASSETS = [
   '/z-flow/',
   '/z-flow/index.html',
@@ -36,16 +36,13 @@ const STATIC_ASSETS = [
 
 const CDN_ASSETS = [
   'https://cdn.tailwindcss.com',
-  'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
-  'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js',
-  'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',
-  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
+  'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js',
+  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.min.js',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
   'https://unpkg.com/html5-qrcode@2.3.4/html5-qrcode.min.js',
-  'https://cdn.jsdelivr.net/npm/chart.js',
-  'https://unpkg.com/vue@3/dist/vue.global.js',
+  'https://unpkg.com/vue@3/dist/vue.global.prod.js',
   'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap'
+  // jsPDF, xlsx, Chart.js are lazy-loaded on demand — cached by fetch handler on first use
 ];
 
 // Install: Cache static assets
