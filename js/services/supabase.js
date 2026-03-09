@@ -53,8 +53,13 @@ function _getCurrentUserId() {
     // Admin local și demo user nu au UUID Supabase real
     if (window.ZFlowStore?.userSession?.user?.email === 'admin') return null;
     if (window.ZFlowStore?.userSession?.isDemo === true) return null;
-    // Pentru utilizatorii Supabase, user_id este disponibil în sesiune
-    return window.ZFlowStore?.userSession?.user?.id || null;
+    // Pentru utilizatorii Supabase, user_id este obligatoriu
+    const id = window.ZFlowStore?.userSession?.user?.id;
+    if (!id) {
+        console.error('[Security] user_id lipsă pentru sesiune non-locală — operație blocată');
+        throw new Error('Autentificare Supabase necesară');
+    }
+    return id;
 }
 
 // ==========================================
@@ -70,6 +75,25 @@ function _getCurrentUserId() {
  */
 const _adminLS = {
     _p: 'zflow_ad_',
+    get(key) {
+        try { const r = localStorage.getItem(this._p + key); return r ? JSON.parse(r) : null; } catch(e) { return null; }
+    },
+    set(key, val) {
+        try { localStorage.setItem(this._p + key, JSON.stringify(val)); } catch(e) {}
+    },
+    clear() {
+        try {
+            Object.keys(localStorage).filter(k => k.startsWith(this._p)).forEach(k => localStorage.removeItem(k));
+        } catch(e) {}
+    }
+};
+
+/**
+ * Persistă/restaurează datele contului DEMO în localStorage.
+ * Prefixul 'zflow_dm_' evită conflicte cu admin și alte chei.
+ */
+const _demoLS = {
+    _p: 'zflow_dm_',
     get(key) {
         try { const r = localStorage.getItem(this._p + key); return r ? JSON.parse(r) : null; } catch(e) { return null; }
     },
@@ -105,14 +129,16 @@ const _demoOps = {
      * Apelat înainte de orice operație care citește datele.
      */
     _restore(lsKey, storeKey) {
-        if (this.isAdminLocal() && window.ZFlowStore[storeKey] === undefined) {
+        if (this.isAdminLocal() && window.ZFlowStore[storeKey] === undefined)
             window.ZFlowStore[storeKey] = _adminLS.get(lsKey) || [];
-        }
+        if (this.isDemo() && window.ZFlowStore[storeKey] === undefined)
+            window.ZFlowStore[storeKey] = _demoLS.get(lsKey) || [];
         if (!window.ZFlowStore[storeKey]) window.ZFlowStore[storeKey] = [];
     },
-    /** Salvează în localStorage dacă este admin (nu demo). */
+    /** Salvează în localStorage — admin → zflow_ad_, demo → zflow_dm_. */
     _persist(lsKey, storeKey) {
         if (this.isAdminLocal()) _adminLS.set(lsKey, window.ZFlowStore[storeKey] || []);
+        if (this.isDemo()) _demoLS.set(lsKey, window.ZFlowStore[storeKey] || []);
     },
 
     initialized() {
@@ -355,9 +381,7 @@ async function fetchClienti() {
     }
     const uid = _getCurrentUserId();
     return withRetry(async () => {
-        let query = zf.from("clienti").select("*").order("nume_firma");
-        if (uid) query = query.eq('user_id', uid);
-        const { data, error } = await query;
+        const { data, error } = await zf.from("clienti").select("*").order("nume_firma").eq('user_id', uid);
         if (error) throw error;
         return data || [];
     });
@@ -373,9 +397,7 @@ async function fetchFacturi() {
     }
     const uid = _getCurrentUserId();
     return withRetry(async () => {
-        let query = zf.from("facturi").select("*").order("created_at", { ascending: false });
-        if (uid) query = query.eq('user_id', uid);
-        const { data, error } = await query;
+        const { data, error } = await zf.from("facturi").select("*").order("created_at", { ascending: false }).eq('user_id', uid);
         if (error) throw error;
         return _normalizeFacturi(data || []);
     });
@@ -401,8 +423,8 @@ async function fetchFacturiPaginated(limit = 50, offset = 0, clientId = null) {
         .from("facturi")
         .select("*", { count: 'exact' })
         .order("created_at", { ascending: false })
-        .range(offset, offset + limit - 1);
-    if (uid) query = query.eq('user_id', uid);
+        .range(offset, offset + limit - 1)
+        .eq('user_id', uid);
     if (clientId) query = query.eq("client_id", clientId);
     const { data, error, count } = await query;
     if (error) throw error;
@@ -416,7 +438,7 @@ async function insertFactura(payload, strict = false) {
     if (_demoOps.isDemo()) { _demoOps.insertFactura(payload); return; }
     if (_demoOps.isLocal()) { _demoOps.insertFactura(payload); return; }
     const uid = _getCurrentUserId();
-    const p = uid ? { ...payload, user_id: uid } : payload;
+    const p = { ...payload, user_id: uid };
     try {
         const { error } = await zf.from("facturi").insert([p]);
         if (error) throw error;
@@ -433,9 +455,7 @@ async function insertFactura(payload, strict = false) {
 async function updateFactura(id, payload) {
     if (_demoOps.isLocal()) { _demoOps.updateFactura(id, payload); return; }
     const uid = _getCurrentUserId();
-    let query = zf.from("facturi").update(payload).eq("id", id);
-    if (uid) query = query.eq('user_id', uid);
-    const { error } = await query;
+    const { error } = await zf.from("facturi").update(payload).eq("id", id).eq('user_id', uid);
     if (error) throw error;
 }
 
@@ -445,9 +465,7 @@ async function updateFactura(id, payload) {
 async function deleteFactura(id) {
     if (_demoOps.isLocal()) { _demoOps.deleteFactura(id); return; }
     const uid = _getCurrentUserId();
-    let query = zf.from("facturi").delete().eq("id", id);
-    if (uid) query = query.eq('user_id', uid);
-    const { error } = await query;
+    const { error } = await zf.from("facturi").delete().eq("id", id).eq('user_id', uid);
     if (error) throw error;
 }
 
@@ -459,7 +477,7 @@ async function insertClient(payload, strict = false) {
     if (_demoOps.isDemo()) return _demoOps.insertClient(payload);
     if (_demoOps.isLocal()) return _demoOps.insertClient(payload);
     const uid = _getCurrentUserId();
-    const p = uid ? { ...payload, user_id: uid } : payload;
+    const p = { ...payload, user_id: uid };
     try {
         const { data, error } = await zf.from("clienti").insert([p]).select('id').single();
         if (error) throw error;
@@ -485,9 +503,7 @@ async function insertClient(payload, strict = false) {
 async function updateClient(id, payload) {
     if (_demoOps.isLocal()) { _demoOps.updateClient(id, payload); return; }
     const uid = _getCurrentUserId();
-    let query = zf.from("clienti").update(payload).eq("id", id);
-    if (uid) query = query.eq('user_id', uid);
-    const { error } = await query;
+    const { error } = await zf.from("clienti").update(payload).eq("id", id).eq('user_id', uid);
     if (error) throw error;
 }
 
@@ -497,9 +513,7 @@ async function updateClient(id, payload) {
 async function deleteClient(id) {
     if (_demoOps.isLocal()) { _demoOps.deleteClient(id); return; }
     const uid = _getCurrentUserId();
-    let query = zf.from("clienti").delete().eq("id", id);
-    if (uid) query = query.eq('user_id', uid);
-    const { error } = await query;
+    const { error } = await zf.from("clienti").delete().eq("id", id).eq('user_id', uid);
     if (error) throw error;
 }
 
@@ -691,9 +705,7 @@ async function fetchFurnizori() {
     }
     const uid = _getCurrentUserId();
     return withRetry(async () => {
-        let query = zf.from("furnizori").select("*").order("nume_firma");
-        if (uid) query = query.eq('user_id', uid);
-        const { data, error } = await query;
+        const { data, error } = await zf.from("furnizori").select("*").order("nume_firma").eq('user_id', uid);
         if (error) throw error;
         return data || [];
     });
@@ -707,7 +719,7 @@ async function insertFurnizor(payload, strict = false) {
     if (_demoOps.isDemo()) return _demoOps.insertFurnizor(payload);
     if (_demoOps.isLocal()) return _demoOps.insertFurnizor(payload);
     const uid = _getCurrentUserId();
-    const p = uid ? { ...payload, user_id: uid } : payload;
+    const p = { ...payload, user_id: uid };
     try {
         const { data, error } = await zf.from("furnizori").insert([p]).select('id').single();
         if (error) throw error;
@@ -733,9 +745,7 @@ async function insertFurnizor(payload, strict = false) {
 async function updateFurnizor(id, payload) {
     if (_demoOps.isLocal()) { _demoOps.updateFurnizor(id, payload); return; }
     const uid = _getCurrentUserId();
-    let query = zf.from("furnizori").update(payload).eq("id", id);
-    if (uid) query = query.eq('user_id', uid);
-    const { error } = await query;
+    const { error } = await zf.from("furnizori").update(payload).eq("id", id).eq('user_id', uid);
     if (error) throw error;
 }
 
@@ -745,9 +755,7 @@ async function updateFurnizor(id, payload) {
 async function deleteFurnizor(id) {
     if (_demoOps.isLocal()) { _demoOps.deleteFurnizor(id); return; }
     const uid = _getCurrentUserId();
-    let query = zf.from("furnizori").delete().eq("id", id);
-    if (uid) query = query.eq('user_id', uid);
-    const { error } = await query;
+    const { error } = await zf.from("furnizori").delete().eq("id", id).eq('user_id', uid);
     if (error) throw error;
 }
 
@@ -765,9 +773,7 @@ async function fetchFacturiPlatit() {
     }
     const uid = _getCurrentUserId();
     return withRetry(async () => {
-        let query = zf.from("facturi_platit").select("*").order("created_at", { ascending: false });
-        if (uid) query = query.eq('user_id', uid);
-        const { data, error } = await query;
+        const { data, error } = await zf.from("facturi_platit").select("*").order("created_at", { ascending: false }).eq('user_id', uid);
         if (error) throw error;
         return _normalizeFacturi(data || []);
     });
@@ -780,7 +786,7 @@ async function insertFacturaPlatit(payload, strict = false) {
     if (_demoOps.isDemo()) { _demoOps.insertFacturaPlatit(payload); return; }
     if (_demoOps.isLocal()) { _demoOps.insertFacturaPlatit(payload); return; }
     const uid = _getCurrentUserId();
-    const p = uid ? { ...payload, user_id: uid } : payload;
+    const p = { ...payload, user_id: uid };
     try {
         const { error } = await zf.from("facturi_platit").insert([p]);
         if (error) throw error;
@@ -797,9 +803,7 @@ async function insertFacturaPlatit(payload, strict = false) {
 async function updateFacturaPlatit(id, payload) {
     if (_demoOps.isLocal()) { _demoOps.updateFacturaPlatit(id, payload); return; }
     const uid = _getCurrentUserId();
-    let query = zf.from("facturi_platit").update(payload).eq("id", id);
-    if (uid) query = query.eq('user_id', uid);
-    const { error } = await query;
+    const { error } = await zf.from("facturi_platit").update(payload).eq("id", id).eq('user_id', uid);
     if (error) throw error;
 }
 
@@ -809,9 +813,7 @@ async function updateFacturaPlatit(id, payload) {
 async function deleteFacturaPlatit(id) {
     if (_demoOps.isLocal()) { _demoOps.deleteFacturaPlatit(id); return; }
     const uid = _getCurrentUserId();
-    let query = zf.from("facturi_platit").delete().eq("id", id);
-    if (uid) query = query.eq('user_id', uid);
-    const { error } = await query;
+    const { error } = await zf.from("facturi_platit").delete().eq("id", id).eq('user_id', uid);
     if (error) throw error;
 }
 
@@ -910,9 +912,7 @@ async function fetchProduse() {
     if (_demoOps.isLocal()) return _demoOps.fetchProduse();
     const uid = _getCurrentUserId();
     try {
-        let q = zf.from('produse').select('*').order('nume');
-        if (uid) q = q.eq('user_id', uid);
-        const { data, error } = await q;
+        const { data, error } = await zf.from('produse').select('*').order('nume').eq('user_id', uid);
         if (error) throw error;
         return data || [];
     } catch(e) { console.warn('[DB] fetchProduse:', e.message); return []; }
@@ -920,18 +920,18 @@ async function fetchProduse() {
 async function insertProdus(payload) {
     if (_demoOps.isLocal()) { _demoOps.insertProdus(payload); return; }
     const uid = _getCurrentUserId();
-    const p = uid ? { ...payload, user_id: uid } : payload;
+    const p = { ...payload, user_id: uid };
     try { const { error } = await zf.from('produse').insert([p]); if (error) throw error; } catch(e) { _demoOps.insertProdus(payload); }
 }
 async function updateProdus(id, payload) {
     if (_demoOps.isLocal()) { _demoOps.updateProdus(id, payload); return; }
     const uid = _getCurrentUserId();
-    try { let q = zf.from('produse').update(payload).eq('id', id); if (uid) q = q.eq('user_id', uid); const { error } = await q; if (error) throw error; } catch(e) { _demoOps.updateProdus(id, payload); }
+    try { const { error } = await zf.from('produse').update(payload).eq('id', id).eq('user_id', uid); if (error) throw error; } catch(e) { _demoOps.updateProdus(id, payload); }
 }
 async function deleteProdus(id) {
     if (_demoOps.isLocal()) { _demoOps.deleteProdus(id); return; }
     const uid = _getCurrentUserId();
-    try { let q = zf.from('produse').delete().eq('id', id); if (uid) q = q.eq('user_id', uid); const { error } = await q; if (error) throw error; } catch(e) { _demoOps.deleteProdus(id); }
+    try { const { error } = await zf.from('produse').delete().eq('id', id).eq('user_id', uid); if (error) throw error; } catch(e) { _demoOps.deleteProdus(id); }
 }
 
 // ==========================================
@@ -941,9 +941,7 @@ async function fetchMiscariStoc() {
     if (_demoOps.isLocal()) return _demoOps.fetchMiscariStoc();
     const uid = _getCurrentUserId();
     try {
-        let q = zf.from('miscari_stoc').select('*').order('data', {ascending:false}).order('created_at', {ascending:false});
-        if (uid) q = q.eq('user_id', uid);
-        const { data, error } = await q;
+        const { data, error } = await zf.from('miscari_stoc').select('*').order('data', {ascending:false}).order('created_at', {ascending:false}).eq('user_id', uid);
         if (error) throw error;
         return data || [];
     } catch(e) { console.warn('[DB] fetchMiscariStoc:', e.message); return []; }
@@ -951,7 +949,7 @@ async function fetchMiscariStoc() {
 async function insertMiscare(payload) {
     if (_demoOps.isLocal()) { _demoOps.insertMiscare(payload); return; }
     const uid = _getCurrentUserId();
-    const p = uid ? { ...payload, user_id: uid } : payload;
+    const p = { ...payload, user_id: uid };
     try { const { error } = await zf.from('miscari_stoc').insert([p]); if (error) throw error; } catch(e) { _demoOps.insertMiscare(payload); }
 }
 
@@ -1015,12 +1013,12 @@ function stopRealtimeSubscriptions() {
 async function fetchReceptii() {
     if (_demoOps.isLocal()) return _demoOps.fetchReceptii();
     const uid = _getCurrentUserId();
-    try { let q = zf.from('receptii').select('*').order('created_at', {ascending:false}); if (uid) q = q.eq('user_id', uid); const { data, error } = await q; if (error) throw error; return data || []; } catch(e) { console.warn('[DB] fetchReceptii:', e.message); return []; }
+    try { const { data, error } = await zf.from('receptii').select('*').order('created_at', {ascending:false}).eq('user_id', uid); if (error) throw error; return data || []; } catch(e) { console.warn('[DB] fetchReceptii:', e.message); return []; }
 }
 async function insertReceptie(payload) {
     if (_demoOps.isLocal()) { _demoOps.insertReceptie(payload); return; }
     const uid = _getCurrentUserId();
-    const p = uid ? { ...payload, user_id: uid } : payload;
+    const p = { ...payload, user_id: uid };
     try { const { error } = await zf.from('receptii').insert([p]); if (error) throw error; } catch(e) { _demoOps.insertReceptie(payload); }
 }
 
@@ -1030,12 +1028,12 @@ async function insertReceptie(payload) {
 async function fetchLivrari() {
     if (_demoOps.isLocal()) return _demoOps.fetchLivrari();
     const uid = _getCurrentUserId();
-    try { let q = zf.from('livrari').select('*').order('created_at', {ascending:false}); if (uid) q = q.eq('user_id', uid); const { data, error } = await q; if (error) throw error; return data || []; } catch(e) { console.warn('[DB] fetchLivrari:', e.message); return []; }
+    try { const { data, error } = await zf.from('livrari').select('*').order('created_at', {ascending:false}).eq('user_id', uid); if (error) throw error; return data || []; } catch(e) { console.warn('[DB] fetchLivrari:', e.message); return []; }
 }
 async function insertLivrare(payload) {
     if (_demoOps.isLocal()) { _demoOps.insertLivrare(payload); return; }
     const uid = _getCurrentUserId();
-    const p = uid ? { ...payload, user_id: uid } : payload;
+    const p = { ...payload, user_id: uid };
     try { const { error } = await zf.from('livrari').insert([p]); if (error) throw error; } catch(e) { _demoOps.insertLivrare(payload); }
 }
 
@@ -1045,23 +1043,23 @@ async function insertLivrare(payload) {
 async function fetchSoferi() {
     if (_demoOps.isLocal()) return _demoOps.fetchSoferi();
     const uid = _getCurrentUserId();
-    try { let q = zf.from('soferi').select('*').order('nume'); if (uid) q = q.eq('user_id', uid); const { data, error } = await q; if (error) throw error; return data || []; } catch(e) { console.warn('[DB] fetchSoferi:', e.message); return []; }
+    try { const { data, error } = await zf.from('soferi').select('*').order('nume').eq('user_id', uid); if (error) throw error; return data || []; } catch(e) { console.warn('[DB] fetchSoferi:', e.message); return []; }
 }
 async function insertSofer(payload) {
     if (_demoOps.isLocal()) { _demoOps.insertSofer(payload); return; }
     const uid = _getCurrentUserId();
-    const p = uid ? { ...payload, user_id: uid } : payload;
+    const p = { ...payload, user_id: uid };
     try { const { error } = await zf.from('soferi').insert([p]); if (error) throw error; } catch(e) { _demoOps.insertSofer(payload); }
 }
 async function updateSofer(id, payload) {
     if (_demoOps.isLocal()) { _demoOps.updateSofer(id, payload); return; }
     const uid = _getCurrentUserId();
-    try { let q = zf.from('soferi').update(payload).eq('id', id); if (uid) q = q.eq('user_id', uid); const { error } = await q; if (error) throw error; } catch(e) { _demoOps.updateSofer(id, payload); }
+    try { const { error } = await zf.from('soferi').update(payload).eq('id', id).eq('user_id', uid); if (error) throw error; } catch(e) { _demoOps.updateSofer(id, payload); }
 }
 async function deleteSofer(id) {
     if (_demoOps.isLocal()) { _demoOps.deleteSofer(id); return; }
     const uid = _getCurrentUserId();
-    try { let q = zf.from('soferi').delete().eq('id', id); if (uid) q = q.eq('user_id', uid); const { error } = await q; if (error) throw error; } catch(e) { _demoOps.deleteSofer(id); }
+    try { const { error } = await zf.from('soferi').delete().eq('id', id).eq('user_id', uid); if (error) throw error; } catch(e) { _demoOps.deleteSofer(id); }
 }
 
 // ==========================================
@@ -1070,23 +1068,23 @@ async function deleteSofer(id) {
 async function fetchVehicule() {
     if (_demoOps.isLocal()) return _demoOps.fetchVehicule();
     const uid = _getCurrentUserId();
-    try { let q = zf.from('vehicule').select('*').order('nr_inmatriculare'); if (uid) q = q.eq('user_id', uid); const { data, error } = await q; if (error) throw error; return data || []; } catch(e) { console.warn('[DB] fetchVehicule:', e.message); return []; }
+    try { const { data, error } = await zf.from('vehicule').select('*').order('nr_inmatriculare').eq('user_id', uid); if (error) throw error; return data || []; } catch(e) { console.warn('[DB] fetchVehicule:', e.message); return []; }
 }
 async function insertVehicul(payload) {
     if (_demoOps.isLocal()) { _demoOps.insertVehicul(payload); return; }
     const uid = _getCurrentUserId();
-    const p = uid ? { ...payload, user_id: uid } : payload;
+    const p = { ...payload, user_id: uid };
     try { const { error } = await zf.from('vehicule').insert([p]); if (error) throw error; } catch(e) { _demoOps.insertVehicul(payload); }
 }
 async function updateVehicul(id, payload) {
     if (_demoOps.isLocal()) { _demoOps.updateVehicul(id, payload); return; }
     const uid = _getCurrentUserId();
-    try { let q = zf.from('vehicule').update(payload).eq('id', id); if (uid) q = q.eq('user_id', uid); const { error } = await q; if (error) throw error; } catch(e) { _demoOps.updateVehicul(id, payload); }
+    try { const { error } = await zf.from('vehicule').update(payload).eq('id', id).eq('user_id', uid); if (error) throw error; } catch(e) { _demoOps.updateVehicul(id, payload); }
 }
 async function deleteVehicul(id) {
     if (_demoOps.isLocal()) { _demoOps.deleteVehicul(id); return; }
     const uid = _getCurrentUserId();
-    try { let q = zf.from('vehicule').delete().eq('id', id); if (uid) q = q.eq('user_id', uid); const { error } = await q; if (error) throw error; } catch(e) { _demoOps.deleteVehicul(id); }
+    try { const { error } = await zf.from('vehicule').delete().eq('id', id).eq('user_id', uid); if (error) throw error; } catch(e) { _demoOps.deleteVehicul(id); }
 }
 
 // ==========================================
@@ -1095,29 +1093,25 @@ async function deleteVehicul(id) {
 async function fetchComenziTransport() {
     if (_demoOps.isLocal()) return _demoOps.fetchComenzi();
     const uid = _getCurrentUserId();
-    try { let q = zf.from('comenzi_transport').select('*').order('created_at', {ascending:false}); if (uid) q = q.eq('user_id', uid); const { data, error } = await q; if (error) throw error; return data || []; } catch(e) { console.warn('[DB] fetchComenziTransport:', e.message); return []; }
+    try { const { data, error } = await zf.from('comenzi_transport').select('*').order('created_at', {ascending:false}).eq('user_id', uid); if (error) throw error; return data || []; } catch(e) { console.warn('[DB] fetchComenziTransport:', e.message); return []; }
 }
 async function insertComandaTransport(payload) {
     if (_demoOps.isLocal()) { _demoOps.insertComanda(payload); return; }
     const uid = _getCurrentUserId();
-    const p = uid ? { ...payload, user_id: uid } : payload;
+    const p = { ...payload, user_id: uid };
     const { error } = await zf.from('comenzi_transport').insert([p]);
     if (error) throw new Error(error.message || 'Eroare salvare comandă transport');
 }
 async function updateComandaTransport(id, payload) {
     if (_demoOps.isLocal()) { _demoOps.updateComanda(id, payload); return; }
     const uid = _getCurrentUserId();
-    let q = zf.from('comenzi_transport').update(payload).eq('id', id);
-    if (uid) q = q.eq('user_id', uid);
-    const { error } = await q;
+    const { error } = await zf.from('comenzi_transport').update(payload).eq('id', id).eq('user_id', uid);
     if (error) throw new Error(error.message || 'Eroare actualizare comandă transport');
 }
 async function deleteComandaTransport(id) {
     if (_demoOps.isLocal()) { _demoOps.deleteComanda(id); return; }
     const uid = _getCurrentUserId();
-    let q = zf.from('comenzi_transport').delete().eq('id', id);
-    if (uid) q = q.eq('user_id', uid);
-    const { error } = await q;
+    const { error } = await zf.from('comenzi_transport').delete().eq('id', id).eq('user_id', uid);
     if (error) throw new Error(error.message || 'Eroare ștergere comandă transport');
 }
 

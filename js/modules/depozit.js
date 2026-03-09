@@ -3,6 +3,9 @@
  * Modul Depozit — Gestionare Stoc, Produse, Recepții, Livrări
  */
 
+// Filtru alerte stoc activ — setat de navigaLaAlerteStoc()
+let _filtruAlerteActiv = false;
+
 // ==========================================
 // KPI & RENDER PRINCIPAL
 // ==========================================

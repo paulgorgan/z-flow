@@ -204,6 +204,15 @@ const ZFlowMobile = {
     },
 
     /**
+     * Blocheză orientația ecranului în Portrait (Screen Orientation API)
+     */
+    lockOrientationPortrait() {
+        if (screen.orientation && typeof screen.orientation.lock === 'function') {
+            screen.orientation.lock('portrait-primary').catch(() => {});
+        }
+    },
+
+    /**
      * Inițializează toate funcționalitățile mobile
      */
     init() {
@@ -215,6 +224,7 @@ const ZFlowMobile = {
     },
 
     _init() {
+        this.lockOrientationPortrait();
         this.setupKeyboardFix();
         this.setupBackButton();
         this.setupOfflineHandler();

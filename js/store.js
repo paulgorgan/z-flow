@@ -193,20 +193,41 @@ function updateUIForRole() {
     }
 }
 
-/**
- * Salvează datele în localStorage — DOAR pentru utilizatori locali (admin/1234 și demo).
+/** * Elimină elementele duplicate dintr-un array pe baza câmpului `id`.
+ * Dacă acelasi ID apare de mai multe ori, este păstrat primul element.
+ */
+function deduplicaPeID(arr) {
+    const seen = new Set();
+    return (arr || []).filter(item => {
+        const k = String(item?.id ?? '');
+        return k && !seen.has(k) ? !!seen.add(k) : false;
+    });
+}
+window.deduplicaPeID = deduplicaPeID;
+
+/** * Salvează datele în localStorage — DOAR pentru utilizatori locali (admin/1234 și demo).
  * Utilizatorii Supabase au datele în baza de date + cache IDB; nu scriem redundant în localStorage.
  */
 function saveZFlowData() {
     const session = ZFlowStore.userSession;
     const isLocalUser = session?.user?.email === 'admin' || session?.isDemo === true;
     if (!isLocalUser) return;
+    const isDemo = session?.isDemo === true;
     try {
-        localStorage.setItem("zflow_data", JSON.stringify({
-            dateLocal: ZFlowStore.dateLocal,
-            dateFacturiBI: ZFlowStore.dateFacturiBI,
-            lastSync: new Date().toISOString()
-        }));
+        if (isDemo) {
+            // Salvăm array-urile principale deduplicatre pentru reload rapid
+            localStorage.setItem('zflow_dm__rendered', JSON.stringify({
+                dateLocal: deduplicaPeID(ZFlowStore.dateLocal),
+                dateFacturiBI: deduplicaPeID(ZFlowStore.dateFacturiBI),
+                lastSync: new Date().toISOString()
+            }));
+        } else {
+            localStorage.setItem("zflow_data", JSON.stringify({
+                dateLocal: deduplicaPeID(ZFlowStore.dateLocal),
+                dateFacturiBI: deduplicaPeID(ZFlowStore.dateFacturiBI),
+                lastSync: new Date().toISOString()
+            }));
+        }
     } catch (e) {
         console.warn("localStorage indisponibil:", e);
     }
@@ -217,8 +238,14 @@ function saveZFlowData() {
  */
 function loadZFlowData() {
     try {
-        const saved = localStorage.getItem("zflow_data");
-        return saved ? JSON.parse(saved) : null;
+        const isDemo = localStorage.getItem('zflow_demo_session') ? JSON.parse(localStorage.getItem('zflow_demo_session'))?.isDemo : false;
+        const key = isDemo ? 'zflow_dm__rendered' : 'zflow_data';
+        const saved = localStorage.getItem(key);
+        if (!saved) return null;
+        const data = JSON.parse(saved);
+        if (data.dateLocal) data.dateLocal = deduplicaPeID(data.dateLocal);
+        if (data.dateFacturiBI) data.dateFacturiBI = deduplicaPeID(data.dateFacturiBI);
+        return data;
     } catch (e) {
         return null;
     }

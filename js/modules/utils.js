@@ -4,6 +4,18 @@
  */
 
 /**
+ * Returnează data curentă a sistemului în format ISO (YYYY-MM-DD).
+ * Respectă preferința utilizatorului zflow_pref_data_azi dacă este disponibilă.
+ * @returns {string} Data în format ISO sau string gol dacă preferința e dezactivată
+ */
+function getCurrentISODate() {
+    return typeof getDataImplicita === 'function'
+        ? getDataImplicita()
+        : new Date().toISOString().slice(0, 10);
+}
+window.getCurrentISODate = getCurrentISODate;
+
+/**
  * Funcție utilHelper: debounce
  * @param {Function} func - Funcția de executat
  * @param {number} delay - Delay în ms

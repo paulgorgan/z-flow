@@ -7,7 +7,7 @@
  */
 
 const ZFLOW_IDB_NAME = 'zflow-offline';
-const ZFLOW_IDB_VERSION = 1;
+const ZFLOW_IDB_VERSION = 2;
 
 /**
  * Deschide (și creează dacă e prima oară) baza IndexedDB
@@ -18,15 +18,13 @@ function _idbOpen() {
 
         req.onupgradeneeded = (e) => {
             const db = e.target.result;
-            if (!db.objectStoreNames.contains('clienti')) {
-                db.createObjectStore('clienti', { keyPath: 'id' });
-            }
-            if (!db.objectStoreNames.contains('facturi')) {
-                db.createObjectStore('facturi', { keyPath: 'id' });
-            }
-            if (!db.objectStoreNames.contains('meta')) {
+            ['clienti','facturi','furnizori','facturi_platit','produse','miscari_stoc',
+             'receptii','livrari','soferi','vehicule','comenzi_transport'].forEach(name => {
+                if (!db.objectStoreNames.contains(name))
+                    db.createObjectStore(name, { keyPath: 'id' });
+            });
+            if (!db.objectStoreNames.contains('meta'))
                 db.createObjectStore('meta', { keyPath: 'key' });
-            }
         };
 
         req.onsuccess = (e) => resolve(e.target.result);
@@ -131,3 +129,4 @@ async function idbCacheAge(storeName) {
 
 // Export global
 const ZFlowIDB = { save: idbSave, getAll: idbGetAll, getMeta: idbGetMeta, clearAll: idbClearAll, cacheAge: idbCacheAge };
+window.ZFlowIDB = ZFlowIDB;

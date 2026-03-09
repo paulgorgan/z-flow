@@ -950,19 +950,19 @@ input, select, button {
     margin-right: auto !important;
   }
 
-  /* Grid 3 coloane pentru lista de clienți */
+  /* Grid 2 coloane la 1024px (cările prea înguste la 3 coloane) */
   #lista-firme-global {
     display: grid !important;
-    grid-template-columns: repeat(3, 1fr) !important;
+    grid-template-columns: repeat(2, 1fr) !important;
     gap: 20px !important;
     padding: 8px;
     width: 100% !important;
   }
 
-  /* Grid 3 coloane pentru lista de furnizori (uniform cu clienții) */
+  /* Grid 2 coloane pentru furnizori (uniform cu clienții) */
   #lista-furnizori-global {
     display: grid !important;
-    grid-template-columns: repeat(3, 1fr) !important;
+    grid-template-columns: repeat(2, 1fr) !important;
     gap: 20px !important;
     padding: 8px;
     width: 100% !important;
@@ -1935,6 +1935,18 @@ input {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* ============================================
+   DESKTOP MEDIU (1280px+) — 3 coloane card-uri
+   ============================================ */
+@media (min-width: 1280px) {
+  #lista-firme-global {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+  #lista-furnizori-global {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
 }
 
 /* ============================================
