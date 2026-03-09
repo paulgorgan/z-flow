@@ -19,8 +19,13 @@
     <link rel="manifest" href="manifest.json" />
     <link rel="apple-touch-icon" href="icons/icon.svg" />
     <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
-    <!-- Preload PWA icon so it is served from cache on first paint -->
-    <link rel="preload" href="icons/icon.svg" as="image" type="image/svg+xml" />
+    <!-- LCP: preconnect CDN hosts — elimina latenta DNS+TLS pe prima vizita -->
+    <link rel="preconnect" href="https://cdn.tailwindcss.com" crossorigin />
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link rel="preconnect" href="https://unpkg.com" crossorigin />
+    <link rel="dns-prefetch" href="https://exrypxknksgrtrwnbtrl.supabase.co" />
+    <!-- LCP: preload icona cu prioritate ridicata — primul element vizual -->
+    <link rel="preload" href="icons/icon.svg" as="image" type="image/svg+xml" fetchpriority="high" />
 
     <!-- Tailwind CSS (JIT via CDN) -->
     <script src="https://cdn.tailwindcss.com" defer></script>
@@ -34,8 +39,8 @@
     <!-- Vue.js 3 — production build (minified, no dev warnings) -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js" defer></script>
 
-    <!-- Z-FLOW Custom Styles -->
-    <link rel="stylesheet" href="css/styles.css" />
+    <!-- Z-FLOW Custom Styles — fetchpriority=high: singura foaie de stiluri locala, esentiala pentru LCP -->
+    <link rel="stylesheet" href="css/styles.css" fetchpriority="high" />
 
     <!-- Critical CSS — eliminates Cumulative Layout Shift (CLS ~1.0 → <0.1) before Tailwind CDN loads -->
     <style>
@@ -60,6 +65,10 @@
       #logistic-comenzi-list,#depozit-lista-produse{min-height:60px}
       /* Card skeleton */
       .card-flow{background:#fff;border-radius:1.5rem}
+      /* LCP: stiluri header vizibile inainte ca Tailwind sa se incarce */
+      .glass-header{background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+      /* Accesibilitate WCAG: clasa sr-only pentru etichete vizual ascunse */
+      .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border-width:0}
     </style>
   </head>
 
@@ -129,6 +138,7 @@
       <div class="flex items-center gap-2">
         <!-- Buton unificat: Firmă + Rol utilizator -->
         <button onclick="deschideProfilFirma()" title="Profil firmă & cont" id="multifirma-switcher-btn"
+            aria-label="Schimbă firma activă sau accesează profilul"
             class="flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-200 transition-all max-w-[200px]">
             <svg class="w-3.5 h-3.5 text-blue-700 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21"/></svg>
             <div class="flex flex-col items-start min-w-0">
@@ -2939,25 +2949,33 @@
           <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Autentificare</p>
         </div>
         <!-- Mesaj eroare dinamic -->
-        <div id="auth-error-msg" class="hidden bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-xs font-bold mb-4 flex items-center gap-2">
+        <div id="auth-error-msg" class="hidden bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-xs font-bold mb-4 flex items-center gap-2" role="alert" aria-live="assertive">
           <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           <span id="auth-error-text"></span>
         </div>
         <div class="space-y-3">
+          <label for="auth-username" class="sr-only">Email sau utilizator</label>
           <input
             type="text"
             id="auth-username"
+            name="username"
+            autocomplete="username"
+            aria-required="true"
             placeholder="Email sau utilizator"
             class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm border-2 border-transparent outline-none focus:border-blue-200 transition-all"
           />
+          <label for="auth-password" class="sr-only">Parolă</label>
           <input
             type="password"
             id="auth-password"
+            name="password"
+            autocomplete="current-password"
+            aria-required="true"
             placeholder="Parolă"
             class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm border-2 border-transparent outline-none focus:border-blue-200 transition-all"
           />
           <!-- Reține autentificarea -->
-          <label class="flex items-center gap-2 px-1 cursor-pointer select-none">
+          <label for="auth-remember" class="flex items-center gap-2 px-1 cursor-pointer select-none">
             <input type="checkbox" id="auth-remember" class="w-4 h-4 rounded accent-blue-700">
             <span class="text-xs font-bold text-slate-500">Reține autentificarea 30 de zile</span>
           </label>

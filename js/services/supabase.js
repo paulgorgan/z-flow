@@ -12,6 +12,39 @@ const KEY_Z = "sb_publishable_nKFEv_6AOyKBFp3f_AnZmw_MMZ9MXl5";
 // Inițializăm clientul Supabase
 const zf = supabase.createClient(URL_Z, KEY_Z);
 
+// ==========================================
+// RETRY — Exponential Backoff pentru erori de rețea
+// ==========================================
+
+/**
+ * Execută o funcție asincronă cu reîncercări și exponential backoff.
+ * Nu reîncercă erori de autentificare / autorizare (401, 403) sau
+ * constrângeri de unicitate (cod Postgres 23505) — acestea sunt definitive.
+ * @param {Function} fn - Funcția async de executat
+ * @param {number} [maxRetries=3] - Numărul maxim de reîncercări după primul eșec
+ * @param {number} [baseDelay=1000] - Delay-ul inițial în ms (se dublează la fiecare retry)
+ * @returns {Promise<*>}
+ */
+async function withRetry(fn, maxRetries = 3, baseDelay = 1000) {
+    let lastError;
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+            return await fn();
+        } catch (error) {
+            lastError = error;
+            // Erorile definitive nu se reîncarcă
+            const status = error?.status ?? error?.response?.status;
+            if (status === 401 || status === 403 || error?.code === '23505') throw error;
+            if (attempt < maxRetries) {
+                const delay = baseDelay * Math.pow(2, attempt); // 1s → 2s → 4s
+                console.warn(`[Retry] Tentativa ${attempt + 1}/${maxRetries} eșuată. Reîncerc în ${delay}ms:`, error?.message || error);
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
+        }
+    }
+    throw lastError;
+}
+
 /**
  * Returnează UUID-ul utilizatorului Supabase curent (null pentru admin/demo local)
  * Folosit pentru a seta user_id în toate inserările, garantând izolarea datelor per user.
@@ -321,11 +354,13 @@ async function fetchClienti() {
         return (window.ZFlowStore._demoClienti || []).map(c => ({...c}));
     }
     const uid = _getCurrentUserId();
-    let query = zf.from("clienti").select("*").order("nume_firma");
-    if (uid) query = query.eq('user_id', uid);
-    const { data, error } = await query;
-    if (error) throw error;
-    return data || [];
+    return withRetry(async () => {
+        let query = zf.from("clienti").select("*").order("nume_firma");
+        if (uid) query = query.eq('user_id', uid);
+        const { data, error } = await query;
+        if (error) throw error;
+        return data || [];
+    });
 }
 
 /**
@@ -337,11 +372,13 @@ async function fetchFacturi() {
         return _normalizeFacturi(window.ZFlowStore._demoFacturi || []);
     }
     const uid = _getCurrentUserId();
-    let query = zf.from("facturi").select("*").order("created_at", { ascending: false });
-    if (uid) query = query.eq('user_id', uid);
-    const { data, error } = await query;
-    if (error) throw error;
-    return _normalizeFacturi(data || []);
+    return withRetry(async () => {
+        let query = zf.from("facturi").select("*").order("created_at", { ascending: false });
+        if (uid) query = query.eq('user_id', uid);
+        const { data, error } = await query;
+        if (error) throw error;
+        return _normalizeFacturi(data || []);
+    });
 }
 
 /**
@@ -653,11 +690,13 @@ async function fetchFurnizori() {
         return (window.ZFlowStore._demoFurnizori || []).map(f => ({...f}));
     }
     const uid = _getCurrentUserId();
-    let query = zf.from("furnizori").select("*").order("nume_firma");
-    if (uid) query = query.eq('user_id', uid);
-    const { data, error } = await query;
-    if (error) throw error;
-    return data || [];
+    return withRetry(async () => {
+        let query = zf.from("furnizori").select("*").order("nume_firma");
+        if (uid) query = query.eq('user_id', uid);
+        const { data, error } = await query;
+        if (error) throw error;
+        return data || [];
+    });
 }
 
 /**
@@ -725,11 +764,13 @@ async function fetchFacturiPlatit() {
         return _normalizeFacturi(window.ZFlowStore._demoFacturiPlatit || []);
     }
     const uid = _getCurrentUserId();
-    let query = zf.from("facturi_platit").select("*").order("created_at", { ascending: false });
-    if (uid) query = query.eq('user_id', uid);
-    const { data, error } = await query;
-    if (error) throw error;
-    return _normalizeFacturi(data || []);
+    return withRetry(async () => {
+        let query = zf.from("facturi_platit").select("*").order("created_at", { ascending: false });
+        if (uid) query = query.eq('user_id', uid);
+        const { data, error } = await query;
+        if (error) throw error;
+        return _normalizeFacturi(data || []);
+    });
 }
 
 /**

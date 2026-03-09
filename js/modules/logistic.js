@@ -7,6 +7,11 @@
 // KPI & RENDER PRINCIPAL
 // ==========================================
 
+/**
+ * Calculează și actualizează în DOM valorile KPI pentru tab-ul Logistic:
+ * număr comenzi active (Planificat + In curs), număr șoferi și număr vehicule.
+ * @returns {void}
+ */
 function calculeazaKPILogistic() {
     const comenzi  = ZFlowStore.dateComenziTransport || [];
     const soferi   = ZFlowStore.dateSoferi   || [];
@@ -18,11 +23,23 @@ function calculeazaKPILogistic() {
     set('logistic-kpi-vehicule', vehicule.length);
 }
 
+/**
+ * Randul principal al modulului Logistic. Calculează KPI-urile și
+ * delega redarea view-ului curent din ZFlowStore.logisticView.
+ * @returns {void}
+ */
 function renderLogistic() {
     calculeazaKPILogistic();
     schimbaViewLogistic(ZFlowStore.logisticView || 'comenzi', false);
 }
 
+/**
+ * Comută view-ul activ în tab-ul Logistic și apelează funcția de render specifică.
+ * Actualizează pill-urile de navigare corespunzătoare.
+ * @param {'comenzi'|'soferi'|'vehicule'} view - View-ul de activat
+ * @param {boolean} [updateStore=true] - Dacă se actualizează ZFlowStore.logisticView
+ * @returns {void}
+ */
 function schimbaViewLogistic(view, updateStore = true) {
     if (updateStore) ZFlowStore.logisticView = view;
     ['comenzi', 'soferi', 'vehicule'].forEach(v => {
@@ -41,6 +58,12 @@ function schimbaViewLogistic(view, updateStore = true) {
 // COMENZI TRANSPORT
 // ==========================================
 
+/**
+ * Renderizează lista de comenzi de transport cu filtrare după text
+ * (rută, cod tracking), sortare descrescătoare după dată și paginare.
+ * Rezolvă relațiile client, șofer și vehicul din Store.
+ * @returns {void}
+ */
 function renderComenziTransport() {
     const container = document.getElementById('logistic-comenzi-list');
     if (!container) return;
@@ -118,6 +141,10 @@ function renderComenziTransport() {
 // ȘOFERI
 // ==========================================
 
+/**
+ * Renderizează lista de șoferi cu filtrare după nume/telefon și paginare.
+ * @returns {void}
+ */
 function renderSoferi() {
     const container = document.getElementById('logistic-soferi-list');
     if (!container) return;
@@ -173,6 +200,11 @@ function renderSoferi() {
 // VEHICULE
 // ==========================================
 
+/**
+ * Renderizează lista de vehicule cu filtrare după număr de înmatriculare,
+ * marcă și model, cu paginare.
+ * @returns {void}
+ */
 function renderVehicule() {
     const container = document.getElementById('logistic-vehicule-list');
     if (!container) return;

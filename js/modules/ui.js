@@ -79,7 +79,7 @@ const ZFlowUI = {
      * Afișează skeleton loader
      * @param {HTMLElement} container - Containerul
      * @param {number} count - Număr de skeletons
-     * @param {string} type - client | invoice | row
+     * @param {string} type - client | invoice | row | table | chart | dashboard
      */
     showSkeleton(container, count = 5, type = "client") {
         if (!container) return;
@@ -107,6 +107,16 @@ const ZFlowUI = {
                         </div>
                         <div class="h-3 bg-slate-100 rounded w-32 mt-2"></div>
                     </div>`;
+            } else if (type === "dashboard") {
+                html += `
+                    <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 animate-pulse">
+                        <div class="flex items-center gap-2 mb-3">
+                            <div class="w-6 h-6 bg-slate-200 rounded-lg"></div>
+                            <div class="h-3 bg-slate-100 rounded w-20"></div>
+                        </div>
+                        <div class="h-7 bg-slate-200 rounded w-24 mb-1"></div>
+                        <div class="h-2 bg-slate-100 rounded w-16"></div>
+                    </div>`;
             } else {
                 html += `
                     <div class="bg-white rounded-lg p-3 animate-pulse">
@@ -115,6 +125,51 @@ const ZFlowUI = {
             }
         }
         container.innerHTML = html;
+    },
+
+    /**
+     * Afișează skeleton pentru rândurile unui tabel HTML (umple <tbody>).
+     * @param {string|HTMLElement} target - ID-ul tbody-ului sau elementul direct
+     * @param {number} [rows=5] - Număr de rânduri placeholder
+     * @param {number} [cols=4] - Număr de coloane
+     */
+    showTableSkeleton(target, rows = 5, cols = 4) {
+        const el = typeof target === 'string' ? document.getElementById(target) : target;
+        if (!el) return;
+        const widths = ['w-28', 'w-36', 'w-20', 'w-16', 'w-24', 'w-32'];
+        let html = '';
+        for (let r = 0; r < rows; r++) {
+            html += '<tr class="animate-pulse border-b border-slate-50">';
+            for (let c = 0; c < cols; c++) {
+                const w = widths[c % widths.length];
+                html += `<td class="px-3 py-3"><div class="h-3 bg-slate-200 rounded ${w}"></div></td>`;
+            }
+            html += '</tr>';
+        }
+        el.innerHTML = html;
+    },
+
+    /**
+     * Afișează skeleton animat pentru zona unui grafic (bar chart placeholder).
+     * @param {string|HTMLElement} target - ID-ul containerului sau elementul direct
+     * @param {number} [bars=7] - Număr de bare
+     */
+    showChartSkeleton(target, bars = 7) {
+        const el = typeof target === 'string' ? document.getElementById(target) : target;
+        if (!el) return;
+        const heights = [55, 75, 40, 85, 65, 50, 70, 45, 80, 60];
+        let barHtml = '';
+        let labelHtml = '';
+        for (let i = 0; i < bars; i++) {
+            const h = heights[i % heights.length];
+            barHtml  += `<div class="flex-1 bg-slate-200 rounded-t animate-pulse" style="height:${h}%"></div>`;
+            labelHtml += `<div class="flex-1 h-2 bg-slate-100 rounded animate-pulse"></div>`;
+        }
+        el.innerHTML = `
+            <div class="flex flex-col justify-end gap-1 w-full h-full min-h-[180px] px-2 pb-2">
+                <div class="flex items-end gap-1.5 h-[85%]">${barHtml}</div>
+                <div class="flex gap-1.5 mt-1">${labelHtml}</div>
+            </div>`;
     },
 
     /**

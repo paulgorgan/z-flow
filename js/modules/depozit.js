@@ -7,6 +7,11 @@
 // KPI & RENDER PRINCIPAL
 // ==========================================
 
+/**
+ * Calculează și actualizează în DOM valorile KPI pentru tab-ul Depozit:
+ * număr produse, valoare stoc total și număr alerte de stoc minim.
+ * @returns {void}
+ */
 function calculeazaKPIDepozit() {
     const produse = ZFlowStore.dateProduse || [];
     let valoare = 0, alerte = 0;
@@ -24,6 +29,12 @@ function calculeazaKPIDepozit() {
     set('depozit-kpi-alerte', alerte);
 }
 
+/**
+ * Calculează stocul curent al unui produs prin sumarea tuturor mișcărilor de stoc.
+ * Intrările adaugă la stoc, ieșirile (orice tip != 'Intrare') scad din stoc.
+ * @param {string} produsId - ID-ul produsului din ZFlowStore.dateProduse
+ * @returns {number} Stocul curent (poate fi negativ dacă lipsesc mișcări de intrare)
+ */
 function calcStocCurent(produsId) {
     return (ZFlowStore.dateMiscariStoc || [])
         .filter(m => String(m.produs_id) === String(produsId))
@@ -33,6 +44,12 @@ function calcStocCurent(produsId) {
         }, 0);
 }
 
+/**
+ * Rand-ul principal al modulului Depozit. Calculează KPI-urile,
+ * sincronizează vizibilitatea sub-navurilor și delega redarea
+ * view-ului curent din ZFlowStore.depozitView.
+ * @returns {void}
+ */
 function renderDepozit() {
     calculeazaKPIDepozit();
     const view = ZFlowStore.depozitView || 'produse';
@@ -49,6 +66,13 @@ function renderDepozit() {
     schimbaViewDepozit(view, false);
 }
 
+/**
+ * Comută view-ul activ în tab-ul Depozit și actualizează Store, pill-urile de navigare
+ * și sub-butoanele corespunzătoare. Apelează funcția de render specifică view-ului.
+ * @param {'produse'|'miscari'|'receptii'|'livrari'|'scanner'} view - View-ul de activat
+ * @param {boolean} [updateStore=true] - Dacă se actualizează ZFlowStore.depozitView
+ * @returns {void}
+ */
 function schimbaViewDepozit(view, updateStore = true) {
     if (updateStore) ZFlowStore.depozitView = view;
     ['produse', 'miscari', 'receptii', 'livrari', 'scanner'].forEach(v => {
@@ -105,6 +129,11 @@ function schimbaViewDepozitGrup(grup) {
 // PRODUSE
 // ==========================================
 
+/**
+ * Renderizează lista de produse din ZFlowStore.dateProduse cu filtrare,
+ * paginare și indicatori de stoc (Disponibil / Stoc redus / Epuizat).
+ * @returns {void}
+ */
 function renderProduse() {
     const container = document.getElementById('depozit-lista-produse');
     if (!container) return;
@@ -176,6 +205,11 @@ function renderProduse() {
 // MIȘCĂRI STOC
 // ==========================================
 
+/**
+ * Renderizează istoricul mișcărilor de stoc cu filtrare după text
+ * (nume produs, SKU, tip mișcare, observații) și paginare.
+ * @returns {void}
+ */
 function renderMiscariStoc() {
     const container = document.getElementById('depozit-lista-miscari');
     if (!container) return;

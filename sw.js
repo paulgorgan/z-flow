@@ -96,16 +96,23 @@ self.addEventListener('fetch', event => {
   // Skip Supabase API calls
   if (url.hostname.includes('supabase')) return;
   
-  // HTML: Network first
+  // HTML (app shell): Cache First — reda instant din cache, revalideaza in background
   if (event.request.mode === 'navigate' || url.pathname.endsWith('.html')) {
     event.respondWith(
-      fetch(event.request)
-        .then(response => {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-          return response;
-        })
-        .catch(() => caches.match(event.request))
+      caches.match(event.request).then(cached => {
+        // Porneste revalidarea in background indiferent de cache
+        const networkFetch = fetch(event.request)
+          .then(response => {
+            if (response && response.ok) {
+              const clone = response.clone();
+              caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+            }
+            return response;
+          })
+          .catch(() => cached);
+        // Returneaza cache-ul imediat (LCP instant) sau reteaua daca nu e cache
+        return cached || networkFetch;
+      })
     );
     return;
   }
@@ -126,25 +133,25 @@ self.addEventListener('fetch', event => {
     return;
   }
   
-  // Static assets (JS/CSS): Network first, cache fallback
-  // Always fetch fresh from network so live edits are immediately visible.
+  // Static assets (JS/CSS/icons): Cache First — cache-ul este mereu proaspat dupa install
+  // Dupa o actualizare, CACHE_NAME se schimba, vechiul cache e sters si activat cel nou.
   event.respondWith(
-    fetch(event.request)
-      .then(response => {
-        if (response.ok) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-        }
-        return response;
-      })
-      .catch(() => {
-        return caches.match(event.request).then(cached => {
-          if (cached) return cached;
+    caches.match(event.request).then(cached => {
+      if (cached) return cached; // Cache hit — raspuns instant fara retea
+      return fetch(event.request)
+        .then(response => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          }
+          return response;
+        })
+        .catch(() => {
           if (event.request.mode === 'navigate') {
-            return caches.match('/index.html');
+            return caches.match('/z-flow/index.html') || caches.match('/z-flow/');
           }
         });
-      })
+    })
   );
 });
 

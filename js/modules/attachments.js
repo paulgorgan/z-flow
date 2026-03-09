@@ -267,6 +267,113 @@ const ZFlowAttachments = {
             
             this.renderPendingList(listContainerId);
         });
+    },
+
+    // ==========================================
+    // MENTENANȚĂ — Consistența datelor & Curățare storage
+    // ==========================================
+
+    /**
+     * Șterge din storage toate fișierele asociate unui câmp pdf_url dintr-o factură.
+     * Apelat înainte sau imediat după ștergerea rândului din baza de date.
+     * @param {string} facturaId - ID-ul facturii (folosit doar pentru logging)
+     * @param {string|null} pdfUrl - Valoarea câmpului pdf_url (string simplu sau JSON array)
+     * @returns {Promise<{deleted: number, errors: number}>}
+     */
+    async deleteAttachmentsForFactura(facturaId, pdfUrl) {
+        const zf = window.zf;
+        if (!zf || !pdfUrl) return { deleted: 0, errors: 0 };
+
+        let urls = [];
+        try {
+            urls = pdfUrl.startsWith('[') ? JSON.parse(pdfUrl) : [pdfUrl];
+        } catch (e) {
+            urls = [pdfUrl];
+        }
+
+        let deleted = 0, errors = 0;
+        for (const url of urls) {
+            const ok = await this.deleteAttachment(url);
+            if (ok) deleted++;
+            else errors++;
+        }
+
+        console.log(`[Cleanup] Factură ${facturaId}: ${deleted} fișier(e) șterse din storage, ${errors} erori.`);
+        return { deleted, errors };
+    },
+
+    /**
+     * Funcție de mentenanță: identifică și șterge fișierele orfane din bucket-ul 'zflow-uploads'.
+     * Un fișier este orfan dacă nu există niciun rând în tabela 'facturi' care să îl referențieze.
+     * Rulează o singură cerere de listare + o cerere de citire a tuturor pdf_url-urilor, apoi compară.
+     * @returns {Promise<{checked: number, orphans: number, deleted: number, errors: number}>}
+     */
+    async cleanupOrphanedFiles() {
+        const zf = window.zf;
+        if (!zf) {
+            console.warn('[Cleanup] Supabase client nu este inițializat.');
+            return { checked: 0, orphans: 0, deleted: 0, errors: 0 };
+        }
+
+        try {
+            // 1. Listăm toate fișierele din bucket-ul zflow-uploads
+            const { data: files, error: listErr } = await zf.storage
+                .from('zflow-uploads')
+                .list('', { limit: 1000, sortBy: { column: 'created_at', order: 'asc' } });
+
+            if (listErr) throw listErr;
+            if (!files || files.length === 0) {
+                console.log('[Cleanup] Bucket gol, nimic de verificat.');
+                return { checked: 0, orphans: 0, deleted: 0, errors: 0 };
+            }
+
+            // 2. Obținem toate câmpurile pdf_url din baza de date
+            const { data: facturi, error: facturiErr } = await zf
+                .from('facturi')
+                .select('pdf_url')
+                .not('pdf_url', 'is', null);
+
+            if (facturiErr) throw facturiErr;
+
+            // 3. Construim un Set cu toate path-urile fișierelor referențiate
+            const usedPaths = new Set();
+            (facturi || []).forEach(f => {
+                if (!f.pdf_url) return;
+                let urls = [];
+                try {
+                    urls = f.pdf_url.startsWith('[') ? JSON.parse(f.pdf_url) : [f.pdf_url];
+                } catch (e) { urls = [f.pdf_url]; }
+                urls.forEach(url => {
+                    // Extragem path-ul relativ din URL-ul public Supabase
+                    const match = url.match(/zflow-uploads\/(.+?)(?:\?|$)/);
+                    if (match) usedPaths.add(decodeURIComponent(match[1]));
+                });
+            });
+
+            // 4. Identificăm orfanii (fișiere care nu sunt referențiate de nicio factură)
+            const orphans = files.filter(f => !usedPaths.has(f.name));
+
+            let deleted = 0, errors = 0;
+            for (const orphan of orphans) {
+                const { error: delErr } = await zf.storage
+                    .from('zflow-uploads')
+                    .remove([orphan.name]);
+                if (delErr) {
+                    errors++;
+                    console.warn('[Cleanup] Eroare la ștergerea orfanului:', orphan.name, delErr.message);
+                } else {
+                    deleted++;
+                    console.log('[Cleanup] Orfan șters:', orphan.name);
+                }
+            }
+
+            const result = { checked: files.length, orphans: orphans.length, deleted, errors };
+            console.log('[Cleanup] Finalizat:', result);
+            return result;
+        } catch (e) {
+            console.error('[Cleanup] Eroare critică la curățarea storage-ului:', e);
+            return { checked: 0, orphans: 0, deleted: 0, errors: 1 };
+        }
     }
 };
 
