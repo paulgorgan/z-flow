@@ -813,6 +813,51 @@ async function verificaAuth() {
         
         resetLoginAttempts(); // Reset rate limit la succes
         showNotification(`Bun venit, ${user.email}!`, "success");
+
+        // [R7-FIX 5a] Consumă token pending dacă există (înregistrare cu email confirmation activ)
+        const _pendingToken = localStorage.getItem('zflow_pending_token');
+        if (_pendingToken) {
+            try {
+                await ZFlowDB.consumeSubscriptionToken(_pendingToken, user.email, null);
+                localStorage.removeItem('zflow_pending_token');
+            } catch(_) {}
+        }
+
+        // [R7-FIX 5b] Verifică dacă abonamentul a expirat
+        try {
+            const _profil = await ZFlowDB.fetchProfile();
+            if (_profil) {
+                ZFlowStore.userProfile = _profil;
+                if (_profil.subscription_expires_at) {
+                    const _expDate = new Date(_profil.subscription_expires_at);
+                    const _acum    = new Date();
+                    if (_expDate < _acum) {
+                        await ZFlowDB.signOut();
+                        ZFlowStore.userSession = null;
+                        document.querySelector('main').style.display        = 'none';
+                        document.querySelector('header').style.display      = 'none';
+                        document.querySelector('.bottom-nav').style.display = 'none';
+                        document.getElementById("modal-auth")?.classList.add("active");
+                        showNotification(
+                            `Abonamentul a expirat pe ${_expDate.toLocaleDateString('ro-RO')}. Contactează echipa Z-FLOW pentru reînnoire.`,
+                            'error'
+                        );
+                        setLoader(false);
+                        return;
+                    }
+                    const _zileRamase = Math.ceil((_expDate - _acum) / (1000 * 60 * 60 * 24));
+                    if (_zileRamase <= 14) {
+                        setTimeout(() => showNotification(
+                            `⚠️ Abonamentul expiră în ${_zileRamase} zile (${_expDate.toLocaleDateString('ro-RO')})`,
+                            'warning'
+                        ), 3000);
+                    }
+                }
+            }
+        } catch(_subErr) {
+            console.warn('[Login] Verificare abonament non-fatală:', _subErr.message);
+        }
+
         // [FIX 2] Verifică modul mentenanță și după login Supabase (poate fi activat în timp ce userul era pe pagina de login)
         try {
             const remoteState = await ZFlowDB.getSetAppConfig('maintenance_mode').catch(() => null);
@@ -955,75 +1000,73 @@ function deschideModalResetParola() {
 }
 
 /**
- * Înregistrare utilizator nou
+ * [R7-FIX 4] Înregistrare utilizator nou cu plan de subscripție.
+ * Flux: validare token → plan info → signUp → consume token → salvare profil cu plan
  */
 async function inregistrareUtilizator() {
-    const email = document.getElementById("reg-email").value.trim();
-    const pass = document.getElementById("reg-password").value;
-    const passConfirm = document.getElementById("reg-password-confirm").value;
-    const nume = document.getElementById("reg-nume").value.trim();
-    
-    // Validări
-    if (!email || !pass) {
-        showNotification("Completează toate câmpurile obligatorii", "error");
-        return;
-    }
-    
-    if (pass !== passConfirm) {
-        showNotification("Parolele nu coincid", "error");
-        return;
-    }
-    
-    if (pass.length < 6) {
-        showNotification("Parola trebuie să aibă minim 6 caractere", "error");
-        return;
-    }
-    
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-        showNotification("Email invalid", "error");
-        return;
-    }
+    const email    = document.getElementById("reg-email")?.value.trim();
+    const pass     = document.getElementById("reg-password")?.value;
+    const passConf = document.getElementById("reg-password-confirm")?.value;
+    const nume     = document.getElementById("reg-nume")?.value.trim();
+    const codToken = document.getElementById("reg-subscription-code")?.value.trim().toUpperCase();
 
-    // Validare cod abonament
-    const subscriptionCode = document.getElementById("reg-subscription-code")?.value.trim();
-    if (!subscriptionCode) {
-        showNotification("Codul de abonament este obligatoriu", "error");
-        return;
-    }
-    
+    if (!email || !pass)         { showNotification("Completează toate câmpurile obligatorii", "error"); return; }
+    if (pass !== passConf)       { showNotification("Parolele nu coincid", "error"); return; }
+    if (pass.length < 6)         { showNotification("Parola trebuie să aibă minim 6 caractere", "error"); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showNotification("Email invalid", "error"); return; }
+    if (!codToken)               { showNotification("Codul de abonament este obligatoriu", "error"); return; }
+
     setLoader(true);
-    
     try {
-        const tokenValid = await ZFlowDB.validateSubscriptionToken(subscriptionCode);
-        if (!tokenValid) {
-            showNotification("Cod abonament invalid sau expirat", "error");
+        // PASUL 1: Validează tokenul și obține planul
+        const tokenInfo = await ZFlowDB.validateSubscriptionToken(codToken);
+        if (!tokenInfo) {
+            showNotification("Cod abonament invalid, expirat sau deja folosit", "error");
             setLoader(false);
             return;
         }
 
-        await ZFlowDB.signUp(email, pass, { nume: nume });
-        await ZFlowDB.consumeSubscriptionToken(subscriptionCode, email);
-        
-        document.getElementById("modal-register").classList.remove("active");
-        document.getElementById("modal-auth").classList.add("active");
-        
+        const planLabels = { trial: 'Trial 30 zile', standard: 'Standard 1 an', pro: 'Pro 1 an', enterprise: 'Enterprise' };
+        const planLabel  = planLabels[tokenInfo.plan_type] || tokenInfo.plan_type;
+
+        // PASUL 2: Calculează data expirării
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + (tokenInfo.duration_days || 365));
+
+        // PASUL 3: Creează contul în Supabase Auth
+        await ZFlowDB.signUp(email, pass, { full_name: nume || email, plan_type: tokenInfo.plan_type });
+
+        // PASUL 4: Consume token (cu autentificare automată)
+        await ZFlowDB.consumeSubscriptionToken(codToken, email, pass);
+
+        // PASUL 5: Salvează planul în profil
+        try {
+            await ZFlowDB.upsertProfile({
+                display_name: nume || null,
+                plan_type: tokenInfo.plan_type,
+                subscription_expires_at: expiresAt.toISOString(),
+                subscription_token: codToken
+            });
+        } catch(profileErr) {
+            console.warn('[Register] Profil plan se va salva la onboarding:', profileErr.message);
+        }
+
         // Curăță câmpurile
-        document.getElementById("reg-email").value = '';
-        document.getElementById("reg-password").value = '';
-        document.getElementById("reg-password-confirm").value = '';
-        document.getElementById("reg-nume").value = '';
-        document.getElementById("reg-subscription-code").value = '';
-        
-        showNotification("Cont creat! Verifică-ți email-ul pentru confirmare.", "success");
+        ['reg-email','reg-password','reg-password-confirm','reg-nume','reg-subscription-code']
+            .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+
+        document.getElementById("modal-register")?.classList.remove("active");
+        document.getElementById("modal-auth")?.classList.add("active");
+        showNotification(`Cont creat! Plan: ${planLabel}. Verifică email-ul pentru confirmare.`, "success");
+
     } catch (error) {
         console.error("Register error:", error);
-        
         let errorMsg = "Eroare la înregistrare";
-        if (error.message.includes("already registered")) {
+        if (error.message?.includes("already registered") || error.message?.includes("already been registered")) {
             errorMsg = "Acest email este deja înregistrat";
+        } else if (error.message?.includes("Password")) {
+            errorMsg = "Parola prea slabă — încearcă una mai complexă";
         }
-        
         showNotification(errorMsg, "error");
     } finally {
         setLoader(false);
@@ -1373,6 +1416,39 @@ async function deschideAdminUserPanel() {
     }
 }
 window.deschideAdminUserPanel = deschideAdminUserPanel;
+
+/**
+ * [R7-FIX 6] Generator tokeni abonament — doar pentru admin local
+ */
+async function genereazaTokenAdmin() {
+    const plan  = document.getElementById('admin-token-plan')?.value || 'standard';
+    const zile  = parseInt(document.getElementById('admin-token-zile')?.value || '365');
+    const nota  = document.getElementById('admin-token-nota')?.value.trim() || null;
+    const pfx   = { trial: 'TRL', standard: 'STD', pro: 'PRO', enterprise: 'ENT' }[plan] || 'STD';
+    const rnd   = Math.random().toString(36).substring(2, 7).toUpperCase();
+    const token = `ZFLOW-${pfx}-${new Date().getFullYear()}-${rnd}`;
+    const exp   = new Date(); exp.setFullYear(exp.getFullYear() + 1);
+
+    setLoader(true);
+    try {
+        const { error } = await ZFlowDB._supabase()
+            .from('subscription_tokens')
+            .insert([{ token, plan_type: plan, duration_days: zile, expires_at: exp.toISOString(), notes: nota }]);
+        if (error) throw new Error(error.message);
+        const outEl = document.getElementById('admin-token-output');
+        const boxEl = document.getElementById('admin-token-result');
+        if (outEl) outEl.textContent = token;
+        if (boxEl) boxEl.classList.remove('hidden');
+        const nota2El = document.getElementById('admin-token-nota');
+        if (nota2El) nota2El.value = '';
+        showNotification(`Token generat: ${token}`, 'success');
+    } catch(e) {
+        showNotification('Eroare generare token: ' + e.message, 'error');
+    } finally {
+        setLoader(false);
+    }
+}
+window.genereazaTokenAdmin = genereazaTokenAdmin;
 
 function inchideProfilFirma() {
     document.getElementById('modal-profil-firma').classList.remove('active');
@@ -2647,6 +2723,17 @@ function incarcaDashboard() {
         const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
         setEl("home-firma-initiale", initiale);
         setEl("home-firma-nume", p.nume_firma || "—");
+        // [R7-FIX 7] Badge plan abonament
+        const _planBadge = document.getElementById('home-plan-badge');
+        if (_planBadge && ZFlowStore.userProfile) {
+            const _plan = ZFlowStore.userProfile.plan_type || 'standard';
+            const _exp  = ZFlowStore.userProfile.subscription_expires_at;
+            const _col  = { trial:'bg-yellow-100 text-yellow-700', standard:'bg-blue-100 text-blue-700',
+                            pro:'bg-purple-100 text-purple-700', enterprise:'bg-emerald-100 text-emerald-700' }[_plan] || 'bg-blue-100 text-blue-700';
+            const _expStr = _exp ? new Date(_exp).toLocaleDateString('ro-RO', { month:'short', year:'numeric' }) : '';
+            _planBadge.innerHTML = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${_col}">${_plan}${_expStr ? ' · ' + _expStr : ''}</span>`;
+            _planBadge.classList.remove('hidden');
+        }
         setEl("home-firma-cui", p.cui ? "CUI: " + p.cui : "");
         setEl("home-firma-oras", p.oras || "");
         setEl("home-data-azi", new Date().toLocaleDateString("ro-RO", { weekday: "long", day: "numeric", month: "long", year: "numeric" }));

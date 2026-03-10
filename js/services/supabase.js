@@ -716,7 +716,7 @@ async function upsertProfile(payload) {
     // Cache per-user (namespaced, nu shared) pentru recuperare offline
     try { localStorage.setItem('zflow_prc_' + user.id, JSON.stringify({ ...payload, onboarding_done: true })); } catch(e) {}
     // Cacheaza local campurile care pot lipsi din schema Supabase
-    const { judet, reg_com, banca, ...dbPayload } = payload;
+    const { judet, reg_com, banca, ...dbPayload } = payload; // [R7-FIX 3] plan_type, subscription_expires_at, display_name incluse automat
     try {
         localStorage.setItem('zflow_pex_' + user.id, JSON.stringify({ judet, reg_com, banca }));
     } catch(e) {}
@@ -913,40 +913,58 @@ async function getSetAppConfig(key, value) {
 }
 
 /**
- * Validează un token de abonament din tabelul subscription_tokens
- * Returnează true dacă tokenul există, este activ și nefolosit
- * @param {string} token
- * @returns {Promise<boolean>}
+ * [R7-FIX 1] Validează token abonament.
+ * Returnează { valid, plan_type, duration_days } sau null dacă invalid/expirat/folosit.
  */
 async function validateSubscriptionToken(token) {
-    if (!token || token.trim().length < 6) return false;
+    if (!token || token.trim().length < 6) return null;
     try {
         const { data, error } = await zf
             .from('subscription_tokens')
-            .select('id, used, expires_at')
+            .select('id, used, expires_at, plan_type, duration_days')
             .eq('token', token.trim().toUpperCase())
-            .single();
-        if (error || !data) return false;
-        if (data.used) return false;
-        if (data.expires_at && new Date(data.expires_at) < new Date()) return false;
-        return true;
+            .maybeSingle();
+        if (error || !data) return null;
+        if (data.used) return null;
+        if (data.expires_at && new Date(data.expires_at) < new Date()) return null;
+        return { valid: true, plan_type: data.plan_type || 'standard', duration_days: data.duration_days || 365 };
     } catch(e) {
         console.warn('[validateSubscriptionToken]', e.message);
-        return false;
+        return null;
     }
 }
 
 /**
- * Marchează un token de abonament ca folosit după înregistrare
- * @param {string} token
- * @param {string} email - Email-ul utilizatorului nou
+ * [R7-FIX 2] Marchează tokenul ca folosit.
+ * Autentifică explicit cu parola proaspătă înainte de UPDATE (RLS cere authenticated).
+ * Dacă email confirmation e activ, salvează tokenul pending în localStorage.
  */
-async function consumeSubscriptionToken(token, email) {
+async function consumeSubscriptionToken(token, email, password) {
     try {
-        await zf
-            .from('subscription_tokens')
-            .update({ used: true, used_by: email, used_at: new Date().toISOString() })
-            .eq('token', token.trim().toUpperCase());
+        let hasSession = false;
+        try {
+            const { data: { session } } = await zf.auth.getSession();
+            hasSession = !!session;
+        } catch(_) {}
+
+        if (!hasSession && password) {
+            try {
+                await zf.auth.signInWithPassword({ email, password });
+                hasSession = true;
+            } catch(loginErr) {
+                // Email confirmation activ — token se consumă la primul login real (R7-FIX 5)
+                console.warn('[consumeSubscriptionToken] Sesiune indisponibilă — token pending:', loginErr.message);
+                try { localStorage.setItem('zflow_pending_token', token.trim().toUpperCase()); } catch(_) {}
+                return;
+            }
+        }
+
+        if (hasSession) {
+            await zf
+                .from('subscription_tokens')
+                .update({ used: true, used_by: email, used_at: new Date().toISOString() })
+                .eq('token', token.trim().toUpperCase());
+        }
     } catch(e) {
         console.warn('[consumeSubscriptionToken]', e.message);
     }
@@ -1406,6 +1424,8 @@ window.ZFlowDB = {
     updateUser,
     validateSubscriptionToken,
     consumeSubscriptionToken,
+    // [R7-FIX 3] Expune clientul Supabase pentru operații admin directe (generare tokeni etc.)
+    _supabase() { return zf; },
     // Config aplicație (mentenanță)
     updateUserMeta,
     getSetAppConfig,
