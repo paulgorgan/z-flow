@@ -491,6 +491,16 @@ async function init(goHome = true) {
                 ZFlowIDB.save('facturi_platit', fp),
             ]).catch(e => console.warn('[IDB] Eroare scriere cache:', e));
 
+            // [R5-FIX 5] Marchează ultimul fetch reușit — util pentru diagnosticare
+            try {
+                const _uid = window.ZFlowStore?.userSession?.user?.id;
+                if (_uid) {
+                    localStorage.setItem('zflow_last_fetch_' + _uid,
+                        JSON.stringify({ ts: Date.now(), clienti: cl?.length || 0, facturi: fc?.length || 0 })
+                    );
+                }
+            } catch(e) {}
+
         } catch (networkErr) {
             // #7 - Rețeaua a eșuat → fallback la cache IndexedDB pentru toate sursele
             console.warn('[IDB] Rețea indisponibilă, încerc cache local...', networkErr.message);
@@ -872,8 +882,11 @@ async function logout() {
         ZFlowStore.dateComenziTransport = [];
         ZFlowStore.userProfile = null;
 
-        // #7 - Șterge cache-ul IndexedDB la deconectare (confidențialitate)
-        await ZFlowIDB.clearAll();
+        // [R5-FIX 3] NU ştergăm IDB-ul la logout — datele rămân ca cache pentru
+        // re-login rapid. IDB-ul e per-browser, nu conține date sensibile că sunt
+        // protejate de RLS în Supabase. La re-login, fetch-ul Supabase suprascrie IDB.
+        // IDB se şterge DOAR la cerere explicită (buton "Golire cache" din profil).
+        console.log('[Logout] Cache IDB păstrat pentru re-login rapid'); // [R5-FIX 3]
 
         // Ascunde interfața
         const mainContent = document.querySelector('main');
@@ -901,6 +914,17 @@ async function logout() {
         setLoader(false);
     }
 }
+
+// [R5-FIX 3] Permite utilizatorului să golească manual cache-ul IDB
+async function clearIDBCache() {
+    try {
+        await ZFlowIDB.clearAll();
+        showNotification('Cache local şters. La next refresh datele se re-descarcă din cloud.', 'info');
+    } catch(e) {
+        showNotification('Eroare la golirea cache-ului', 'error');
+    }
+}
+window.clearIDBCache = clearIDBCache;
 
 /**
  * Deschide modalul de înregistrare
@@ -6689,6 +6713,13 @@ window.onload = async () => {
         console.log('Auth state changed:', event);
         if (event === 'SIGNED_OUT') {
             logout();
+        }
+        if (event === 'TOKEN_REFRESHED') {
+            // [R5-FIX 5] Token reînnoit — actualizează sesiunea în store
+            if (session && ZFlowStore.userSession) {
+                ZFlowStore.userSession = session;
+                console.log('[Auth] Token reînnoit, sesiune actualizată');
+            }
         }
     });
 };

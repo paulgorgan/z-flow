@@ -103,16 +103,18 @@ async function idbGetMeta(storeName) {
 }
 
 /**
- * Șterge toate datele din cache (apelat la logout)
+ * Șterge toate datele din cache
  */
 async function idbClearAll() {
+    // [R5-FIX 3] Ətergere completă: toate store-urile relevante
     try {
         const db = await _idbOpen();
+        const storeNames = ['clienti', 'facturi', 'furnizori', 'facturi_platit', 'meta'];
         await new Promise((resolve, reject) => {
-            const tx = db.transaction(['clienti', 'facturi', 'meta'], 'readwrite');
-            tx.objectStore('clienti').clear();
-            tx.objectStore('facturi').clear();
-            tx.objectStore('meta').clear();
+            const tx = db.transaction(storeNames, 'readwrite');
+            storeNames.forEach(name => {
+                try { tx.objectStore(name).clear(); } catch(e) {}
+            });
             tx.oncomplete = () => { db.close(); resolve(); };
             tx.onerror    = (e) => { db.close(); reject(e.target.error); };
         });

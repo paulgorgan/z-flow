@@ -2921,6 +2921,20 @@
             <button data-supabase-only onclick="resetDateUnificat()" class="w-full py-2.5 bg-red-50 text-red-700 border border-red-200 rounded-xl text-[10px] font-black uppercase hover:bg-red-100 transition-all">
               Resetare Completă Date Cont
             </button>
+            <!-- [R5-FIX 4] Buton golire cache — vizibil pentru toți utilizatorii autentificați -->
+            <div data-account-only class="mt-3">
+              <button onclick="clearIDBCache()"
+                class="w-full py-3 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-xl text-sm font-bold transition-all border border-amber-200 flex items-center justify-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/>
+                </svg>
+                Golește cache local
+              </button>
+              <p class="text-[9px] text-slate-400 text-center mt-1">
+                Datele se re-descarcă din cloud la refresh
+              </p>
+            </div>
           </div>
         </div>
       </div>

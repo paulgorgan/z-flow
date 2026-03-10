@@ -950,15 +950,15 @@ input, select, button {
     margin-right: auto !important;
   }
 
-  /* [R4-FIX 6] Grid carduri clienți/furnizori la 1024px–1279px */
+  /* [R5-FIX 2] Grid cu lățime minimă per card — previne carduri sub 280px */
   #lista-firme-global,
   #lista-furnizori-global {
     display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
     gap: 20px !important;
     padding: 8px !important;
     width: 100% !important;
-    min-width: 0 !important;         /* previne overflow în grid parent */
+    min-width: 0 !important;
     box-sizing: border-box !important;
   }
 
@@ -997,6 +997,10 @@ input, select, button {
     font-size: 14px !important;
     font-weight: 800 !important;
     letter-spacing: -0.02em !important;
+    overflow: hidden !important;      /* [R5-FIX 2] truncate lung */
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    max-width: 100% !important;
   }
 
   /* Sold - mai vizibil */
@@ -1063,6 +1067,10 @@ input, select, button {
     font-size: 14px !important;
     font-weight: 800 !important;
     letter-spacing: -0.02em !important;
+    overflow: hidden !important;      /* [R5-FIX 2] truncate lung */
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    max-width: 100% !important;
   }
 
   /* Sold - mai vizibil */
@@ -1403,10 +1411,18 @@ input, select, button {
     border-top: 1px solid #e2e8f0;
   }
 
+  /* [R5-FIX 2] Grila clienti/furnizori — lățime maximă rezonabilă pe ultrawide */
+  #view-firme,
+  #view-furnizori {
+    max-width: 1600px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
   /* Grila clienti/furnizori — latime consistenta cu search bar (900px) */
   #lista-firme-global,
   #lista-furnizori-global {
-    max-width: 900px !important;
+    max-width: 100% !important;
     width: 100% !important;
     margin-left: auto !important;
     margin-right: auto !important;
@@ -1943,23 +1959,10 @@ input {
 }
 
 /* ============================================
-   DESKTOP MEDIU (1280px+) — 3 coloane card-uri
+   DESKTOP MEDIU (1280px+)
+   [R5-FIX 2] Coloanele sunt gestionate de auto-fill minmax(280px, 1fr)
+   — blocurile repeat(3) și repeat(4) au fost eliminate
    ============================================ */
-/* [R4-FIX 6] 3 coloane la 1280px+ */
-@media (min-width: 1280px) {
-  #lista-firme-global,
-  #lista-furnizori-global {
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-  }
-}
-
-/* [R4-FIX 6] Max 4 coloane pe ecrane foarte late -- carduri nu devin prea late */
-@media (min-width: 1600px) {
-  #lista-firme-global,
-  #lista-furnizori-global {
-    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-  }
-}
 
 /* ============================================
    FULL DESKTOP ENHANCEMENTS (1440px+)
@@ -2029,18 +2032,7 @@ input {
     min-height: 280px !important;
   }
 
-  /* Lista clienți - 4 coloane pe ecrane mari */
-  #lista-firme-global {
-    grid-template-columns: repeat(4, 1fr) !important;
-    max-height: 70vh;
-  }
-
-  /* Lista furnizori - 4 coloane */
-  #lista-furnizori-global {
-    display: grid !important;
-    grid-template-columns: repeat(4, 1fr) !important;
-    gap: 20px !important;
-  }
+  /* [R5-FIX 2] Lista clienți/furnizori — coloanele gestionate de auto-fill în blocul 1024px */
 
   /* Modals mai late pe desktop mare */
   .sheet-content {
