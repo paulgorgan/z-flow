@@ -75,16 +75,17 @@ function _updateMaintenanceToggleUI(state) {
         btn.classList.remove('bg-slate-300');
         btn.classList.add('bg-amber-500');
         btn.setAttribute('aria-checked', 'true');
-        if (knob) knob.classList.replace('translate-x-0.5', 'translate-x-4');
+        // [FIX 2] classList.replace() eşuează silentios dacă clasa sursă nu există — folosim remove+add
+        if (knob) { knob.classList.remove('translate-x-0.5'); knob.classList.add('translate-x-4'); }
         if (statusText) statusText.textContent = `Status: ACTIV de la ${state.enabledAt ? new Date(state.enabledAt).toLocaleString('ro-RO') : '—'}`;
-        if (statusText) statusText.classList.replace('text-slate-500', 'text-amber-700');
+        if (statusText) { statusText.classList.remove('text-slate-500'); statusText.classList.add('text-amber-700'); }
     } else {
         btn.classList.remove('bg-amber-500');
         btn.classList.add('bg-slate-300');
         btn.setAttribute('aria-checked', 'false');
-        if (knob) knob.classList.replace('translate-x-4', 'translate-x-0.5');
+        if (knob) { knob.classList.remove('translate-x-4'); knob.classList.add('translate-x-0.5'); }
         if (statusText) statusText.textContent = 'Status: Inactiv';
-        if (statusText) statusText.classList.replace('text-amber-700', 'text-slate-500');
+        if (statusText) { statusText.classList.remove('text-amber-700'); statusText.classList.add('text-slate-500'); }
     }
 }
 
@@ -812,6 +813,12 @@ async function verificaAuth() {
         
         resetLoginAttempts(); // Reset rate limit la succes
         showNotification(`Bun venit, ${user.email}!`, "success");
+        // [FIX 2] Verifică modul mentenanță și după login Supabase (poate fi activat în timp ce userul era pe pagina de login)
+        try {
+            const remoteState = await ZFlowDB.getSetAppConfig('maintenance_mode').catch(() => null);
+            if (remoteState !== null) localStorage.setItem(MAINTENANCE_LS_KEY, JSON.stringify(remoteState));
+            checkAndApplyMaintenanceMode();
+        } catch(e) {}
         await verificaOnboarding(user);
     } catch (error) {
         console.error("Auth error:", error);
@@ -860,6 +867,11 @@ async function logout() {
         }
         
         ZFlowStore.userSession = null;
+
+        // [FIX 4] Resetează cache-ul intern _demoOps._restoreCache pentru a permite
+        // re-încărcarea datelor admin local la re-login (altfel _restore() returnează
+        // imediat fără să citească din localStorage, lăsând datele goale)
+        if (typeof ZFlowDB !== 'undefined' && ZFlowDB.resetLocalSession) ZFlowDB.resetLocalSession();
 
         // Curăță datele demo din memorie — izolează sesiunile (evită afișarea datelor din sesiunea anterioară)
         const _demoStoreKeys = ['_demoClienti','_demoFacturi','_demoFurnizori','_demoFacturiPlatit',

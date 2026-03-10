@@ -695,11 +695,20 @@ window.renderCashflowForecast = renderCashflowForecast;
 // ============================================================
 
 const ZFlowMultiFirma = {
-    _LS_KEY: 'zflow_firmele_mele',
+    _LS_KEY: 'zflow_firmele_mele', // prefix — cheia reală e per-user (vezi _lsKey)
+
+    // [FIX 1] Chei per-utilizator — izolează companiile între utilizatori diferiți pe același browser
+    _getUserSuffix() {
+        return window.ZFlowStore?.userSession?.user?.id
+            || window.ZFlowStore?.userSession?.user?.email
+            || 'anon';
+    },
+    _lsKey()       { return 'zflow_firmele_mele_'   + this._getUserSuffix(); },
+    _lsKeyActiva() { return 'zflow_firma_activa_id_' + this._getUserSuffix(); },
 
     getFirme() {
         try {
-            const stored = JSON.parse(localStorage.getItem(this._LS_KEY) || '[]');
+            const stored = JSON.parse(localStorage.getItem(this._lsKey()) || '[]');
             // Dacă lista e goală și există un profil activ, populează automat cu firma din profil
             if (stored.length === 0 && window.ZFlowUserProfile) {
                 const p = window.ZFlowUserProfile;
@@ -718,7 +727,7 @@ const ZFlowMultiFirma = {
                     };
                     stored.push(firmaActiva);
                     this.saveFirme(stored);
-                    localStorage.setItem('zflow_firma_activa_id', firmaActiva.id);
+                    localStorage.setItem(this._lsKeyActiva(), firmaActiva.id);
                 }
             }
             return stored;
@@ -726,11 +735,11 @@ const ZFlowMultiFirma = {
     },
 
     saveFirme(firme) {
-        localStorage.setItem(this._LS_KEY, JSON.stringify(firme));
+        localStorage.setItem(this._lsKey(), JSON.stringify(firme));
     },
 
     getFirmaActiva() {
-        const id = localStorage.getItem('zflow_firma_activa_id');
+        const id = localStorage.getItem(this._lsKeyActiva());
         const firme = this.getFirme();
         return firme.find(f => f.id === id) || firme[0] || null;
     },
@@ -764,7 +773,7 @@ const ZFlowMultiFirma = {
     switchFirma(id) {
         const firma = this.getFirme().find(f => f.id === id);
         if (!firma) return;
-        localStorage.setItem('zflow_firma_activa_id', id);
+        localStorage.setItem(this._lsKeyActiva(), id);
         // Actualizează profilul activ
         if (window.ZFlowUserProfile) {
             Object.assign(window.ZFlowUserProfile, {

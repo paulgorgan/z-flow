@@ -17,7 +17,7 @@ const KEY_Z = (
 );
 
 // Inițializăm clientul Supabase
-const zf = supabase.createClient(URL_Z, KEY_Z);
+const zf = supabase.createClient('https://exrypxknksgrtrwnbtrl.supabase.co', 'sb_publishable_nKFEv_6AOyKBFp3f_AnZmw_MMZ9MXl5');
 
 // ==========================================
 // RETRY — Exponential Backoff pentru erori de rețea
@@ -1324,6 +1324,18 @@ async function adminSendNotification(targetEmail, mesaj) {
     }
 }
 
+/**
+ * [FIX 4] Resetează cache-ul intern _restore al _demoOps.
+ * Trebuie apelat la logout pentru ca datele admin local să se re-încarce
+ * corect la următorul re-login (altfel _restoreCache rămâne populated
+ * din sesiunea anterioară, iar _restore() returnează imediat fără să
+ * încarce datele din localStorage).
+ */
+function resetLocalSession() {
+    _demoOps._restoreCache.clear();
+    console.log('[Auth] _demoOps._restoreCache resetat — date admin local vor fi re-încarcate la re-login');
+}
+
 // Export pentru utilizare globală (fără module ES6 native în browser)
 window.ZFlowDB = {
     zf,
@@ -1401,5 +1413,7 @@ window.ZFlowDB = {
     // Admin [R4-FIX 5]
     adminGetUserData,
     adminDeleteUserData,
-    adminSendNotification
+    adminSendNotification,
+    // Session helpers [FIX 4]
+    resetLocalSession
 };

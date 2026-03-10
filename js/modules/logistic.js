@@ -51,7 +51,13 @@ function schimbaViewLogistic(view, updateStore = true) {
     });
     if (view === 'comenzi')  renderComenziTransport();
     else if (view === 'soferi')    renderSoferi();
-    else if (view === 'vehicule')  renderVehicule();
+    else if (view === 'vehicule') {
+        renderVehicule();
+        // [FIX 3] Harta e în subview-ul Vehicule care e hidden implicit.
+        // Leaflet inițializat din schimbaTab rulează pe un container ascuns (width/height=0).
+        // Re-apelăm initMap() acum că div-ul este vizibil → invalidateSize() + markere corecte.
+        if (typeof window.initMap === 'function') window.initMap();
+    }
 }
 
 // ==========================================
