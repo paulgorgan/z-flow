@@ -64,7 +64,7 @@
       main{min-height:calc(100svh - 56px - 68px)}
       /* Prevent canvas collapsing before Chart.js attaches */
       canvas{display:block;max-width:100%}
-      #home-chart-cashflow{min-height:220px}
+      /* [R4-FIX 7] #home-chart-cashflow removed */
       /* List containers — avoid height-0 flash during data fetch */
       #lista-firme-global,#lista-furnizori-global,
       #logistic-comenzi-list,#depozit-lista-produse{min-height:60px}
@@ -437,31 +437,7 @@
           <div id="home-alerte-list" class="space-y-2"></div>
         </div>
 
-        <!-- Cashflow Chart - 30 zile -->
-        <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
-          <div class="flex items-center justify-between mb-1">
-            <div>
-              <p class="text-[9px] font-black text-slate-700 uppercase tracking-widest">
-                Cashflow · 30 zile
-              </p>
-              <p id="home-chart-period" class="text-[8px] text-slate-400 font-medium mt-0.5">—</p>
-            </div>
-            <div class="flex items-center gap-2.5">
-              <span class="flex items-center gap-1 text-[8px] font-bold text-emerald-600">
-                <span class="w-2 h-2 rounded-sm bg-emerald-400 inline-block"></span>Intrări
-              </span>
-              <span class="flex items-center gap-1 text-[8px] font-bold text-red-500">
-                <span class="w-2 h-2 rounded-sm bg-red-400 inline-block"></span>Ieșiri
-              </span>
-              <span class="flex items-center gap-1 text-[8px] font-bold text-indigo-500">
-                <span class="w-2 h-2 rounded-full bg-indigo-400 inline-block"></span>Net
-              </span>
-            </div>
-          </div>
-          <div style="position: relative; height: 220px; width: 100%" class="mt-3">
-            <canvas id="home-chart-cashflow"></canvas>
-          </div>
-        </div>
+
       </section>
 
       <!-- ==================== TAB FINANCIAR ==================== -->
@@ -2932,6 +2908,11 @@
             </button>
             <button data-admin-only onclick="resetDateUnificat()" class="w-full py-2.5 bg-red-50 text-red-700 border border-red-200 rounded-xl text-[10px] font-black uppercase hover:bg-red-100 transition-all">
               Resetare Completă Date
+            </button>
+            <!-- [R4-FIX 5] Buton panel admin multi-user -- vizibil DOAR pentru admin local -->
+            <button data-admin-only onclick="deschideAdminUserPanel()"
+              class="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-sm font-bold transition-all mt-2">
+              👤 Gestionează utilizatori
             </button>
             <button data-account-only onclick="deschideModalSchimbaParola()" class="w-full py-2.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-xl text-[10px] font-black uppercase hover:bg-blue-100 transition-all">
               <svg class="w-3.5 h-3.5 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/></svg>Schimbă Email / Parolă

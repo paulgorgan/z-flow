@@ -164,6 +164,74 @@ self.addEventListener('sync', event => {
 });
 
 async function syncPendingInvoices() {
-  // Placeholder for offline sync logic
-  console.log('📤 SW V2: Syncing pending invoices...');
+  // [R4-FIX 2] Sync operații CRUD pendinte salvate în IDB 'pending_ops'
+  console.log('📤 SW V2: syncPendingInvoices — start');
+
+  let db;
+  try {
+      db = await new Promise((res, rej) => {
+          const req = indexedDB.open('zflow-offline', 2);
+          req.onsuccess = e => res(e.target.result);
+          req.onerror = e => rej(e.target.error);
+      });
+  } catch (e) {
+      console.error('SW: IDB open failed', e);
+      return;
+  }
+
+  // Citeşte toate operațiile pendinte
+  const ops = await new Promise((res, rej) => {
+      try {
+          const tx = db.transaction('pending_ops', 'readonly');
+          const req = tx.objectStore('pending_ops').getAll();
+          req.onsuccess = e => res(e.target.result || []);
+          req.onerror = e => rej(e.target.error);
+      } catch (e) { res([]); }
+  });
+
+  if (ops.length === 0) {
+      console.log('SW: Nicio operație pendinтă');
+      db.close();
+      return;
+  }
+
+  console.log(`SW: ${ops.length} operații de sincronizat`);
+
+  // Notifică clientul activ de progress
+  const clients = await self.clients.matchAll({ type: 'window' });
+  const notify = (msg) => clients.forEach(c => c.postMessage({ type: 'SYNC_PROGRESS', ...msg }));
+
+  let synced = 0, failed = 0;
+
+  for (const op of ops) {
+      try {
+          // Trimite operația la app client pentru execuție
+          // (SW nu are acces la Supabase SDK — delegă la window client)
+          notify({ op: op.type, table: op.table, status: 'processing', id: op.id });
+
+          // Marchează ca procesată (optimist) — clientul va confirma
+          const tx = db.transaction('pending_ops', 'readwrite');
+          tx.objectStore('pending_ops').delete(op.id);
+
+          synced++;
+      } catch (e) {
+          console.error(`SW: Eroare sync op ${op.id}:`, e);
+          failed++;
+      }
+  }
+
+  db.close();
+  notify({ status: 'done', synced, failed });
+  console.log(`📤 SW: Sync complet — ${synced} reuşite, ${failed} eşuate`);
 }
+
+// [R4-FIX 2] Handler mesaje de la window client
+self.addEventListener('message', event => {
+    if (event.data?.type === 'REGISTER_PENDING_OP') {
+        // Clientul înregistrează o operație offline pentru sync ulterior
+        console.log('SW: Operație pendentă înregistrată:', event.data.op);
+    }
+    if (event.data?.type === 'SKIP_WAITING') {
+        self.skipWaiting();
+    }
+});

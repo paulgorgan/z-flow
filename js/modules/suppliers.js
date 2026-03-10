@@ -71,7 +71,7 @@ const ZFlowSuppliers = {
         let total = 0, platit = 0, dePlata = 0;
         
         facturi.forEach(f => {
-            const suma = parseFloat(f.suma) || 0;
+            const suma = parseFloat(f.valoare ?? f.suma) /* [R4-FIX 4] */ || 0;
             total += suma;
             if (f.status_plata === 'Platit') {
                 platit += suma;

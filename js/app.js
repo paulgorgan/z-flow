@@ -118,63 +118,17 @@ window.checkAndApplyMaintenanceMode = checkAndApplyMaintenanceMode;
 // #13 - Drag & Drop: fișier PDF pending drop (nu poate fi setat pe input.files direct)
 let pendingPDFFiles = []; // #23 - multiple attachments
 
+// [R4-FIX 3] Rate limiting client-side eliminat
 // ==========================================
-// RATE LIMITING LOGIN - Blocare după 5 încercări
+// Supabase Auth gestionează nativ rate limiting — returnează HTTP 429 automat
 // ==========================================
-const LOGIN_RATE_LIMIT = {
-    maxAttempts: 5,
-    lockoutDuration: 5 * 60 * 1000, // 5 minute în ms
-    attempts: 0,
-    lockedUntil: null
-};
-
-/**
- * Verifică dacă utilizatorul este blocat din cauza încercărilor eșuate
- * @returns {boolean} true dacă e blocat, false dacă poate încerca
- */
-function isLoginBlocked() {
-    if (!LOGIN_RATE_LIMIT.lockedUntil) return false;
-    
-    const now = Date.now();
-    if (now >= LOGIN_RATE_LIMIT.lockedUntil) {
-        // Timpul de blocare a expirat, resetăm
-        LOGIN_RATE_LIMIT.attempts = 0;
-        LOGIN_RATE_LIMIT.lockedUntil = null;
-        return false;
-    }
-    return true;
-}
-
-/**
- * Returnează timpul rămas până la deblocare (în secunde)
- */
-function getLoginLockoutRemaining() {
-    if (!LOGIN_RATE_LIMIT.lockedUntil) return 0;
-    const remaining = Math.ceil((LOGIN_RATE_LIMIT.lockedUntil - Date.now()) / 1000);
-    return remaining > 0 ? remaining : 0;
-}
-
-/**
- * Înregistrează o încercare de login eșuată
- */
+// Stub-uri no-op păstrate pentru compatibilitate cu apelurile existente
+function isLoginBlocked() { return false; }         // [R4-FIX 3] no-op
+function getLoginLockoutRemaining() { return 0; }    // [R4-FIX 3] no-op
 function recordFailedLoginAttempt() {
-    LOGIN_RATE_LIMIT.attempts++;
-    console.log(`⚠️ Încercare eșuată: ${LOGIN_RATE_LIMIT.attempts}/${LOGIN_RATE_LIMIT.maxAttempts}`);
-    
-    if (LOGIN_RATE_LIMIT.attempts >= LOGIN_RATE_LIMIT.maxAttempts) {
-        LOGIN_RATE_LIMIT.lockedUntil = Date.now() + LOGIN_RATE_LIMIT.lockoutDuration;
-        const minutes = Math.ceil(LOGIN_RATE_LIMIT.lockoutDuration / 60000);
-        console.log(`🔒 Cont blocat pentru ${minutes} minute`);
-    }
+    console.log("[Auth] Încercare eşuată — rate limiting gestionat de Supabase");
 }
-
-/**
- * Resetează contorul de încercări la login reușit
- */
-function resetLoginAttempts() {
-    LOGIN_RATE_LIMIT.attempts = 0;
-    LOGIN_RATE_LIMIT.lockedUntil = null;
-}
+function resetLoginAttempts() {}                     // [R4-FIX 3] no-op
 
 /**
  * Funcție utilHelper: debounce
@@ -763,13 +717,9 @@ async function verificaAuth() {
     // Ascunde mesajul de eroare anterior
     const _errDiv = document.getElementById('auth-error-msg');
     if (_errDiv) _errDiv.classList.add('hidden');
-    // Rate limiting check - blocare după 5 încercări eșuate
-    if (isLoginBlocked()) {
-        const remainingSec = getLoginLockoutRemaining();
-        const remainingMin = Math.ceil(remainingSec / 60);
-        showNotification(`Cont blocat temporar. Încearcă din nou în ${remainingMin} min.`, "warning");
-        return;
-    }
+    // [R4-FIX 3] Rate limiting eliminat din client — gestionat de Supabase Auth
+    // Supabase returnează eroare HTTP 429 (Too Many Requests) după încercări repetate
+    // Eroarea e prinsă automat în blocul catch de mai jos şi afişată utilizatorului
     
     const email = document.getElementById("auth-username").value.trim();
     const pass = document.getElementById("auth-password").value;
@@ -1335,6 +1285,59 @@ async function deschideProfilFirma() {
 /**
  * Închide modalul de profil firmă
  */
+// [R4-FIX 5] Funcție UI pentru panoul admin multi-user
+async function deschideAdminUserPanel() {
+    const email = prompt('Email utilizator țintă (ex: paul.gorgan@ymail.com):');
+    if (!email || !email.includes('@')) {
+        showNotification('Email invalid', 'error');
+        return;
+    }
+    setLoader(true);
+    try {
+        const userData = await ZFlowDB.adminGetUserData(email);
+        if (!userData) {
+            showNotification(`Utilizatorul ${email} nu a fost găsit`, 'warning');
+            return;
+        }
+        const actiune = prompt(
+            `Utilizator găsit: ${userData.email || email}\n` +
+            `ID: ${userData.id || 'necunoscut'}\n\n` +
+            `Acțiuni disponibile:\n` +
+            `  1 — Trimite notificare\n` +
+            `  2 — Şterge toate datele\n` +
+            `  3 — Anulează\n\n` +
+            `Introdu 1, 2 sau 3:`
+        );
+        if (actiune === '1') {
+            const mesaj = prompt('Mesajul notificării:');
+            if (mesaj) {
+                const ok = await ZFlowDB.adminSendNotification(email, mesaj);
+                showNotification(ok ? 'Notificare trimisă' : 'Eroare la trimitere', ok ? 'success' : 'error');
+            }
+        } else if (actiune === '2') {
+            const confirmat = confirm(
+                `⚠️ ATENȚIE: Vei şterge DEFINITIV toate datele lui ${email}.\n` +
+                `Acțiunea este IREVERSIBILĂ.\n\nContinui?`
+            );
+            if (confirmat) {
+                const rezultate = await ZFlowDB.adminDeleteUserData(userData.id);
+                const reuşite = Object.values(rezultate).filter(r => r.success).length;
+                const erori = Object.values(rezultate).filter(r => !r.success).length;
+                showNotification(
+                    `Date şterse: ${reuşite} tabele OK${erori > 0 ? `, ${erori} erori` : ''}`,
+                    erori > 0 ? 'warning' : 'success'
+                );
+                console.table(rezultate);
+            }
+        }
+    } catch (e) {
+        showNotification('Eroare panel admin: ' + e.message, 'error');
+    } finally {
+        setLoader(false);
+    }
+}
+window.deschideAdminUserPanel = deschideAdminUserPanel;
+
 function inchideProfilFirma() {
     document.getElementById('modal-profil-firma').classList.remove('active');
 }
@@ -2731,127 +2734,16 @@ function incarcaDashboard() {
     const elPeriod = document.getElementById("home-chart-period");
     if (elPeriod) elPeriod.innerText = perioadaFmt(perioadaStartDate) + " – " + perioadaFmt(aziChart);
 
-    const canvas = document.getElementById("home-chart-cashflow");
-    if (canvas) {
-        if (window._homeCashflowChart) {
-            window._homeCashflowChart.destroy();
-            window._homeCashflowChart = null;
-        }
-        if (window._homeCashflowRAF) {
-            cancelAnimationFrame(window._homeCashflowRAF);
-            window._homeCashflowRAF = null;
-        }
-        window._homeCashflowRAF = requestAnimationFrame(() => {
-            window._homeCashflowRAF = null;
-            if (window._homeCashflowChart) {
-                window._homeCashflowChart.destroy();
-                window._homeCashflowChart = null;
-            }
-            const isMobile = window.innerWidth < 768;
-            const fmt = v => v === 0 ? "0" : Math.abs(v) >= 1000000 ? (v / 1000000).toFixed(1) + "M" : Math.abs(v) >= 1000 ? (v / 1000).toFixed(0) + "k" : String(v);
-            window._homeCashflowChart = new Chart(canvas, {
-                type: "bar",
-                data: {
-                    labels,
-                    datasets: [
-                        {
-                            label: "Intrări",
-                            data: datriIntrari,
-                            backgroundColor: "rgba(16,185,129,0.75)",
-                            borderColor: "transparent",
-                            borderRadius: { topLeft: 4, topRight: 4, bottomLeft: 0, bottomRight: 0 },
-                            borderSkipped: false,
-                            barPercentage: isMobile ? 0.9 : 0.8,
-                            categoryPercentage: isMobile ? 0.75 : 0.65,
-                            order: 2,
-                            yAxisID: "y",
-                        },
-                        {
-                            label: "Ieșiri",
-                            data: datriIesiri,
-                            backgroundColor: "rgba(239,68,68,0.7)",
-                            borderColor: "transparent",
-                            borderRadius: { topLeft: 4, topRight: 4, bottomLeft: 0, bottomRight: 0 },
-                            borderSkipped: false,
-                            barPercentage: isMobile ? 0.9 : 0.8,
-                            categoryPercentage: isMobile ? 0.75 : 0.65,
-                            order: 2,
-                            yAxisID: "y",
-                        },
-                        {
-                            label: "Net",
-                            type: "line",
-                            data: datriNet,
-                            borderColor: "rgba(99,102,241,0.95)",
-                            backgroundColor: "rgba(99,102,241,0.06)",
-                            borderWidth: isMobile ? 1.5 : 2,
-                            pointRadius: 0,
-                            pointHoverRadius: isMobile ? 6 : 5,
-                            pointHoverBackgroundColor: "rgba(99,102,241,1)",
-                            pointHoverBorderColor: "#fff",
-                            pointHoverBorderWidth: 2,
-                            fill: true,
-                            tension: 0.35,
-                            order: 1,
-                            yAxisID: "y",
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    animation: { duration: 400, easing: "easeOutQuart" },
-                    interaction: { mode: "index", intersect: false },
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            backgroundColor: "rgba(15,23,42,0.95)",
-                            titleColor: "#cbd5e1",
-                            bodyColor: "#f1f5f9",
-                            titleFont: { size: isMobile ? 11 : 10, weight: "700" },
-                            bodyFont: { size: isMobile ? 12 : 11 },
-                            padding: isMobile ? 14 : 12,
-                            cornerRadius: 12,
-                            boxPadding: 5,
-                            usePointStyle: true,
-                            callbacks: {
-                                title: ctx => ctx[0].label,
-                                label: ctx => {
-                                    const icons = { "Intrări": "↑", "Ieșiri": "↓", "Net": "≈" };
-                                    const val = new Intl.NumberFormat("ro-RO", { maximumFractionDigits: 0 }).format(ctx.raw);
-                                    return `  ${icons[ctx.dataset.label] || ""} ${ctx.dataset.label}: ${val} RON`;
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            grid: { display: false },
-                            border: { display: false },
-                            ticks: {
-                                font: { size: isMobile ? 9 : 8, weight: "600" },
-                                color: ctx => ctx.index === 29 ? "#1e3a5f" : "#94a3b8",
-                                maxRotation: 0,
-                                autoSkip: true,
-                                maxTicksLimit: isMobile ? 6 : 10,
-                            }
-                        },
-                        y: {
-                            grid: { color: "rgba(241,245,249,1)", lineWidth: 1 },
-                            border: { display: false, dash: [3, 3] },
-                            ticks: {
-                                font: { size: isMobile ? 9 : 8 },
-                                color: "#cbd5e1",
-                                maxTicksLimit: isMobile ? 4 : 5,
-                                callback: fmt
-                            }
-                        }
-                    }
-                }
-            });
-        });
+    // [R4-FIX 7] Chart cashflow eliminat din Home — canvas şters din index.html
+    // KPI-urile rămân funcționale (home-kpi-facturat, home-kpi-neincasat, etc.)
+    if (window._homeCashflowChart) {
+        window._homeCashflowChart.destroy();
+        window._homeCashflowChart = null;
     }
-
+    if (window._homeCashflowRAF) {
+        cancelAnimationFrame(window._homeCashflowRAF);
+        window._homeCashflowRAF = null;
+    }
     // \u2500\u2500\u2500 Trend vs. 30 zile anterioare \u2500\u2500\u2500
     const _acum60 = new Date(); _acum60.setDate(_acum60.getDate() - 59); _acum60.setHours(0,0,0,0);
     const _acum31 = new Date(); _acum31.setDate(_acum31.getDate() - 30); _acum31.setHours(23,59,59,999);
@@ -3598,7 +3490,7 @@ function filtreazaFacturiInDetalii() {
  * Încarcă mai multe facturi pentru clientul curent (Lazy Loading)
  * #6 TODO - Lazy loading facturi
  */
-function loadMoreFacturiClient() {
+async function loadMoreFacturiClient() {
     if (!ZFlowStore.facturiSortateClient || !ZFlowStore.hasMoreFacturi) return;
     
     const f = ZFlowStore.dateLocal.find((x) => String(x.id) === String(ZFlowStore.selectedClientId));
@@ -3606,7 +3498,53 @@ function loadMoreFacturiClient() {
     
     const azi = new Date();
     azi.setHours(0, 0, 0, 0);
-    
+
+    // [R4-FIX 1] Dacă am epuizat facturile in-memory DAR mai sunt în Supabase,
+    // facem fetch pentru pagina următoare înainte de a continua paginarea in-memory
+    const inMemoryTotal = ZFlowStore.dateFacturiBI?.length || 0;
+    const supabaseTotal = ZFlowStore._facturiTotalSupabase || 0;
+    const allInMemoryShown = ZFlowStore.facturiLoadedCount >= inMemoryTotal;
+
+    if (allInMemoryShown && inMemoryTotal < supabaseTotal) {
+        // Fetch pagina următoare din Supabase
+        const nextOffset = inMemoryTotal;
+        const pageSize = 100;
+        const loadBtn = document.querySelector('#load-more-facturi button');
+        if (loadBtn) loadBtn.disabled = true;
+
+        try {
+            const { data: newFacturi } = await ZFlowDB.fetchFacturiPage(pageSize, nextOffset);
+            if (newFacturi && newFacturi.length > 0) {
+                // Adaugă la store fără a re-randa tot
+                ZFlowStore.dateFacturiBI = [...(ZFlowStore.dateFacturiBI || []), ...newFacturi];
+                // Recalculează facturiSortateClient pentru clientul curent
+                const clientId = ZFlowStore.selectedClientId;
+                const clientFacturi = ZFlowStore.dateFacturiBI.filter(
+                    f => String(f.client_id) === String(clientId)
+                );
+                // Re-sortează şi actualizează
+                ZFlowStore.facturiSortateClient = clientFacturi.sort((a, b) => {
+                    // Păstrează logica de sortare existentă: restante primele
+                    const aDepas = a.status_plata !== 'Incasat' && a.data_scadenta && new Date(a.data_scadenta) < new Date();
+                    const bDepas = b.status_plata !== 'Incasat' && b.data_scadenta && new Date(b.data_scadenta) < new Date();
+                    const aPriority = aDepas ? 3 : (a.status_plata !== 'Incasat' ? 2 : 1);
+                    const bPriority = bDepas ? 3 : (b.status_plata !== 'Incasat' ? 2 : 1);
+                    if (aPriority !== bPriority) return bPriority - aPriority;
+                    return 0;
+                });
+                ZFlowStore.facturiTotalCount = ZFlowStore.facturiSortateClient.length;
+                ZFlowStore.hasMoreFacturi = ZFlowStore.facturiTotalCount > ZFlowStore.facturiLoadedCount
+                    || ZFlowStore.dateFacturiBI.length < supabaseTotal;
+            }
+        } catch (e) {
+            console.error('[LazyLoad R4] Fetch pagina:', e);
+            showNotification('Eroare la încărcarea facturilor suplimentare', 'error');
+            if (loadBtn) loadBtn.disabled = false;
+            return;
+        }
+        if (loadBtn) loadBtn.disabled = false;
+    }
+
     const start = ZFlowStore.facturiLoadedCount;
     const end = Math.min(start + ZFlowStore.facturiPerPage, ZFlowStore.facturiTotalCount);
     const facturiNoi = ZFlowStore.facturiSortateClient.slice(start, end);
@@ -3625,15 +3563,23 @@ function loadMoreFacturiClient() {
     
     // Actualizăm contorul
     ZFlowStore.facturiLoadedCount = end;
-    ZFlowStore.hasMoreFacturi = end < ZFlowStore.facturiTotalCount;
+    // [R4-FIX 1] hasMoreFacturi = mai sunt în memorie SAU mai sunt în Supabase
+    ZFlowStore.hasMoreFacturi = end < ZFlowStore.facturiTotalCount
+        || (ZFlowStore.dateFacturiBI?.length || 0) < (ZFlowStore._facturiTotalSupabase || 0);
     
     // Actualizăm sau ascundem butonul
     const loadMoreDiv = document.getElementById("load-more-facturi");
     if (loadMoreDiv) {
         if (ZFlowStore.hasMoreFacturi) {
+            // [R4-FIX 1] Dacă mai sunt facturi de adus din Supabase, arată indicator diferit
+            const moreFromServer = (ZFlowStore.dateFacturiBI?.length || 0) < (ZFlowStore._facturiTotalSupabase || 0);
+            const remainingLocal = ZFlowStore.facturiTotalCount - ZFlowStore.facturiLoadedCount;
+            const label = moreFromServer && remainingLocal === 0
+                ? `⬇ Încarcă din server (${ZFlowStore._facturiTotalSupabase - ZFlowStore.dateFacturiBI.length} rămase)`
+                : `Încarcă mai multe (${ZFlowStore.facturiLoadedCount}/${ZFlowStore.facturiTotalCount})`;
             loadMoreDiv.querySelector("button").innerHTML = `
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
-                Încarcă mai multe (${ZFlowStore.facturiLoadedCount}/${ZFlowStore.facturiTotalCount})`;
+                ... ${label}`;
         } else {
             loadMoreDiv.innerHTML = `
                 <div class="text-center py-4 text-slate-400 text-[10px] font-bold uppercase flex items-center justify-center gap-2">

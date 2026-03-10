@@ -22,7 +22,7 @@ const ZFlowAnalytics = {
         // Calcul încasări
         let totalDeIncasat = 0, incasat = 0, restantInc = 0;
         facturiInc.forEach(f => {
-            const suma = parseFloat(f.suma) || 0;
+            const suma = parseFloat(f.valoare ?? f.suma) /* [R4-FIX 4] */ || 0;
             if (f.status_plata === 'Incasat') {
                 incasat += suma;
             } else {
@@ -36,7 +36,7 @@ const ZFlowAnalytics = {
         // Calcul plăți
         let totalDePlata = 0, platit = 0, restantPlat = 0;
         facturiPlat.forEach(f => {
-            const suma = parseFloat(f.suma) || 0;
+            const suma = parseFloat(f.valoare ?? f.suma) /* [R4-FIX 4] */ || 0;
             if (f.status_plata === 'Platit') {
                 platit += suma;
             } else {
@@ -91,7 +91,7 @@ const ZFlowAnalytics = {
             facturiInc.forEach(f => {
                 const dataScadenta = new Date(f.data_scadenta);
                 if (dataScadenta >= startLuna && dataScadenta <= endLuna) {
-                    incLuna += parseFloat(f.suma) || 0;
+                    incLuna += parseFloat(f.valoare ?? f.suma) /* [R4-FIX 4] */ || 0;
                 }
             });
             incasari.push(incLuna);
@@ -101,7 +101,7 @@ const ZFlowAnalytics = {
             facturiPlat.forEach(f => {
                 const dataScadenta = new Date(f.data_scadenta);
                 if (dataScadenta >= startLuna && dataScadenta <= endLuna) {
-                    platLuna += parseFloat(f.suma) || 0;
+                    platLuna += parseFloat(f.valoare ?? f.suma) /* [R4-FIX 4] */ || 0;
                 }
             });
             plati.push(platLuna);

@@ -950,22 +950,27 @@ input, select, button {
     margin-right: auto !important;
   }
 
-  /* Grid 2 coloane la 1024px (cările prea înguste la 3 coloane) */
-  #lista-firme-global {
-    display: grid !important;
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 20px !important;
-    padding: 8px;
-    width: 100% !important;
-  }
-
-  /* Grid 2 coloane pentru furnizori (uniform cu clienții) */
+  /* [R4-FIX 6] Grid carduri clienți/furnizori la 1024px–1279px */
+  #lista-firme-global,
   #lista-furnizori-global {
     display: grid !important;
-    grid-template-columns: repeat(2, 1fr) !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     gap: 20px !important;
-    padding: 8px;
+    padding: 8px !important;
     width: 100% !important;
+    min-width: 0 !important;         /* previne overflow în grid parent */
+    box-sizing: border-box !important;
+  }
+
+  /* Forțează cardurile să nu depăşească coloana */
+  #lista-firme-global .card-flow,
+  #lista-furnizori-global .card-flow {
+    min-width: 0 !important;         /* fix clasic pentru grid children overflow */
+    max-width: 100% !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+    word-break: break-word !important;
   }
 
   #lista-furnizori-global .card-flow {
@@ -1940,12 +1945,19 @@ input {
 /* ============================================
    DESKTOP MEDIU (1280px+) — 3 coloane card-uri
    ============================================ */
+/* [R4-FIX 6] 3 coloane la 1280px+ */
 @media (min-width: 1280px) {
-  #lista-firme-global {
-    grid-template-columns: repeat(3, 1fr) !important;
-  }
+  #lista-firme-global,
   #lista-furnizori-global {
-    grid-template-columns: repeat(3, 1fr) !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+/* [R4-FIX 6] Max 4 coloane pe ecrane foarte late -- carduri nu devin prea late */
+@media (min-width: 1600px) {
+  #lista-firme-global,
+  #lista-furnizori-global {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
   }
 }
 

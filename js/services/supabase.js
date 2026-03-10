@@ -370,24 +370,21 @@ Object.assign(_demoOps, {
     }
 });
 
-/**
- * Normalizează câmpurile facturilor pentru compatibilitate cu ambele convenții de denumire
- * (DB canonical: numar_factura/valoare/data_emiterii  ↔  legacy: nr_factura/suma/data_emitere)
- * [QUALITY-FIX] nr_factura, suma și data_emitere sunt alias-uri DEPRECATE.
- * Vor fi eliminate după migrarea completă a codului la câmpurile canonice.
- */
 function _normalizeFacturi(arr) {
-    return (arr || []).map(f => ({
+    // [R4-FIX 4] Alias-uri deprecate eliminate — toate modulele folosesc câmpurile canonice
+    // Câmpuri canonice: numar_factura, valoare, data_emiterii
+    if (!Array.isArray(arr)) return [];
+    return arr.map(f => ({
         ...f,
-        numar_factura:  f.numar_factura  || f.nr_factura    || '',
-        // DEPRECATED: nr_factura → folosiți numar_factura
-        nr_factura:     f.nr_factura     || f.numar_factura  || '',
-        valoare:        f.valoare        != null ? f.valoare        : (f.suma        != null ? f.suma        : 0),
-        // DEPRECATED: suma → folosiți valoare
-        suma:           f.suma           != null ? f.suma           : (f.valoare     != null ? f.valoare     : 0),
-        data_emiterii:  f.data_emiterii  || f.data_emitere  || '',
-        // DEPRECATED: data_emitere → folosiți data_emiterii
-        data_emitere:   f.data_emitere   || f.data_emiterii || '',
+        // Normalizare defensivă: acceptă variante vechi din CSV/import dar nu le propagă
+        numar_factura: f.numar_factura || f.nr_factura || '',
+        valoare:       f.valoare != null ? f.valoare : (f.suma != null ? f.suma : 0),
+        data_emiterii: f.data_emiterii || f.data_emitere || '',
+        // Câmpuri numerice garantate
+        id:            f.id,
+        client_id:     f.client_id,
+        user_id:       f.user_id,
+        // Notă: nr_factura, suma, data_emitere NU mai sunt adăugate ca alias-uri
     }));
 }
 
@@ -452,6 +449,29 @@ async function fetchFacturiPaginated(limit = 50, offset = 0, clientId = null) {
     const { data, error, count } = await query;
     if (error) throw error;
     return { data: _normalizeFacturi(data || []), count: count || 0 };
+}
+
+/**
+ * Fetch o pagină suplimentară de facturi din Supabase (lazy loading real)
+ */
+async function fetchFacturiPage(limit = 100, offset = 0) {
+    // [R4-FIX 1] Fetch o pagină suplimentară de facturi din Supabase
+    // Folosit de lazy loading real pentru facturile 501+
+    const uid = _getCurrentUserId();
+    if (!uid) return { data: [], count: 0 };
+    try {
+        const { data, error, count } = await zf
+            .from('facturi')
+            .select('*', { count: 'exact' })
+            .eq('user_id', uid)
+            .order('created_at', { ascending: false })
+            .range(offset, offset + limit - 1);
+        if (error) throw error;
+        return { data: _normalizeFacturi(data || []), count: count || 0 };
+    } catch (e) {
+        console.error('[fetchFacturiPage]', e);
+        return { data: [], count: 0 };
+    }
 }
 
 /**
@@ -1225,6 +1245,83 @@ async function deleteComandaTransport(id) {
     if (error) throw new Error(error.message || 'Eroare ștergere comandă transport');
 }
 
+// [R4-FIX 5] Admin: funcții pentru gestionarea datelor altor utilizatori Supabase
+
+// TODO: Creați RPC-ul în Supabase SQL Editor:
+// CREATE OR REPLACE FUNCTION admin_get_user_by_email(p_email text)
+// RETURNS TABLE(id uuid, email text, display_name text, created_at timestamptz)
+// LANGUAGE plpgsql SECURITY DEFINER AS $$
+// BEGIN
+//   RETURN QUERY SELECT id, email::text, raw_user_meta_data->>'full_name' AS display_name, created_at
+//   FROM auth.users WHERE email = p_email LIMIT 1;
+// END; $$;
+
+async function adminGetUserData(targetEmail) {
+    // [R4-FIX 5] Admin: accesează datele unui utilizator Supabase după email
+    if (!targetEmail || typeof targetEmail !== 'string') return null;
+    const email = targetEmail.trim().toLowerCase();
+    try {
+        const { data: rpcData, error: rpcErr } = await zf.rpc('admin_get_user_by_email', { p_email: email });
+        if (!rpcErr && rpcData) return rpcData;
+    } catch (e) {
+        console.warn('[adminGetUserData] RPC indisponibil, încerc fallback profiles');
+    }
+    try {
+        const { data, error } = await zf
+            .from('profiles')
+            .select('id, email, display_name, created_at')
+            .eq('email', email)
+            .single();
+        if (error) throw error;
+        return data;
+    } catch (e) {
+        console.warn('[adminGetUserData] Nu s-a putut găsi utilizatorul:', e.message);
+        return null;
+    }
+}
+
+async function adminDeleteUserData(targetUserId, tables) {
+    // [R4-FIX 5] Admin: şterge datele unui utilizator din tabelele selectate
+    // ATENTIE: Necesită RLS policy specială sau service_role — verifică în Supabase Dashboard
+    if (!tables) tables = ['facturi', 'clienti', 'furnizori', 'facturi_platit'];
+    if (!targetUserId) throw new Error('targetUserId lipsă');
+    const rezultate = {};
+    for (const table of tables) {
+        try {
+            const { error, count } = await zf
+                .from(table)
+                .delete({ count: 'exact' })
+                .eq('user_id', targetUserId);
+            if (error) throw error;
+            rezultate[table] = { success: true, deleted: count || 0 };
+            console.log(`[adminDelete] ${table}: ${count} înregistrări şterse`);
+        } catch (e) {
+            rezultate[table] = { success: false, error: e.message };
+            console.error(`[adminDelete] Eroare la ${table}:`, e.message);
+        }
+    }
+    return rezultate;
+}
+
+async function adminSendNotification(targetEmail, mesaj) {
+    // [R4-FIX 5] Admin: trimite notificare unui utilizator
+    if (!targetEmail || !mesaj) return false;
+    try {
+        const { error } = await zf.from('admin_notifications').insert({
+            to_email: targetEmail.trim().toLowerCase(),
+            message: String(mesaj).slice(0, 500),
+            from_admin: true,
+            created_at: new Date().toISOString(),
+            read: false
+        });
+        if (error) throw error;
+        return true;
+    } catch (e) {
+        console.warn('[adminSendNotification]', e.message);
+        return false;
+    }
+}
+
 // Export pentru utilizare globală (fără module ES6 native în browser)
 window.ZFlowDB = {
     zf,
@@ -1297,5 +1394,10 @@ window.ZFlowDB = {
     consumeSubscriptionToken,
     // Config aplicație (mentenanță)
     updateUserMeta,
-    getSetAppConfig
+    getSetAppConfig,
+    fetchFacturiPage, // [R4-FIX 1]
+    // Admin [R4-FIX 5]
+    adminGetUserData,
+    adminDeleteUserData,
+    adminSendNotification
 };

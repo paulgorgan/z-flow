@@ -25,6 +25,14 @@ function _idbOpen() {
             });
             if (!db.objectStoreNames.contains('meta'))
                 db.createObjectStore('meta', { keyPath: 'key' });
+            // [R4-FIX 2] Store pentru operații offline pendinte
+            if (!db.objectStoreNames.contains('pending_ops')) {
+                const pendingStore = db.createObjectStore('pending_ops', {
+                    keyPath: 'id', autoIncrement: true
+                });
+                pendingStore.createIndex('table', 'table', { unique: false });
+                pendingStore.createIndex('created_at', 'created_at', { unique: false });
+            }
         };
 
         req.onsuccess = (e) => resolve(e.target.result);
@@ -127,6 +135,34 @@ async function idbCacheAge(storeName) {
     return `${Math.floor(h / 24)} zile`;
 }
 
+// [R4-FIX 2] Salvează o operație CRUD pendentă pentru sync offline
+async function idbSavePendingOp(op) {
+    // op = { type: 'INSERT'|'UPDATE'|'DELETE', table: string, payload: object }
+    try {
+        const db = await _idbOpen();
+        await new Promise((resolve, reject) => {
+            const tx = db.transaction('pending_ops', 'readwrite');
+            tx.objectStore('pending_ops').add({ ...op, created_at: Date.now() });
+            tx.oncomplete = () => { db.close(); resolve(); };
+            tx.onerror = e => reject(e.target.error);
+        });
+        // Înregistrează sync tag dacă ServiceWorker disponibil
+        if ('serviceWorker' in navigator && 'sync' in ServiceWorkerRegistration.prototype) {
+            const reg = await navigator.serviceWorker.ready;
+            await reg.sync.register('sync-invoices');
+        }
+    } catch (e) {
+        console.warn('[idbSavePendingOp]', e);
+    }
+}
+
 // Export global
-const ZFlowIDB = { save: idbSave, getAll: idbGetAll, getMeta: idbGetMeta, clearAll: idbClearAll, cacheAge: idbCacheAge };
+const ZFlowIDB = {
+    save: idbSave,
+    getAll: idbGetAll,
+    getMeta: idbGetMeta,
+    clearAll: idbClearAll,
+    cacheAge: idbCacheAge,
+    savePendingOp: idbSavePendingOp  // [R4-FIX 2]
+};
 window.ZFlowIDB = ZFlowIDB;
