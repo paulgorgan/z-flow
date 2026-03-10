@@ -3,7 +3,7 @@
  * Versiune Refactorizată cu Arhitectură Modulară
  */
 
-const CACHE_NAME = 'zflow-v60.0';
+const CACHE_NAME = 'zflow-v61.0';
 const STATIC_ASSETS = [
   '/z-flow/',
   '/z-flow/index.html',
