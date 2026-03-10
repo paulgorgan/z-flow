@@ -22,6 +22,7 @@ const ZFlowBulk = {
 
         this.updateUI();
         return window.ZFlowStore?.bulkMode === true; // [V3-FIX 1]
+    },
 
     /**
      * Selectează/deselectează o factură
@@ -32,12 +33,22 @@ const ZFlowBulk = {
         const arr = (window.ZFlowStore?.bulkSelectedFacturi) || [];
         const idx = arr.indexOf(String(facturaId));
         if (idx === -1) arr.push(String(facturaId)); else arr.splice(idx, 1);
+        this.updateUI();
+    },
+
+    /**
      * Verifică dacă o factură e selectată
      * @param {string} facturaId 
      * @returns {boolean}
      */
     isSelected(facturaId) {
         return (window.ZFlowStore?.bulkSelectedFacturi || []).includes(String(facturaId)); // [V3-FIX 1]
+    },
+
+    /**
+     * Selectează toate facturile vizibile
+     * @param {Array} facturi - Lista de facturi vizibile
+     */
     selectAll(facturi) {
         if (window.ZFlowStore) ZFlowStore.bulkSelectedFacturi = facturi.map(f => String(f.id)); // [V3-FIX 1]
         this.updateUI();
@@ -59,6 +70,12 @@ const ZFlowBulk = {
         const toateFacturile = window.ZFlowStore?.dateFacturiBI || [];
         const selectedIds = window.ZFlowStore?.bulkSelectedFacturi || []; // [V3-FIX 1]
         return toateFacturile.filter(f => selectedIds.includes(String(f.id)));
+    },
+
+    /**
+     * Obține numărul de facturi selectate
+     * @returns {number}
+     */
     getCount() {
         return (window.ZFlowStore?.bulkSelectedFacturi || []).length; // [V3-FIX 1]
     },
@@ -168,7 +185,6 @@ const ZFlowBulk = {
             window.ZFlowUI?.showNotification('Selectați cel puțin o factură', 'warning');
             return;
         }
-        
         window.ZFlowExport?.savePDF(facturi, `facturi-selectie-${Date.now()}.pdf`);
     },
 
@@ -181,7 +197,6 @@ const ZFlowBulk = {
             window.ZFlowUI?.showNotification('Selectați cel puțin o factură', 'warning');
             return;
         }
-        
         window.ZFlowExport?.saveExcel(facturi, `facturi-selectie-${Date.now()}.xlsx`);
     },
 
@@ -192,38 +207,32 @@ const ZFlowBulk = {
         const isActive = window.ZFlowStore?.bulkMode === true; // [V3-FIX 1]
         const selectedCount = (window.ZFlowStore?.bulkSelectedFacturi || []).length; // [V3-FIX 1]
 
-        // Toggle buton mod bulk
         const btnBulk = document.getElementById('btn-bulk-mode');
         if (btnBulk) {
             btnBulk.classList.toggle('bg-blue-600', isActive);
             btnBulk.classList.toggle('text-white', isActive);
         }
 
-        // Afișează/ascunde toolbar bulk
         const toolbar = document.getElementById('bulk-toolbar');
         if (toolbar) {
             toolbar.classList.toggle('hidden', !isActive || selectedCount === 0);
         }
 
-        // Actualizează counter
         const counter = document.getElementById('bulk-count');
         if (counter) {
             counter.innerText = selectedCount;
         }
 
-        // Actualizează total
         const totalEl = document.getElementById('bulk-total');
         if (totalEl) {
             totalEl.innerText = this.formatSuma(this.getTotal());
         }
 
-        // Actualizează checkbox-uri
         document.querySelectorAll('[data-bulk-checkbox]').forEach(cb => {
             const id = cb.dataset.facturaId;
             cb.checked = this.isSelected(id);
         });
 
-        // Afișează/ascunde checkbox-uri
         document.querySelectorAll('.bulk-checkbox-container').forEach(el => {
             el.classList.toggle('hidden', !isActive);
         });

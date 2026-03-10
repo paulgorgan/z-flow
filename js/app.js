@@ -2433,11 +2433,6 @@ async function salveazaFacturaNou() {
                 status_plata: "Neplatit",
                 updated_at: new Date().toISOString()
             });
-                data_scadenta: scad,
-                note,
-                status_plata: "Neplatit",
-                updated_at: new Date().toISOString()
-            });
             showNotification("Factură de plătit adăugată!", "success");
         }
         inchideModal("modal-factura-nou");
