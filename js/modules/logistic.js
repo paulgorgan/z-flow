@@ -613,15 +613,23 @@ window.syncSafefleetVehicule          = syncSafefleetVehicule;
  * @param {string} vehiculId
  */
 function trackeazaVehicul(vehiculId) {
+    // [R6-FIX 6] Leaflet may not be loaded yet — retry until available
+    if (typeof L === 'undefined') {
+        console.warn('[GPS] Leaflet nedisponibil, reîncercare în 500ms...');
+        setTimeout(() => trackeazaVehicul(vehiculId), 500);
+        return;
+    }
     // Comutăm pe view Vehicule (în care este afișată harta)
     schimbaViewLogistic('vehicule', true);
     // Inițializăm / actualizăm harta
+    const mapFuseInitializat = !ZFlowStore.map;
     if (typeof window.initMap === 'function') window.initMap();
-    // Scrolām la hartă
+    // Scrolăm la hartă
     setTimeout(() => {
         const mapEl = document.getElementById('map');
         if (mapEl) mapEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
         // Centrăm pe vehicul după ce markerele sunt plasate
+        // [R6-FIX 6] dacă harta tocmai a fost inițializată, așteptăm mai mult
         setTimeout(() => {
             const marcatori = ZFlowStore._gpsMarcatori || [];
             const vehicule  = ZFlowStore.dateVehicule   || [];
@@ -630,7 +638,7 @@ function trackeazaVehicul(vehiculId) {
                 marcatori[idx].openPopup();
                 ZFlowStore.map?.panTo(marcatori[idx].getLatLng());
             }
-        }, 400);
+        }, mapFuseInitializat ? 1000 : 400);
     }, 350);
 }
 window.trackeazaVehicul = trackeazaVehicul;
@@ -834,8 +842,16 @@ async function importaComenziCSV() {
             }
             ZFlowStore.dateComenziTransport = await ZFlowDB.fetchComenziTransport().catch(() => ZFlowStore.dateComenziTransport || []);
             renderComenziTransport();
-            calculeazaKPILogistic();
-            const msg = `Import comenzi: ${importate} importate, ${sarite} s\u0103rite, ${erori ? erori + ' erori' : 'f\u0103r\u0103 erori'}.`;
+            calculeazaKPILogistic();            // [R6-FIX 2] Dacă toate rândurile au fost sărite (duplicate) — informează explicit
+            if (importate === 0 && sarite > 0 && erori === 0) {
+                (typeof showNotification === 'function' ? showNotification : alert)(
+                    `Import comenzi: ${sarite} înregistrări există deja în baza de date (duplicate după tracking_code). ` +
+                    `Dacă vrei să re-imporți, şterge mai întâi comenzile existente din Logistic.`,
+                    'info'
+                );
+                resolve();
+                return;
+            }            const msg = `Import comenzi: ${importate} importate, ${sarite} s\u0103rite, ${erori ? erori + ' erori' : 'f\u0103r\u0103 erori'}.`;
             (typeof showNotification === 'function' ? showNotification : alert)(msg, importate > 0 ? 'success' : 'warning');
             resolve();
         };

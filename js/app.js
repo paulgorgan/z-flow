@@ -1682,6 +1682,7 @@ function renderMain(lista = null) {
             return `
 <div onclick="arataDetalii('${f.id}')" class="card-flow group flex flex-col p-5 mb-3 transition-all cursor-pointer relative overflow-hidden bg-white border border-slate-100 hover:border-blue-200 hover:shadow-lg active:scale-[0.98]">
     ${areRestante ? `<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-red-500 shadow-[2px_0_10px_rgba(239,68,68,0.3)]"></div>` : ""}
+    <div class="flex-1 flex flex-col">
     <div class="flex justify-between items-start w-full">
         <div class="max-w-[60%]">
             <h4 class="font-extrabold text-slate-800 text-[15px] leading-tight truncate tracking-tight">${_esc(f.nume_firma || f.cui)}</h4>
@@ -1704,7 +1705,8 @@ function renderMain(lista = null) {
         </div>
         <p class="text-red-600 font-black text-[13px] leading-none">${Math.round(sumaScadenta).toLocaleString()} lei</p>
     </div>` : ""}
-    <div class="flex gap-3 mt-auto pt-4">
+    </div>
+    <div class="flex gap-3 pt-4 mt-3">
         <button onclick="event.stopPropagation(); arataDetalii('${f.id}')"
                 class="flex-1 bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-700 py-3 rounded-xl text-[10px] font-bold uppercase transition-all flex items-center justify-center gap-2 border border-blue-100 hover:border-blue-600">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
@@ -1804,6 +1806,7 @@ function renderFurnizori(lista) {
         return `
 <div onclick="arataDetaliiFurnizor('${f.id}')" class="card-flow group flex flex-col p-5 mb-3 transition-all cursor-pointer relative overflow-hidden bg-white border border-slate-100 hover:border-red-200 hover:shadow-lg active:scale-[0.98]">
     ${areRestante ? `<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-red-500 shadow-[2px_0_10px_rgba(239,68,68,0.3)]"></div>` : ""}
+    <div class="flex-1 flex flex-col">
     <div class="flex justify-between items-start w-full">
         <div class="max-w-[60%]">
             <h4 class="font-extrabold text-slate-800 text-[15px] leading-tight truncate tracking-tight">${_esc(f.nume_firma || f.cui)}</h4>
@@ -1826,7 +1829,8 @@ function renderFurnizori(lista) {
         </div>
         <p class="text-red-600 font-black text-[13px] leading-none">${Math.round(f.sumaScadenta).toLocaleString()} lei</p>
     </div>` : ""}
-    <div class="flex gap-3 mt-auto pt-4">
+    </div>
+    <div class="flex gap-3 pt-4 mt-3">
         <button onclick="event.stopPropagation(); arataDetaliiFurnizor('${f.id}')"
                 class="flex-1 bg-red-50 hover:bg-red-700 hover:text-white text-red-700 py-3 rounded-xl text-[10px] font-bold uppercase transition-all flex items-center justify-center gap-2 border border-red-100 hover:border-red-700">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
@@ -6529,6 +6533,12 @@ function renderTransportTab() {
 }
 
 function initMap() {
+    // [R6-FIX 1] Guard: Leaflet se încarcă cu defer — poate să nu fie gata imediat
+    if (typeof L === 'undefined') {
+        console.warn('[Map] Leaflet nu e încărcat încă — retry în 500ms');
+        setTimeout(initMap, 500);
+        return;
+    }
     if (!ZFlowStore.map) {
         ZFlowStore.map = L.map("map", { zoomControl: false }).setView([47.18, 23.05], 13);
         L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
@@ -6549,6 +6559,8 @@ function initMap() {
  */
 function actualizaMarkerePeHarta() {
     if (!ZFlowStore.map) return;
+    // [R6-FIX 1] Guard Leaflet
+    if (typeof L === 'undefined') { console.warn('[Map] Leaflet nedisponibil'); return; }
     // Șterge markere vechi
     if (ZFlowStore._gpsMarcatori) {
         ZFlowStore._gpsMarcatori.forEach(m => { try { m.remove(); } catch(e) {} });

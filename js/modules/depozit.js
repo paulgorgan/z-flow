@@ -6,6 +6,33 @@
 // Filtru alerte stoc activ — setat de navigaLaAlerteStoc()
 let _filtruAlerteActiv = false;
 
+// [R6-FIX 3] Navighează la tab Depozit > Produse şi activează filtrul de alerte
+function navigaLaAlerteStoc() {
+    // Activează filtrul alerte
+    _filtruAlerteActiv = true;
+
+    // Asigură-te că suntem pe tab-ul Depozit
+    if (typeof schimbaTab === 'function') {
+        schimbaTab('depozit', document.querySelector('[data-tab="depozit"]') ||
+            document.querySelector('[onclick*="depozit"]'));
+    }
+    // Comută la sub-view Produse
+    if (typeof schimbaViewDepozit === 'function') {
+        schimbaViewDepozit('produse');
+    }
+    // Re-render cu filtrul activ (apelat deja de schimbaViewDepozit, dar for safety)
+    renderProduse();
+
+    // Feedback vizual — highlight pe search box dacă există
+    const searchBox = document.getElementById('depozit-search-produse');
+    if (searchBox) {
+        searchBox.value = '';
+        searchBox.placeholder = '🔴 Filtrare: produse cu stoc sub limită...';
+        setTimeout(() => { searchBox.placeholder = 'Caută produs...'; }, 3000);
+    }
+}
+window.navigaLaAlerteStoc = navigaLaAlerteStoc;
+
 // ==========================================
 // KPI & RENDER PRINCIPAL
 // ==========================================
@@ -77,6 +104,8 @@ function renderDepozit() {
  * @returns {void}
  */
 function schimbaViewDepozit(view, updateStore = true) {
+    // [R6-FIX 3] Reset filtru alerte la schimbarea view-ului
+    _filtruAlerteActiv = false;
     if (updateStore) ZFlowStore.depozitView = view;
     ['produse', 'miscari', 'receptii', 'livrari', 'scanner'].forEach(v => {
         const el = document.getElementById('depozit-view-' + v);
@@ -141,9 +170,16 @@ function renderProduse() {
     const container = document.getElementById('depozit-lista-produse');
     if (!container) return;
     const q = (document.getElementById('depozit-search-produse')?.value || '').toLowerCase();
-    const all = (ZFlowStore.dateProduse || []).filter(p =>
-        !q || (p.sku||'').toLowerCase().includes(q) || (p.nume||'').toLowerCase().includes(q)
-    );
+    // [R6-FIX 3] Aplică filtrul de alerte dacă e activ
+    const all = (ZFlowStore.dateProduse || []).filter(p => {
+        const matchQ = !q || (p.sku||'').toLowerCase().includes(q) || (p.nume||'').toLowerCase().includes(q);
+        if (_filtruAlerteActiv) {
+            const stoc = typeof calcStocCurent === 'function' ? calcStocCurent(p.id) : 0;
+            const isAlert = (p.stoc_min && stoc < Number(p.stoc_min)) || stoc <= 0;
+            return matchQ && isAlert;
+        }
+        return matchQ;
+    });
     ZFlowStore._produseFiltrate = all;
     const ps  = ZFlowStore.produsePageSize ?? 10;
     const pg  = ZFlowStore.produseCurrentPage || 1;
@@ -1010,10 +1046,14 @@ window.filtreazaLivrari        = filtreazaLivrari;
 window.exportProduseCSV        = exportProduseCSV;
 window.exportMiscariStocCSV    = exportMiscariStocCSV;
 
-// Debounced version for search input
-const renderProduseDebounced = (typeof debounce === 'function')
+// Debounced version for search input — resets alert filter when user searches manually
+const _renderProduseRaw = (typeof debounce === 'function')
     ? debounce(renderProduse, 250)
     : renderProduse;
+const renderProduseDebounced = function() {
+    _filtruAlerteActiv = false; // [R6-FIX 3] utilizatorul caută manual — dezactivează filtrul alerte
+    _renderProduseRaw();
+};
 window.renderProduseDebounced = renderProduseDebounced;
 
 // ==========================================

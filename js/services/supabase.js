@@ -1226,8 +1226,10 @@ async function fetchComenziTransport() {
     try { const { data, error } = await zf.from('comenzi_transport').select('*').order('created_at', {ascending:false}).eq('user_id', uid); if (error) throw error; return data || []; } catch(e) { console.warn('[DB] fetchComenziTransport:', e.message); return []; }
 }
 async function insertComandaTransport(payload) {
+    // [R6-FIX 2] Verificare user_id înainte de insert
     if (_demoOps.isLocal()) { _demoOps.insertComanda(payload); return; }
     const uid = _getCurrentUserId();
+    if (!uid) throw new Error('Sesiune expirată — reconectează-te pentru a importa date');
     const p = { ...payload, user_id: uid };
     const { error } = await zf.from('comenzi_transport').insert([p]);
     if (error) throw new Error(error.message || 'Eroare salvare comandă transport');
