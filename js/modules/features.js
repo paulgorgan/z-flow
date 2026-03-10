@@ -192,8 +192,8 @@ function exportBridgeXML(tip) {
             const cl = clienti.find(c => String(c.id) === String(f.client_id));
             lines.push('    <Factura>');
             lines.push('      <ID>' + _escXML(String(f.id || '')) + '</ID>');
-            lines.push('      <NrFactura>' + _escXML(f.numar_factura || f.nr_factura || '') + '</NrFactura>');
-            lines.push('      <DataEmitere>' + (f.data_emiterii || f.data_emitere || '') + '</DataEmitere>');
+            lines.push('      <NrFactura>' + _escXML(f.numar_factura || '') + '</NrFactura>'); // [RISK-FIX 5]
+            lines.push('      <DataEmitere>' + (f.data_emiterii || '') + '</DataEmitere>'); // [RISK-FIX 5]
             lines.push('      <DataScadenta>' + (f.data_scadenta || '') + '</DataScadenta>');
             lines.push('      <Suma>' + (parseFloat(f.valoare || f.suma) || 0).toFixed(2) + '</Suma>');
             lines.push('      <TVA>' + (parseFloat(f.tva) || 0).toFixed(2) + '</TVA>');
@@ -219,8 +219,8 @@ function exportBridgeXML(tip) {
             const furn = furnizori.find(x => String(x.id) === String(f.furnizor_id));
             lines.push('    <Factura>');
             lines.push('      <ID>' + _escXML(String(f.id || '')) + '</ID>');
-            lines.push('      <NrFactura>' + _escXML(f.numar_factura || f.nr_factura || '') + '</NrFactura>');
-            lines.push('      <DataEmitere>' + (f.data_emiterii || f.data_emitere || '') + '</DataEmitere>');
+            lines.push('      <NrFactura>' + _escXML(f.numar_factura || '') + '</NrFactura>'); // [RISK-FIX 5]
+            lines.push('      <DataEmitere>' + (f.data_emiterii || '') + '</DataEmitere>'); // [RISK-FIX 5]
             lines.push('      <DataScadenta>' + (f.data_scadenta || '') + '</DataScadenta>');
             lines.push('      <Suma>' + (parseFloat(f.valoare || f.suma) || 0).toFixed(2) + '</Suma>');
             lines.push('      <TVA>' + (parseFloat(f.tva) || 0).toFixed(2) + '</TVA>');
@@ -578,7 +578,7 @@ function calculeazaCashflowForecast(zile) {
         if (scad >= azi && scad <= limita) {
             const suma = parseFloat(f.suma) || 0;
             intrari += suma;
-            detalii.push({ tip: 'intrare', suma, scadenta: f.data_scadenta, nr: f.nr_factura, entitate: f.client_id });
+            detalii.push({ tip: 'intrare', suma, scadenta: f.data_scadenta, nr: f.numar_factura, entitate: f.client_id }); // [RISK-FIX 5]
         }
     });
 
@@ -588,7 +588,7 @@ function calculeazaCashflowForecast(zile) {
         if (scad >= azi && scad <= limita) {
             const suma = parseFloat(f.suma) || 0;
             iesiri += suma;
-            detalii.push({ tip: 'iesire', suma, scadenta: f.data_scadenta, nr: f.nr_factura, entitate: f.furnizor_id });
+            detalii.push({ tip: 'iesire', suma, scadenta: f.data_scadenta, nr: f.numar_factura, entitate: f.furnizor_id }); // [RISK-FIX 5]
         }
     });
 

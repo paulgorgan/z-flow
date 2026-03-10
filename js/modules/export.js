@@ -63,9 +63,9 @@ const ZFlowExport = {
             const client = window.ZFlowClients?.findById(f.client_id);
             const furnizor = window.ZFlowSuppliers?.findById(f.furnizor_id);
             return [
-                f.numar_factura || f.nr_factura || '-',
+                f.numar_factura || '-', // [RISK-FIX 5]
                 client?.nume_firma || furnizor?.nume_firma || '-',
-                this.formatData(f.data_emiterii || f.data_emitere),
+                this.formatData(f.data_emiterii), // [RISK-FIX 5]
                 this.formatData(f.data_scadenta),
                 this.formatSuma(f.valoare || f.suma),
                 f.status_plata || 'Neincasat'
@@ -134,10 +134,10 @@ const ZFlowExport = {
             const client = window.ZFlowClients?.findById(f.client_id);
             const furnizor = window.ZFlowSuppliers?.findById(f.furnizor_id);
             return {
-                'Nr. Factură': f.numar_factura || f.nr_factura || '',
+                'Nr. Factură': f.numar_factura || '', // [RISK-FIX 5]
                 'Client/Furnizor': client?.nume_firma || furnizor?.nume_firma || '',
                 'CUI': client?.cui || furnizor?.cui || '',
-                'Data Emitere': f.data_emiterii || f.data_emitere || '',
+                'Data Emitere': f.data_emiterii || '', // [RISK-FIX 5]
                 'Data Scadență': f.data_scadenta || '',
                 'Sumă': parseFloat(f.valoare || f.suma) || 0,
                 'Status': f.status_plata || 'Neincasat',
@@ -208,10 +208,10 @@ const ZFlowExport = {
             const client = window.ZFlowClients?.findById(f.client_id);
             const furnizor = window.ZFlowSuppliers?.findById(f.furnizor_id);
             const row = [
-                `"${f.numar_factura || f.nr_factura || ''}"`,
+                `"${f.numar_factura || ''}"`, // [RISK-FIX 5]
                 `"${(client?.nume_firma || furnizor?.nume_firma || '').replace(/"/g, '""')}"`,
                 `"${client?.cui || furnizor?.cui || ''}"`,
-                f.data_emiterii || f.data_emitere || '',
+                f.data_emiterii || '', // [RISK-FIX 5]
                 f.data_scadenta || '',
                 f.valoare || f.suma || 0,
                 f.status_plata || 'Neincasat'

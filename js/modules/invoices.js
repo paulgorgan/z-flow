@@ -78,7 +78,7 @@ const ZFlowInvoices = {
      */
     filterByPeriod(facturi, startDate, endDate) {
         return facturi.filter(f => {
-            const dataFactura = new Date(f.data_emitere || f.created_at);
+            const dataFactura = new Date(f.data_emiterii || f.created_at); // [RISK-FIX 5]
             return dataFactura >= startDate && dataFactura <= endDate;
         });
     },
@@ -141,8 +141,8 @@ const ZFlowInvoices = {
                     valB = new Date(b.data_scadenta || 0).getTime();
                     break;
                 default: // data
-                    valA = new Date(a.data_emitere || a.created_at || 0).getTime();
-                    valB = new Date(b.data_emitere || b.created_at || 0).getTime();
+                    valA = new Date(a.data_emiterii || a.created_at || 0).getTime(); // [RISK-FIX 5]
+                    valB = new Date(b.data_emiterii || b.created_at || 0).getTime(); // [RISK-FIX 5]
             }
             
             return order === 'asc' ? valA - valB : valB - valA;
@@ -194,7 +194,7 @@ const ZFlowInvoices = {
     validate(data) {
         const errors = [];
         
-        if (!data.nr_factura?.trim()) {
+        if (!data.numar_factura?.trim()) { // [RISK-FIX 5]
             errors.push("Numărul facturii este obligatoriu");
         }
         
@@ -202,7 +202,7 @@ const ZFlowInvoices = {
             errors.push("Suma trebuie să fie mai mare decât 0");
         }
         
-        if (!data.data_emitere) {
+        if (!data.data_emiterii) { // [RISK-FIX 5]
             errors.push("Data emiterii este obligatorie");
         }
         
@@ -210,8 +210,8 @@ const ZFlowInvoices = {
             errors.push("Data scadenței este obligatorie");
         }
         
-        if (data.data_emitere && data.data_scadenta) {
-            const emitere = new Date(data.data_emitere);
+        if (data.data_emiterii && data.data_scadenta) { // [RISK-FIX 5]
+            const emitere = new Date(data.data_emiterii); // [RISK-FIX 5]
             const scadenta = new Date(data.data_scadenta);
             if (scadenta < emitere) {
                 errors.push("Data scadenței nu poate fi înainte de data emiterii");
@@ -233,9 +233,9 @@ const ZFlowInvoices = {
     preparePayload(formData, clientId) {
         return {
             client_id: clientId,
-            nr_factura: formData.nr_factura?.trim() || '',
+            numar_factura: formData.numar_factura?.trim() || '', // [RISK-FIX 5]
             suma: parseFloat(formData.suma) || 0,
-            data_emitere: formData.data_emitere || new Date().toISOString().split('T')[0],
+            data_emiterii: formData.data_emiterii || new Date().toISOString().split('T')[0], // [RISK-FIX 5]
             data_scadenta: formData.data_scadenta || null,
             status_plata: formData.status_plata || 'Neincasat',
             descriere: formData.descriere?.trim() || null,
