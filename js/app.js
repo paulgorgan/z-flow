@@ -521,6 +521,7 @@ async function init(goHome = true) {
             fp = fpRes;
             ZFlowStore._facturiTotal  = fcResult.count || 0;
             ZFlowStore._facturiLoaded = fc.length;
+            ZFlowStore._facturiTotalSupabase = fcResult.count || 0; // [V3-FIX 5]
             console.log(`✅ Clienți: ${cl.length}, Facturi: ${fc.length}/${ZFlowStore._facturiTotal}, Furnizori: ${fr.length}, Facturi plătit: ${fp.length}`);
 
             // [PERF-FIX] FIX 2 — avertizare când se afișează doar 500 din totalul facturilor
@@ -3492,6 +3493,11 @@ function arataDetalii(id) {
     ZFlowStore.facturiLoadedCount = Math.min(facturiSortate.length, ZFlowStore.facturiPerPage);
     ZFlowStore.facturiTotalCount = facturiSortate.length;
     ZFlowStore.hasMoreFacturi = facturiSortate.length > ZFlowStore.facturiPerPage;
+    // Dacă totalul din Supabase e mai mare decât facturile în memorie, avertizează
+    if (ZFlowStore._facturiTotalSupabase > (ZFlowStore.dateFacturiBI?.length || 0)) {
+        const lipsesc = ZFlowStore._facturiTotalSupabase - (ZFlowStore.dateFacturiBI?.length || 0);
+        console.warn(`[LazyLoad] ${lipsesc} facturi înărcate din Supabase — total real: ${ZFlowStore._facturiTotalSupabase}`); // [V3-FIX 5]
+    }
     
     // Afișăm doar primele N facturi inițial
     const facturiDeAfisat = facturiSortate.slice(0, ZFlowStore.facturiPerPage);
@@ -4482,8 +4488,7 @@ function vehiculeSetPageSize(n){ ZFlowStore.vehiculePageSize=Number(n)||0; ZFlow
  * Activează/dezactivează modul de selecție multiplă
  */
 function toggleBulkMode() {
-    ZFlowStore.bulkMode = !ZFlowStore.bulkMode;
-    ZFlowStore.bulkSelectedFacturi = [];
+    if (window.ZFlowBulk) { ZFlowBulk.toggle(); } else { ZFlowStore.bulkMode = !ZFlowStore.bulkMode; ZFlowStore.bulkSelectedFacturi = []; } // [V3-FIX 1]
 
     const bulkInline = document.getElementById("bulk-inline-bar");
     const searchRow = document.getElementById("search-bi-row");
@@ -4519,6 +4524,7 @@ function toggleBulkMode() {
  * Toggle selectare factură individuală
  */
 function toggleBulkSelectFactura(facturaId) {
+    if (window.ZFlowBulk) { ZFlowBulk.toggleSelect(facturaId); return; } // [V3-FIX 1]
     const idx = ZFlowStore.bulkSelectedFacturi.indexOf(String(facturaId));
     if (idx > -1) {
         ZFlowStore.bulkSelectedFacturi.splice(idx, 1);
