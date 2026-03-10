@@ -2892,89 +2892,212 @@
         <!-- Acțiuni suplimentare (Task 7 + Task 3) -->
         <div class="mt-4 space-y-2 border-t border-slate-100 pt-4">
           <div id="admin-delete-section" class="hidden space-y-2">
-            <!-- Maintenance Mode Toggle — Admin only -->
-            <div data-admin-only class="bg-amber-50 border border-amber-200 rounded-xl p-3">
-              <div class="flex items-center justify-between mb-1.5">
-                <p class="text-[9px] font-black text-amber-800 uppercase">Mod Mentenanță</p>
-                <button id="btn-maintenance-toggle" onclick="toggleMaintenanceMode()"
-                  class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors bg-slate-300"
-                  role="switch" aria-checked="false">
-                  <span id="maintenance-knob" class="inline-block h-3.5 w-3.5 translate-x-0.5 rounded-full bg-white shadow transition-transform"></span>
+    <!-- SECȚIUNEA 1: SISTEM (admin only) -->
+    <div data-admin-only>
+      <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">
+        ⚙️ Sistem
+      </p>
+      <div class="space-y-2">
+
+        <!-- Mod mentenanță -->
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-[10px] font-black text-amber-800 uppercase">Mod Mentenanță</p>
+              <p id="maintenance-status-text" class="text-[9px] text-amber-600 mt-0.5">Status: Inactiv</p>
+            </div>
+            <button id="btn-maintenance-toggle" onclick="toggleMaintenanceMode()"
+              class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors bg-slate-300"
+              role="switch" aria-checked="false">
+              <span id="maintenance-knob"
+                class="inline-block h-4 w-4 translate-x-1 rounded-full bg-white shadow transition-transform">
+              </span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Generator Token Abonament -->
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3">
+          <p class="text-[10px] font-black text-blue-800 uppercase mb-2">🔑 Generator Token</p>
+          <div class="space-y-2">
+            <select id="admin-token-plan"
+              onchange="sincronizeazaZilePlan(this.value)"
+              class="w-full p-2.5 bg-white rounded-lg text-xs font-bold border border-blue-200 outline-none focus:border-blue-400">
+              <option value="trial">Trial — 30 zile</option>
+              <option value="standard" selected>Standard — 365 zile</option>
+              <option value="pro">Pro — 365 zile</option>
+              <option value="enterprise">Enterprise — 365 zile</option>
+            </select>
+            <!-- Zile — sincronizat automat cu planul de mai sus -->
+            <div class="flex items-center gap-2">
+              <input type="number" id="admin-token-zile" value="365" min="7" max="1095"
+                class="w-24 p-2.5 bg-white rounded-lg text-xs font-bold border border-blue-200 outline-none text-center"
+                title="Zile valabilitate abonament (se actualizează automat)" />
+              <span class="text-[9px] text-slate-400 font-bold">zile abonament</span>
+            </div>
+            <input type="text" id="admin-token-nota"
+              placeholder="Client (ex: Ion Popescu SRL)"
+              class="w-full p-2.5 bg-white rounded-lg text-xs font-bold border border-blue-200 outline-none focus:border-blue-400" />
+            <button onclick="genereazaTokenAdmin()"
+              class="w-full py-2.5 bg-blue-700 hover:bg-blue-800 text-white rounded-lg text-xs font-black uppercase transition-all">
+              Generează Token
+            </button>
+            <!-- Rezultat token -->
+            <div id="admin-token-result" class="hidden bg-white rounded-lg border border-blue-300 p-2.5">
+              <p class="text-[9px] text-slate-400 font-bold mb-1">Trimite clientului:</p>
+              <div class="flex items-center gap-2">
+                <code id="admin-token-output"
+                  class="flex-1 text-xs font-black text-blue-700 tracking-wider break-all"></code>
+                <button
+                  onclick="navigator.clipboard.writeText(document.getElementById('admin-token-output').textContent).then(()=>showNotification('Copiat!','success'))"
+                  class="shrink-0 text-[9px] font-black bg-blue-100 hover:bg-blue-200 text-blue-700 px-2 py-1 rounded-md transition-all">
+                  COPIAZĂ
                 </button>
               </div>
-              <p class="text-[8px] text-amber-700">Activat: afișează ecran de mentenanță tuturor utilizatorilor care nu sunt admin</p>
-              <p id="maintenance-status-text" class="text-[8px] font-bold text-slate-500 mt-1">Status: Inactiv</p>
             </div>
-            <!-- [R7-FIX 6] Generator tokeni abonament — DOAR admin -->
-            <div data-admin-only class="mt-4 p-4 bg-amber-50 rounded-2xl border border-amber-200">
-              <p class="text-xs font-black text-amber-700 uppercase mb-3">🔑 Generator Token Abonament</p>
-              <div class="space-y-2">
-                <select id="admin-token-plan"
-                  class="w-full p-3 bg-white rounded-xl text-sm font-bold border border-amber-200 outline-none">
-                  <option value="trial">Trial — 30 zile</option>
-                  <option value="standard" selected>Standard — 1 an</option>
-                  <option value="pro">Pro — 1 an</option>
-                  <option value="enterprise">Enterprise — 1 an</option>
-                </select>
-                <input type="number" id="admin-token-zile" value="365" min="7" max="1095"
-                  placeholder="Zile durata abonament"
-                  class="w-full p-3 bg-white rounded-xl text-sm font-bold border border-amber-200 outline-none" />
-                <input type="text" id="admin-token-nota" placeholder="Notă client (ex: Ion Popescu SRL)"
-                  class="w-full p-3 bg-white rounded-xl text-sm font-bold border border-amber-200 outline-none" />
-                <button onclick="genereazaTokenAdmin()"
-                  class="w-full py-3 bg-amber-500 text-white rounded-xl text-sm font-black uppercase">
-                  Generează Token Nou
-                </button>
-                <div id="admin-token-result" class="hidden">
-                  <p class="text-[10px] text-slate-400 font-bold mb-1">Trimite clientului:</p>
-                  <div class="flex items-center gap-2 bg-white p-3 rounded-xl border border-amber-300">
-                    <code id="admin-token-output" class="flex-1 text-sm font-black text-amber-700 tracking-wider break-all"></code>
-                    <button onclick="navigator.clipboard.writeText(document.getElementById('admin-token-output').textContent).then(()=>showNotification('Copiat!','success'))"
-                      class="shrink-0 text-[9px] font-black bg-amber-100 text-amber-700 px-2 py-1 rounded-lg">
-                      COPIAZĂ
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <button data-admin-only onclick="exportareCompleta()" class="w-full py-2.5 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-xl text-[10px] font-black uppercase hover:bg-indigo-100 transition-all">
-              Export Backup Complet (XLSX + JSON)
-            </button>
-            <button data-admin-only onclick="resetDateUnificat()" class="w-full py-2.5 bg-red-50 text-red-700 border border-red-200 rounded-xl text-[10px] font-black uppercase hover:bg-red-100 transition-all">
-              Resetare Completă Date
-            </button>
-            <!-- [R4-FIX 5] Buton panel admin multi-user -- vizibil DOAR pentru admin local -->
-            <button data-admin-only onclick="deschideAdminUserPanel()"
-              class="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-sm font-bold transition-all mt-2">
-              👤 Gestionează utilizatori
-            </button>
-            <button data-account-only onclick="deschideModalSchimbaParola()" class="w-full py-2.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-xl text-[10px] font-black uppercase hover:bg-blue-100 transition-all">
-              <svg class="w-3.5 h-3.5 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/></svg>Schimbă Email / Parolă
-            </button>
-            <!-- Resetare date pt. utilizatori Supabase (înainte era buton separat) -->
-            <button data-supabase-only onclick="resetDateUnificat()" class="w-full py-2.5 bg-red-50 text-red-700 border border-red-200 rounded-xl text-[10px] font-black uppercase hover:bg-red-100 transition-all">
-              Resetare Completă Date Cont
-            </button>
-            <!-- [R5-FIX 4] Buton golire cache — vizibil pentru toți utilizatorii autentificați -->
-            <div data-account-only class="mt-3">
-              <button onclick="clearIDBCache()"
-                class="w-full py-3 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-xl text-sm font-bold transition-all border border-amber-200 flex items-center justify-center gap-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round"
-                    d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/>
-                </svg>
-                Golește cache local
-              </button>
-              <p class="text-[9px] text-slate-400 text-center mt-1">
-                Datele se re-descarcă din cloud la refresh
-              </p>
-            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- SEPARATOP -->
+    <div data-admin-only class="border-t border-slate-100 pt-2">
+      <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">
+        👥 Utilizatori
+      </p>
+      <button data-admin-only onclick="deschideAdminUserPanel()"
+        class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-black uppercase transition-all">
+        Gestionează Utilizatori
+      </button>
+    </div>
+
+    <!-- SECȚIUNEA 3: CONT (toți userii autentificați) -->
+    <div class="border-t border-slate-100 pt-2">
+      <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">
+        🔒 Contul meu
+      </p>
+      <div class="space-y-2">
+
+        <button data-account-only onclick="deschideModalSchimbaParola()"
+          class="w-full py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-black uppercase transition-all">
+          Schimbă Email / Parolă
+        </button>
+
+        <!-- Golire cache — toți userii -->
+        <div data-account-only>
+          <button onclick="clearIDBCache()"
+            class="w-full py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/>
+            </svg>
+            Golește cache local
+          </button>
+          <p class="text-[9px] text-slate-400 text-center mt-1">
+            Datele se re-descarcă din cloud la refresh
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECȚIUNEA PERICULOASĂ — colapsată implicit -->
+    <div class="border-t border-red-100 pt-2">
+      <button onclick="this.nextElementSibling.classList.toggle('hidden')"
+        class="w-full text-[8px] font-black text-red-300 uppercase tracking-widest py-1 text-center hover:text-red-400 transition-all">
+        ▼ Zona periculoasă
+      </button>
+      <div class="hidden space-y-2 mt-2">
+        <button data-admin-only onclick="exportareCompleta()"
+          class="w-full py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-black uppercase transition-all">
+          Export Backup Complet (XLSX + JSON)
+        </button>
+        <button data-admin-only onclick="resetDateUnificat()"
+          class="w-full py-2.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-xl text-xs font-black uppercase transition-all">
+          ⚠️ Resetare Completă Date
+        </button>
+        <button data-supabase-only onclick="resetDateUnificat()"
+          class="w-full py-2.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-xl text-xs font-black uppercase transition-all">
+          ⚠️ Resetare Date Cont
+        </button>
+      </div>
+    </div>
           </div>
         </div>
       </div>
     </div>
 
     <!-- ==================== MODAL AUTH ==================== -->
+    <!-- ==================== MODAL ADMIN USERS ==================== -->
+    <div id="modal-admin-users" class="modal-sheet">
+      <div class="sheet-content">
+        <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-6"></div>
+        <div class="flex items-center justify-between mb-5">
+          <div>
+            <h1 class="text-xl font-black text-slate-800">Gestionează Utilizatori</h1>
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Admin Panel</p>
+          </div>
+          <button onclick="inchideAdminUsers()"
+            class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 transition-all text-sm font-black">
+            ✕
+          </button>
+        </div>
+
+        <!-- Căutare utilizator -->
+        <div class="space-y-2 mb-4">
+          <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Email utilizator</label>
+          <div class="flex gap-2">
+            <input type="email" id="admin-target-email"
+              placeholder="client@exemplu.ro"
+              class="flex-1 p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200 transition-all" />
+            <button onclick="adminCautaUtilizator()"
+              class="px-4 py-3 bg-blue-900 text-white rounded-xl text-xs font-black uppercase hover:bg-blue-800 transition-all shrink-0">
+              Caută
+            </button>
+          </div>
+        </div>
+
+        <!-- Rezultat căutare + acțiuni -->
+        <div id="admin-user-result" class="hidden space-y-3">
+          <!-- Info utilizator -->
+          <div id="admin-user-info"
+            class="bg-slate-50 rounded-xl p-3 border border-slate-200">
+          </div>
+
+          <!-- Trimite notificare -->
+          <div class="bg-blue-50 rounded-xl p-3 border border-blue-200 space-y-2">
+            <p class="text-[9px] font-black text-blue-700 uppercase">📢 Trimite notificare</p>
+            <textarea id="admin-notif-text" rows="2"
+              placeholder="Mesajul notificării..."
+              class="w-full p-2.5 bg-white rounded-lg text-xs font-bold border border-blue-200 outline-none resize-none focus:border-blue-400"></textarea>
+            <button onclick="adminTrimiteNotificare()"
+              class="w-full py-2 bg-blue-700 text-white rounded-lg text-xs font-black uppercase hover:bg-blue-800 transition-all">
+              Trimite
+            </button>
+          </div>
+
+          <!-- Ștergere date — zona periculoasă -->
+          <div class="bg-red-50 rounded-xl p-3 border border-red-200 space-y-2">
+            <p class="text-[9px] font-black text-red-700 uppercase">⚠️ Ștergere permanentă date</p>
+            <p class="text-[9px] text-red-500">
+              Pentru confirmare, scrie exact: <strong id="admin-delete-hint">STERGE email@exemplu.ro</strong>
+            </p>
+            <input type="text" id="admin-delete-confirm"
+              placeholder="STERGE email@exemplu.ro"
+              class="w-full p-2.5 bg-white rounded-lg text-xs font-bold border border-red-200 outline-none focus:border-red-400 font-mono" />
+            <button onclick="adminStergeDate()"
+              class="w-full py-2 bg-red-600 text-white rounded-lg text-xs font-black uppercase hover:bg-red-700 transition-all">
+              Șterge definitiv
+            </button>
+          </div>
+        </div>
+
+        <button onclick="inchideAdminUsers()"
+          class="w-full mt-4 py-3 bg-slate-100 text-slate-500 rounded-xl text-xs font-black uppercase">
+          Închide
+        </button>
+      </div>
+    </div>
     <div id="modal-auth" class="modal-sheet">
       <div class="sheet-content">
         <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-6"></div>

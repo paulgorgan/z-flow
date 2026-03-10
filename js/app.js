@@ -1364,58 +1364,114 @@ async function deschideProfilFirma() {
 /**
  * Închide modalul de profil firmă
  */
-// [R4-FIX 5] Funcție UI pentru panoul admin multi-user
+/**
+ * [R8-FIX 3] Panou admin utilizatori — înlocuiește prompt() cu modal dedicat
+ */
 async function deschideAdminUserPanel() {
-    const email = prompt('Email utilizator țintă (ex: paul.gorgan@ymail.com):');
+    const modal = document.getElementById('modal-admin-users');
+    if (!modal) {
+        showNotification('Modal admin users lipsă din HTML', 'error');
+        return;
+    }
+    // Reset stare
+    const emailInput = document.getElementById('admin-target-email');
+    const resultDiv  = document.getElementById('admin-user-result');
+    if (emailInput) emailInput.value = '';
+    if (resultDiv)  resultDiv.classList.add('hidden');
+    modal.classList.add('active');
+}
+window.deschideAdminUserPanel = deschideAdminUserPanel;
+
+async function adminCautaUtilizator() {
+    const email = document.getElementById('admin-target-email')?.value.trim();
     if (!email || !email.includes('@')) {
-        showNotification('Email invalid', 'error');
+        showNotification('Introdu un email valid', 'error');
         return;
     }
     setLoader(true);
     try {
         const userData = await ZFlowDB.adminGetUserData(email);
+        const resultDiv = document.getElementById('admin-user-result');
+        const infoDiv   = document.getElementById('admin-user-info');
         if (!userData) {
             showNotification(`Utilizatorul ${email} nu a fost găsit`, 'warning');
             return;
         }
-        const actiune = prompt(
-            `Utilizator găsit: ${userData.email || email}\n` +
-            `ID: ${userData.id || 'necunoscut'}\n\n` +
-            `Acțiuni disponibile:\n` +
-            `  1 — Trimite notificare\n` +
-            `  2 — Şterge toate datele\n` +
-            `  3 — Anulează\n\n` +
-            `Introdu 1, 2 sau 3:`
-        );
-        if (actiune === '1') {
-            const mesaj = prompt('Mesajul notificării:');
-            if (mesaj) {
-                const ok = await ZFlowDB.adminSendNotification(email, mesaj);
-                showNotification(ok ? 'Notificare trimisă' : 'Eroare la trimitere', ok ? 'success' : 'error');
-            }
-        } else if (actiune === '2') {
-            const confirmat = confirm(
-                `⚠️ ATENȚIE: Vei şterge DEFINITIV toate datele lui ${email}.\n` +
-                `Acțiunea este IREVERSIBILĂ.\n\nContinui?`
-            );
-            if (confirmat) {
-                const rezultate = await ZFlowDB.adminDeleteUserData(userData.id);
-                const reuşite = Object.values(rezultate).filter(r => r.success).length;
-                const erori = Object.values(rezultate).filter(r => !r.success).length;
-                showNotification(
-                    `Date şterse: ${reuşite} tabele OK${erori > 0 ? `, ${erori} erori` : ''}`,
-                    erori > 0 ? 'warning' : 'success'
-                );
-                console.table(rezultate);
-            }
+        if (infoDiv) {
+            infoDiv.innerHTML = `
+                <p class="text-xs font-bold text-slate-700">📧 ${userData.email || email}</p>
+                <p class="text-[10px] text-slate-400 font-mono mt-0.5">ID: ${userData.id || 'necunoscut'}</p>`;
         }
-    } catch (e) {
-        showNotification('Eroare panel admin: ' + e.message, 'error');
+        // Salvează datele pentru acțiunile ulterioare
+        if (resultDiv) {
+            resultDiv.dataset.userId  = userData.id || '';
+            resultDiv.dataset.email   = userData.email || email;
+            resultDiv.classList.remove('hidden');
+        }
+        // Actualizează hint-ul de confirmare cu emailul real
+        const hintEl = document.getElementById('admin-delete-hint');
+        const confirmInput = document.getElementById('admin-delete-confirm');
+        if (hintEl) hintEl.textContent = `STERGE ${userData.email || email}`;
+        if (confirmInput) confirmInput.placeholder = `STERGE ${userData.email || email}`;
+    } catch(e) {
+        showNotification('Eroare căutare: ' + e.message, 'error');
     } finally {
         setLoader(false);
     }
 }
-window.deschideAdminUserPanel = deschideAdminUserPanel;
+window.adminCautaUtilizator = adminCautaUtilizator;
+
+async function adminTrimiteNotificare() {
+    const resultDiv = document.getElementById('admin-user-result');
+    const email     = resultDiv?.dataset.email;
+    const mesaj     = document.getElementById('admin-notif-text')?.value.trim();
+    if (!email || !mesaj) { showNotification('Email și mesaj obligatorii', 'error'); return; }
+    setLoader(true);
+    try {
+        const ok = await ZFlowDB.adminSendNotification(email, mesaj);
+        showNotification(ok ? `Notificare trimisă către ${email}` : 'Eroare la trimitere', ok ? 'success' : 'error');
+        if (ok) document.getElementById('admin-notif-text').value = '';
+    } catch(e) {
+        showNotification('Eroare: ' + e.message, 'error');
+    } finally {
+        setLoader(false);
+    }
+}
+window.adminTrimiteNotificare = adminTrimiteNotificare;
+
+async function adminStergeDate() {
+    const resultDiv = document.getElementById('admin-user-result');
+    const userId    = resultDiv?.dataset.userId;
+    const email     = resultDiv?.dataset.email;
+    if (!userId) { showNotification('Caută mai întâi utilizatorul', 'error'); return; }
+    // Confirmare cu text explicit
+    const confirmEl = document.getElementById('admin-delete-confirm');
+    if (confirmEl?.value !== `STERGE ${email}`) {
+        showNotification(`Scrie exact: STERGE ${email}`, 'error');
+        return;
+    }
+    setLoader(true);
+    try {
+        const rezultate = await ZFlowDB.adminDeleteUserData(userId);
+        const reușite   = Object.values(rezultate).filter(r => r.success).length;
+        const erori     = Object.values(rezultate).filter(r => !r.success).length;
+        showNotification(
+            `Date șterse: ${reușite} tabele OK${erori > 0 ? `, ${erori} erori` : ''}`,
+            erori > 0 ? 'warning' : 'success'
+        );
+        document.getElementById('modal-admin-users')?.classList.remove('active');
+    } catch(e) {
+        showNotification('Eroare ștergere: ' + e.message, 'error');
+    } finally {
+        setLoader(false);
+    }
+}
+window.adminStergeDate = adminStergeDate;
+
+function inchideAdminUsers() {
+    document.getElementById('modal-admin-users')?.classList.remove('active');
+}
+window.inchideAdminUsers = inchideAdminUsers;
 
 /**
  * [R7-FIX 6] Generator tokeni abonament — doar pentru admin local
@@ -1449,6 +1505,20 @@ async function genereazaTokenAdmin() {
     }
 }
 window.genereazaTokenAdmin = genereazaTokenAdmin;
+
+/**
+ * [R8-FIX 1] Sincronizează câmpul "zile" cu planul selectat din dropdown.
+ * Apelat de onchange pe #admin-token-plan.
+ */
+function sincronizeazaZilePlan(plan) {
+    const zilePlanMap = { trial: 30, standard: 365, pro: 365, enterprise: 365 };
+    const zileEl = document.getElementById('admin-token-zile');
+    if (zileEl) zileEl.value = zilePlanMap[plan] || 365;
+    // Ascunde rezultatul anterior când se schimbă planul
+    const boxEl = document.getElementById('admin-token-result');
+    if (boxEl) boxEl.classList.add('hidden');
+}
+window.sincronizeazaZilePlan = sincronizeazaZilePlan;
 
 function inchideProfilFirma() {
     document.getElementById('modal-profil-firma').classList.remove('active');

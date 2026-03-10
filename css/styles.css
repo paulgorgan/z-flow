@@ -893,6 +893,57 @@ input, select, button {
   }
 }
 
+/* [R8-FIX 2] Nav tablet: 768–1023px — orizontal compact fără label text */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .bottom-nav {
+    display: flex !important;
+    position: fixed !important;
+    top: 60px !important;
+    bottom: auto !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    transform: none !important;
+    border-radius: 0 !important;
+    border-top: none !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    background: rgba(255, 255, 255, 0.98) !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 2px !important;
+    padding: 6px 12px !important;
+    z-index: 45 !important;
+  }
+
+  .nav-item {
+    flex-direction: column !important;
+    gap: 2px !important;
+    padding: 8px 14px !important;
+    border-radius: 12px !important;
+    min-height: unset !important;
+    flex: 0 0 auto !important;
+  }
+
+  .nav-item svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  .nav-item span {
+    font-size: 8px !important;
+    font-weight: 800 !important;
+  }
+
+  .nav-item.active {
+    background: #eff6ff !important;
+    color: #1e3a8a !important;
+  }
+
+  main {
+    margin-top: 110px !important;
+  }
+}
+
 /* ============================================
    RESPONSIVE - DESKTOP (Peste 1024px)
    ============================================ */
