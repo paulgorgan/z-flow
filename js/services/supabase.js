@@ -1354,6 +1354,34 @@ function resetLocalSession() {
     console.log('[Auth] _demoOps._restoreCache resetat — date admin local vor fi re-încarcate la re-login');
 }
 
+// [R9-FIX 1] Admin dashboard — lista completa utilizatori
+async function adminGetAllUsers() {
+    try {
+        const { data, error } = await zf.rpc('admin_get_all_users');
+        if (error) throw error;
+        return data || [];
+    } catch(e) {
+        console.warn('[adminGetAllUsers]', e.message);
+        return [];
+    }
+}
+
+// [R9-FIX 1] Admin — extinde abonament user
+async function adminExtendSubscription(email, days, plan) {
+    try {
+        const { data, error } = await zf.rpc('admin_extend_subscription', {
+            p_email: email,
+            p_days: parseInt(days) || 365,
+            p_plan: plan || 'standard'
+        });
+        if (error) throw error;
+        return !!data;
+    } catch(e) {
+        console.warn('[adminExtendSubscription]', e.message);
+        return false;
+    }
+}
+
 // Export pentru utilizare globală (fără module ES6 native în browser)
 window.ZFlowDB = {
     zf,
@@ -1434,6 +1462,9 @@ window.ZFlowDB = {
     adminGetUserData,
     adminDeleteUserData,
     adminSendNotification,
+    // Admin dashboard [R9-FIX 1]
+    adminGetAllUsers,
+    adminExtendSubscription,
     // Session helpers [FIX 4]
     resetLocalSession
 };

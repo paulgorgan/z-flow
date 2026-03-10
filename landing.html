@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Z-FLOW — Software ERP pentru transport & logistică</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .gradient-hero { background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 60%, #1d4ed8 100%); }
+    .card-plan { transition: transform 0.2s, box-shadow 0.2s; }
+    .card-plan:hover { transform: translateY(-4px); box-shadow: 0 20px 40px -12px rgba(0,0,0,0.15); }
+    .plan-pro { border: 2px solid #6d28d9; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans">
+
+  <!-- HERO -->
+  <section class="gradient-hero text-white py-20 px-6 text-center">
+    <div class="max-w-2xl mx-auto">
+      <p class="text-blue-300 text-xs font-black uppercase tracking-widest mb-3">Software ERP · Transport & Logistică</p>
+      <h1 class="text-4xl font-black tracking-tight mb-4">Z-FLOW</h1>
+      <p class="text-blue-100 text-base mb-8 leading-relaxed">
+        Gestionează facturi, clienți, furnizori, șoferi și vehicule<br>
+        dintr-o singură aplicație. Simplu, rapid, sigur.
+      </p>
+      <div class="flex flex-col sm:flex-row gap-3 justify-center">
+        <a href="index.html"
+          class="px-8 py-4 bg-white text-blue-900 rounded-2xl font-black text-sm hover:bg-blue-50 transition-all shadow-xl shadow-blue-900/30">
+          Începe gratuit — Trial 30 zile
+        </a>
+        <a href="#pricing"
+          class="px-8 py-4 border border-blue-400 text-white rounded-2xl font-black text-sm hover:bg-white/10 transition-all">
+          Vezi planurile →
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="py-16 px-6 max-w-4xl mx-auto">
+    <h2 class="text-2xl font-black text-center text-slate-800 mb-10">Tot ce ai nevoie, într-o singură aplicație</h2>
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+      <div class="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
+        <div class="text-2xl mb-2">📄</div>
+        <p class="font-black text-sm text-slate-800">Facturi & Plăți</p>
+        <p class="text-xs text-slate-500 mt-1">Emite, urmărește și arhivează facturi de încasat și de plătit</p>
+      </div>
+      <div class="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
+        <div class="text-2xl mb-2">👥</div>
+        <p class="font-black text-sm text-slate-800">Clienți & Furnizori</p>
+        <p class="text-xs text-slate-500 mt-1">Bază de date completă cu validare CUI ANAF automată</p>
+      </div>
+      <div class="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
+        <div class="text-2xl mb-2">🚛</div>
+        <p class="font-black text-sm text-slate-800">Logistică & GPS</p>
+        <p class="text-xs text-slate-500 mt-1">Urmărire vehicule, comenzi transport, șoferi și rute pe hartă</p>
+      </div>
+      <div class="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
+        <div class="text-2xl mb-2">📦</div>
+        <p class="font-black text-sm text-slate-800">Depozit & Stoc</p>
+        <p class="text-xs text-slate-500 mt-1">Gestiune produse, recepții, livrări și alerte stoc minim</p>
+      </div>
+      <div class="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
+        <div class="text-2xl mb-2">📊</div>
+        <p class="font-black text-sm text-slate-800">Analiză & Rapoarte</p>
+        <p class="text-xs text-slate-500 mt-1">Cashflow, BI, export XLSX/PDF și backup complet</p>
+      </div>
+      <div class="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
+        <div class="text-2xl mb-2">🔒</div>
+        <p class="font-black text-sm text-slate-800">Date izolate 100%</p>
+        <p class="text-xs text-slate-500 mt-1">Fiecare cont are spațiu propriu — nimeni nu îți vede datele</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRICING -->
+  <section id="pricing" class="py-16 px-6 bg-slate-100">
+    <div class="max-w-4xl mx-auto">
+      <h2 class="text-2xl font-black text-center text-slate-800 mb-2">Planuri și Prețuri</h2>
+      <p class="text-center text-slate-500 text-sm mb-10">Toate planurile includ acces complet la funcționalități.</p>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+
+        <!-- Trial -->
+        <div class="card-plan bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+          <p class="text-xs font-black text-yellow-600 uppercase mb-1">Trial</p>
+          <p class="text-3xl font-black text-slate-800 mb-0.5">Gratuit</p>
+          <p class="text-xs text-slate-400 mb-4">30 de zile</p>
+          <ul class="text-xs text-slate-600 space-y-1.5 mb-5">
+            <li>✓ Toate funcționalitățile</li>
+            <li>✓ Fără card de credit</li>
+            <li>✓ Date salvate în cloud</li>
+          </ul>
+          <a href="index.html"
+            class="block text-center py-2.5 bg-yellow-100 hover:bg-yellow-200 text-yellow-800 rounded-xl text-xs font-black uppercase transition-all">
+            Începe trial
+          </a>
+        </div>
+
+        <!-- Standard -->
+        <div class="card-plan bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+          <p class="text-xs font-black text-blue-600 uppercase mb-1">Standard</p>
+          <p class="text-3xl font-black text-slate-800 mb-0.5">Contact</p>
+          <p class="text-xs text-slate-400 mb-4">per an</p>
+          <ul class="text-xs text-slate-600 space-y-1.5 mb-5">
+            <li>✓ 1 utilizator</li>
+            <li>✓ Toate modulele</li>
+            <li>✓ Suport email</li>
+          </ul>
+          <a href="mailto:contact@z-flow.ro"
+            class="block text-center py-2.5 bg-blue-100 hover:bg-blue-200 text-blue-800 rounded-xl text-xs font-black uppercase transition-all">
+            Solicită ofertă
+          </a>
+        </div>
+
+        <!-- Pro (recomandat) -->
+        <div class="card-plan plan-pro bg-white rounded-2xl p-5 shadow-lg relative">
+          <div class="absolute -top-2.5 left-1/2 -translate-x-1/2">
+            <span class="bg-purple-600 text-white text-[8px] font-black px-3 py-0.5 rounded-full uppercase">Recomandat</span>
+          </div>
+          <p class="text-xs font-black text-purple-600 uppercase mb-1">Pro</p>
+          <p class="text-3xl font-black text-slate-800 mb-0.5">Contact</p>
+          <p class="text-xs text-slate-400 mb-4">per an</p>
+          <ul class="text-xs text-slate-600 space-y-1.5 mb-5">
+            <li>✓ 3 utilizatori</li>
+            <li>✓ Rapoarte avansate</li>
+            <li>✓ Export XML ANAF</li>
+            <li>✓ Suport prioritar</li>
+          </ul>
+          <a href="mailto:contact@z-flow.ro"
+            class="block text-center py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-black uppercase transition-all">
+            Solicită ofertă
+          </a>
+        </div>
+
+        <!-- Enterprise -->
+        <div class="card-plan bg-slate-800 rounded-2xl p-5 shadow-sm">
+          <p class="text-xs font-black text-emerald-400 uppercase mb-1">Enterprise</p>
+          <p class="text-3xl font-black text-white mb-0.5">Personalizat</p>
+          <p class="text-xs text-slate-400 mb-4">negociat</p>
+          <ul class="text-xs text-slate-300 space-y-1.5 mb-5">
+            <li>✓ Utilizatori nelimitați</li>
+            <li>✓ Integrări custom</li>
+            <li>✓ Onboarding dedicat</li>
+            <li>✓ SLA garantat</li>
+          </ul>
+          <a href="mailto:contact@z-flow.ro"
+            class="block text-center py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase transition-all">
+            Contactează-ne
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA FINAL -->
+  <section class="py-16 px-6 text-center">
+    <div class="max-w-xl mx-auto">
+      <h2 class="text-2xl font-black text-slate-800 mb-3">Gata să începi?</h2>
+      <p class="text-slate-500 text-sm mb-6">Înregistrează-te cu un cod de abonament primit de la echipa Z-FLOW.</p>
+      <a href="index.html"
+        class="inline-block px-10 py-4 bg-blue-900 hover:bg-blue-800 text-white rounded-2xl font-black text-sm shadow-xl shadow-blue-900/20 transition-all">
+        Deschide aplicația →
+      </a>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="border-t border-slate-200 py-6 px-6 text-center">
+    <p class="text-xs text-slate-400">© 2026 Z-FLOW Enterprise. Toate drepturile rezervate.</p>
+    <p class="text-xs text-slate-300 mt-1">contact@z-flow.ro</p>
+  </footer>
+
+</body>
+</html>
