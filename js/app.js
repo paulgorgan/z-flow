@@ -504,30 +504,45 @@ async function init(goHome = true) {
     }
 
     try {
-        let cl, fc;
+        // [PERF-FIX] FIX 1 — fetch toate 4 surse de date în paralel cu Promise.all
+        // Reduce timpul de inițializare față de await-uri secvențiale
+        let cl, fc, fr, fp;
 
         try {
-            // Fetch clienți și facturi din rețea
-            cl = await ZFlowDB.fetchClienti();
-            console.log("✅ Clienți descărcați:", cl.length);
-
-            const fcResult = await ZFlowDB.fetchFacturiPaginated(500, 0);
+            const [clRes, fcResult, frRes, fpRes] = await Promise.all([
+                ZFlowDB.fetchClienti(),
+                ZFlowDB.fetchFacturiPaginated(500, 0),
+                ZFlowDB.fetchFurnizori(),
+                ZFlowDB.fetchFacturiPlatit()
+            ]);
+            cl = clRes;
             fc = fcResult.data || [];
+            fr = frRes;
+            fp = fpRes;
             ZFlowStore._facturiTotal  = fcResult.count || 0;
             ZFlowStore._facturiLoaded = fc.length;
-            console.log(`✅ Facturi descărcate: ${fc.length} din ${ZFlowStore._facturiTotal} totale`);
+            console.log(`✅ Clienți: ${cl.length}, Facturi: ${fc.length}/${ZFlowStore._facturiTotal}, Furnizori: ${fr.length}, Facturi plătit: ${fp.length}`);
+
+            // [PERF-FIX] FIX 2 — avertizare când se afișează doar 500 din totalul facturilor
+            if (fcResult.count > 500) {
+                showNotification(`Afișezi 500 din ${fcResult.count} facturi. Folosiți filtrul de client pentru a vedea toate facturile.`, 'warning');
+            }
 
             // #7 - Scrie în cache IndexedDB după fiecare fetch reușit
             Promise.all([
                 ZFlowIDB.save('clienti', cl),
                 ZFlowIDB.save('facturi', fc),
+                ZFlowIDB.save('furnizori', fr),
+                ZFlowIDB.save('facturi_platit', fp),
             ]).catch(e => console.warn('[IDB] Eroare scriere cache:', e));
 
         } catch (networkErr) {
-            // #7 - Rețeaua a eșuat → fallback la cache IndexedDB
+            // #7 - Rețeaua a eșuat → fallback la cache IndexedDB pentru toate sursele
             console.warn('[IDB] Rețea indisponibilă, încerc cache local...', networkErr.message);
             cl = await ZFlowIDB.getAll('clienti');
             fc = await ZFlowIDB.getAll('facturi');
+            fr = await ZFlowIDB.getAll('furnizori').catch(() => []);
+            fp = await ZFlowIDB.getAll('facturi_platit').catch(() => []);
 
             if (cl.length === 0 && fc.length === 0) {
                 throw networkErr; // fără cache → aruncă eroarea originală
@@ -535,15 +550,17 @@ async function init(goHome = true) {
 
             const varstaCache = await ZFlowIDB.cacheAge('clienti');
             showNotification(`Mod offline · Cache: ${varstaCache || 'N/A'}`, 'warning');
-            console.log(`[IDB] Din cache: ${cl.length} clienți, ${fc.length} facturi`);
+            console.log(`[IDB] Din cache: ${cl.length} clienți, ${fc.length} facturi, ${fr.length} furnizori, ${fp.length} facturi plătit`);
         }
 
-        ZFlowStore.dateFacturiBI = fc || [];
+        // Procesare date comune
+        ZFlowStore.dateFacturiBI    = fc || [];
+        ZFlowStore.dateFacturiPlatit = fp || [];
 
         const azi = new Date();
         azi.setHours(0, 0, 0, 0);
 
-        // Procesăm datele locale
+        // Procesăm datele clienților
         ZFlowStore.dateLocal = (cl || []).map((c) => {
             const fcs = ZFlowStore.dateFacturiBI.filter((f) => String(f.client_id) === String(c.id));
             const sold = fcs
@@ -567,12 +584,32 @@ async function init(goHome = true) {
 
         console.log("📊 Date procesate local:", ZFlowStore.dateLocal.length);
 
+        // Procesăm datele furnizorilor
+        ZFlowStore.dateFurnizori = (fr || []).map(furn => {
+            const fps = ZFlowStore.dateFacturiPlatit.filter(fp2 => String(fp2.furnizor_id) === String(furn.id));
+            const sold = fps.filter(fp2 => fp2.status_plata !== 'Platit').reduce((sum, fp2) => sum + (Number(fp2.valoare) || 0), 0);
+            const sumaScadenta = fps.reduce((acc, fac) => {
+                if (fac.status_plata !== 'Platit' && fac.data_scadenta) {
+                    const d = new Date(fac.data_scadenta); d.setHours(0, 0, 0, 0);
+                    if (d < azi) return acc + (Number(fac.valoare) || 0);
+                }
+                return acc;
+            }, 0);
+            return { ...furn, facturi: fps, sold, sumaScadenta };
+        });
+
         // Demo mode: golire date la prima pornire (prezentare fără date reale)
         if (ZFlowStore.userSession?.isDemo && ZFlowStore._demoClienti === undefined) {
             ZFlowStore.dateLocal = [];
             ZFlowStore.dateFacturiBI = [];
             ZFlowStore._demoClienti = [];
             ZFlowStore._demoFacturi = [];
+            ZFlowStore._demoFurnizori = [];
+            ZFlowStore._demoFacturiPlatit = [];
+        }
+        if (ZFlowStore.userSession?.isDemo && ZFlowStore._demoFurnizori === undefined) {
+            ZFlowStore.dateFurnizori = [];
+            ZFlowStore.dateFacturiPlatit = [];
             ZFlowStore._demoFurnizori = [];
             ZFlowStore._demoFacturiPlatit = [];
         }
@@ -584,51 +621,11 @@ async function init(goHome = true) {
             }
         }
 
+        // [PERF-FIX] FIX 1 — render o singură dată după procesarea completă a tuturor datelor
         renderMain();
         updateDashboardKPI();
-
-        // === Furnizori & Facturi de Plătit (non-fatal) ===
-        try {
-            let fr = [], fp = [];
-            try {
-                fr = await ZFlowDB.fetchFurnizori();
-                fp = await ZFlowDB.fetchFacturiPlatit();
-                console.log("✅ Furnizori descărcați:", fr.length, "| Facturi plătit:", fp.length);
-                Promise.all([
-                    ZFlowIDB.save('furnizori', fr),
-                    ZFlowIDB.save('facturi_platit', fp),
-                ]).catch(e => console.warn('[IDB] Eroare cache furnizori:', e));
-            } catch (fErr) {
-                console.warn('[Furnizori] Rețea indisponibilă, încerc cache local...', fErr.message);
-                fr = await ZFlowIDB.getAll('furnizori').catch(() => []);
-                fp = await ZFlowIDB.getAll('facturi_platit').catch(() => []);
-            }
-            ZFlowStore.dateFacturiPlatit = fp || [];
-            const aziF = new Date(); aziF.setHours(0, 0, 0, 0);
-            ZFlowStore.dateFurnizori = (fr || []).map(furn => {
-                const fps = ZFlowStore.dateFacturiPlatit.filter(fp2 => String(fp2.furnizor_id) === String(furn.id));
-                const sold = fps.filter(fp2 => fp2.status_plata !== 'Platit').reduce((sum, fp2) => sum + (Number(fp2.valoare) || 0), 0);
-                const sumaScadenta = fps.reduce((acc, fac) => {
-                    if (fac.status_plata !== 'Platit' && fac.data_scadenta) {
-                        const d = new Date(fac.data_scadenta); d.setHours(0, 0, 0, 0);
-                        if (d < aziF) return acc + (Number(fac.valoare) || 0);
-                    }
-                    return acc;
-                }, 0);
-                return { ...furn, facturi: fps, sold, sumaScadenta };
-            });
-            // Demo mode: golire furnizori la prima pornire
-            if (ZFlowStore.userSession?.isDemo && ZFlowStore._demoFurnizori === undefined) {
-                ZFlowStore.dateFurnizori = [];
-                ZFlowStore.dateFacturiPlatit = [];
-                ZFlowStore._demoFurnizori = [];
-                ZFlowStore._demoFacturiPlatit = [];
-            }
-            renderFurnizori();
-            updateFurnizoriKPI();
-        } catch (furnErr) {
-            console.warn('⚠️ Eroare furnizori (non-fatal):', furnErr.message);
-        }
+        renderFurnizori();
+        updateFurnizoriKPI();
 
         // === Depozit & Logistic (non-fatal) ===
         try {
@@ -655,6 +652,19 @@ async function init(goHome = true) {
     } finally {
         setLoader(false);
     }
+
+    // [PERF-FIX] FIX 5 — cache referințe DOM stabile, populate după ce DOM-ul este gata
+    window._DOM = {
+        listaFirme:     document.getElementById('lista-firme-global'),
+        listaFurnizori: document.getElementById('lista-furnizori-global'),
+        totalGeneral:   document.getElementById('total-general'),
+        searchFirme:    document.getElementById('search-firme'),
+        searchFurnizori:document.getElementById('search-furnizori'),
+        tabFinanciar:   document.getElementById('tab-financiar'),
+        tabFurnizori:   document.getElementById('tab-furnizori'),
+        tabDepozit:     document.getElementById('tab-depozit'),
+        tabLogistic:    document.getElementById('tab-logistic'),
+    };
 
     comutaVedereFin("firme", false);
     updateDateLabels();
@@ -1550,11 +1560,46 @@ window.setBIRange = setBIRange;
 // RENDER CLIENȚI
 // ==========================================
 
+// [PERF-FIX] FIX 4 — throttle render via requestAnimationFrame
+// Evită render-uri redundante cauzate de event-uri rapide (Realtime, CRUD)
+const _renderThrottle = { main: false, furnizori: false, facturi: false };
+
+function renderMainThrottled() {
+    if (_renderThrottle.main) return; // render deja programat pentru acest frame
+    _renderThrottle.main = true;
+    requestAnimationFrame(() => { renderMain(); _renderThrottle.main = false; });
+}
+
+function renderFurnizoriThrottled() {
+    if (_renderThrottle.furnizori) return; // render deja programat pentru acest frame
+    _renderThrottle.furnizori = true;
+    requestAnimationFrame(() => { renderFurnizori(); _renderThrottle.furnizori = false; });
+}
+
+// [QUALITY-FIX] FIX 6 — recompilează dateFurnizori din store curent fără fetch din DB
+// Folosit după operații optimiste CRUD pe furnizori și facturi_platit
+function _recomputeFurnizoriData() {
+    const azi = new Date(); azi.setHours(0, 0, 0, 0);
+    ZFlowStore.dateFurnizori = ZFlowStore.dateFurnizori.map(furn => {
+        const fps = (ZFlowStore.dateFacturiPlatit || []).filter(fp2 => String(fp2.furnizor_id) === String(furn.id));
+        const sold = fps.filter(fp2 => fp2.status_plata !== "Platit").reduce((s, fp2) => s + (Number(fp2.valoare) || 0), 0);
+        const sumaScadenta = fps.reduce((acc, fac) => {
+            if (fac.status_plata !== "Platit" && fac.data_scadenta) {
+                const d = new Date(fac.data_scadenta); d.setHours(0, 0, 0, 0);
+                if (d < azi) return acc + (Number(fac.valoare) || 0);
+            }
+            return acc;
+        }, 0);
+        return { ...furn, facturi: fps, sold, sumaScadenta };
+    });
+}
+
 /**
  * Renderizează lista principală de clienți
  */
 function renderMain(lista = null) {
-    const container = document.getElementById("lista-firme-global");
+    // [PERF-FIX] FIX 5 — referință DOM cached; fallback la getElementById dacă cache nu e populat
+    const container = window._DOM?.listaFirme || document.getElementById("lista-firme-global");
     let sursa = lista || ZFlowStore.dateLocal;
     if (!container) return;
 
@@ -1687,7 +1732,8 @@ const filtreazaListaFirmeDebounced = debounce(function () {
 
 
 function renderFurnizori(lista) {
-    const container = document.getElementById("lista-furnizori-global");
+    // [PERF-FIX] FIX 5 — referință DOM cached; fallback la getElementById dacă cache nu e populat
+    const container = window._DOM?.listaFurnizori || document.getElementById("lista-furnizori-global");
     const sursa = lista || ZFlowStore.dateFurnizori;
     if (!container) return;
 
@@ -2074,30 +2120,22 @@ async function salveazaFurnizor() {
 
         if (id) {
             await ZFlowDB.updateFurnizor(id, payload);
+            // [QUALITY-FIX] FIX 6 — actualizare optimistă în store, fără re-fetch din DB
+            const fIdx = ZFlowStore.dateFurnizori.findIndex(f => String(f.id) === String(id));
+            if (fIdx !== -1) ZFlowStore.dateFurnizori[fIdx] = { ...ZFlowStore.dateFurnizori[fIdx], ...payload };
             showNotification("Furnizor actualizat!", "success");
         } else {
-            await ZFlowDB.insertFurnizor(payload);
+            const newId = await ZFlowDB.insertFurnizor(payload);
+            // [QUALITY-FIX] FIX 6 — insert optimist în store, fără re-fetch din DB
+            ZFlowStore.dateFurnizori = [
+                { ...payload, id: newId, facturi: [], sold: 0, sumaScadenta: 0, created_at: new Date().toISOString() },
+                ...ZFlowStore.dateFurnizori
+            ];
             showNotification("Furnizor adăugat!", "success");
         }
 
         inchideModal("modal-furnizor");
-        // Reîncarcă furnizori
-        const fr = await ZFlowDB.fetchFurnizori();
-        ZFlowStore.dateFacturiPlatit = ZFlowStore.dateFacturiPlatit || [];
-        const azi = new Date(); azi.setHours(0,0,0,0);
-        ZFlowStore.dateFurnizori = fr.map(furn => {
-            const fps = ZFlowStore.dateFacturiPlatit.filter(fp2 => String(fp2.furnizor_id) === String(furn.id));
-            const sold = fps.filter(fp2 => fp2.status_plata !== "Platit").reduce((s, fp2) => s + (Number(fp2.valoare) || 0), 0);
-            const sumaScadenta = fps.reduce((acc, fac) => {
-                if (fac.status_plata !== "Platit" && fac.data_scadenta) {
-                    const d = new Date(fac.data_scadenta); d.setHours(0,0,0,0);
-                    if (d < azi) return acc + (Number(fac.valoare) || 0);
-                }
-                return acc;
-            }, 0);
-            return { ...furn, facturi: fps, sold, sumaScadenta };
-        });
-        renderFurnizori();
+        renderFurnizoriThrottled();
         updateFurnizoriKPI();
         invalidateCashflowCache();
         incarcaDashboard(); // Actualizează chart Home după modificare furnizor
@@ -2122,25 +2160,14 @@ function stergeFurnizorModal() {
             try {
                 await ZFlowDB.deleteFurnizor(id);
                 inchideModal("modal-furnizor");
-                const fr = await ZFlowDB.fetchFurnizori();
-                const fp = await ZFlowDB.fetchFacturiPlatit();
-                ZFlowStore.dateFacturiPlatit = fp || [];
-                const azi = new Date(); azi.setHours(0,0,0,0);
-                ZFlowStore.dateFurnizori = fr.map(furn => {
-                    const fps = ZFlowStore.dateFacturiPlatit.filter(fp2 => String(fp2.furnizor_id) === String(furn.id));
-                    const sold = fps.filter(fp2 => fp2.status_plata !== "Platit").reduce((s, fp2) => s + (Number(fp2.valoare) || 0), 0);
-                    const sumaScadenta = fps.reduce((acc, fac) => {
-                        if (fac.status_plata !== "Platit" && fac.data_scadenta) {
-                            const d = new Date(fac.data_scadenta); d.setHours(0,0,0,0);
-                            if (d < azi) return acc + (Number(fac.valoare) || 0);
-                        }
-                        return acc;
-                    }, 0);
-                    return { ...furn, facturi: fps, sold, sumaScadenta };
-                });
+                // [QUALITY-FIX] FIX 6 — ștergere optimistă din store, fără re-fetch din DB
+                ZFlowStore.dateFurnizori = ZFlowStore.dateFurnizori.filter(f => String(f.id) !== String(id));
+                ZFlowStore.dateFacturiPlatit = (ZFlowStore.dateFacturiPlatit || []).filter(fp2 => String(fp2.furnizor_id) !== String(id));
                 comutaVedereFin("furnizori");
-                renderFurnizori();
+                renderFurnizoriThrottled();
                 updateFurnizoriKPI();
+                invalidateCashflowCache();
+                incarcaDashboard(); // Actualizează chart Home
                 showNotification("Furnizor șters!", "success");
             } catch (err) {
                 showNotification("Eroare: " + err.message, "error");
@@ -2160,24 +2187,13 @@ function stergeFurnizorDirect(id) {
         setLoader(true);
         try {
             await ZFlowDB.deleteFurnizor(id);
-            const fr = await ZFlowDB.fetchFurnizori();
-            const fp = await ZFlowDB.fetchFacturiPlatit();
-            ZFlowStore.dateFacturiPlatit = fp || [];
-            const azi = new Date(); azi.setHours(0,0,0,0);
-            ZFlowStore.dateFurnizori = fr.map(furn => {
-                const fps = ZFlowStore.dateFacturiPlatit.filter(fp2 => String(fp2.furnizor_id) === String(furn.id));
-                const sold = fps.filter(fp2 => fp2.status_plata !== 'Platit').reduce((s, fp2) => s + (Number(fp2.valoare) || 0), 0);
-                const sumaScadenta = fps.reduce((acc, fac) => {
-                    if (fac.status_plata !== 'Platit' && fac.data_scadenta) {
-                        const d = new Date(fac.data_scadenta); d.setHours(0,0,0,0);
-                        if (d < azi) return acc + (Number(fac.valoare) || 0);
-                    }
-                    return acc;
-                }, 0);
-                return { ...furn, facturi: fps, sold, sumaScadenta };
-            });
-            renderFurnizori();
+            // [QUALITY-FIX] FIX 6 — ștergere optimistă din store, fără re-fetch din DB
+            ZFlowStore.dateFurnizori = ZFlowStore.dateFurnizori.filter(f => String(f.id) !== String(id));
+            ZFlowStore.dateFacturiPlatit = (ZFlowStore.dateFacturiPlatit || []).filter(fp2 => String(fp2.furnizor_id) !== String(id));
+            renderFurnizoriThrottled();
             updateFurnizoriKPI();
+            invalidateCashflowCache();
+            incarcaDashboard(); // Actualizează chart Home
             showNotification('Furnizor șters!', 'success');
         } catch (err) { showNotification('Eroare: ' + err.message, 'error'); }
         finally { setLoader(false); }
@@ -2391,11 +2407,9 @@ async function salveazaFacturaNou() {
             if (!clientId) { showNotification("Selectează un client!", "error"); setLoader(false); return; }
             await ZFlowDB.insertFactura({
                 client_id: clientId,
-                numar_factura: nr || null,
-                nr_factura: nr || null,
+                numar_factura: nr || null, // [QUALITY-FIX] FIX 7 — eliminat alias deprecat nr_factura
                 valoare: val,
-                data_emiterii: emisie,
-                data_emitere: emisie,
+                data_emiterii: emisie,     // [QUALITY-FIX] FIX 7 — eliminat alias deprecat data_emitere
                 data_scadenta: scad,
                 note,
                 status_plata: "Neincasat",
@@ -2407,11 +2421,14 @@ async function salveazaFacturaNou() {
             if (!furnizorId) { showNotification("Selectează un furnizor!", "error"); setLoader(false); return; }
             await ZFlowDB.insertFacturaPlatit({
                 furnizor_id: furnizorId,
-                numar_factura: nr || null,
-                nr_factura: nr || null,
+                numar_factura: nr || null, // [QUALITY-FIX] FIX 7 — eliminat alias deprecat nr_factura
                 valoare: val,
-                data_emiterii: emisie,
-                data_emitere: emisie,
+                data_emiterii: emisie,     // [QUALITY-FIX] FIX 7 — eliminat alias deprecat data_emitere
+                data_scadenta: scad,
+                note,
+                status_plata: "Neplatit",
+                updated_at: new Date().toISOString()
+            });
                 data_scadenta: scad,
                 note,
                 status_plata: "Neplatit",
@@ -2966,9 +2983,17 @@ async function salveazaFacturaPlatit() {
 
         if (id) {
             await ZFlowDB.updateFacturaPlatit(id, payload);
+            // [QUALITY-FIX] FIX 6 — actualizare optimistă în store, fără re-fetch din DB
+            const fpIdx = (ZFlowStore.dateFacturiPlatit || []).findIndex(f => String(f.id) === String(id));
+            if (fpIdx !== -1) ZFlowStore.dateFacturiPlatit[fpIdx] = { ...ZFlowStore.dateFacturiPlatit[fpIdx], ...payload };
             showNotification("Factură actualizată!", "success");
         } else {
-            await ZFlowDB.insertFacturaPlatit(payload);
+            const newId = await ZFlowDB.insertFacturaPlatit(payload);
+            // [QUALITY-FIX] FIX 6 — insert optimist în store, fără re-fetch din DB
+            ZFlowStore.dateFacturiPlatit = [
+                { ...payload, id: newId || ('tmp_' + Date.now()), created_at: new Date().toISOString() },
+                ...(ZFlowStore.dateFacturiPlatit || [])
+            ];
             showNotification("Factură adăugată!", "success");
         }
 
@@ -2976,23 +3001,9 @@ async function salveazaFacturaPlatit() {
         inchideModal("modal-factura-platit");
         if (!id) showCorrelationPrompt('intrare', { obs: payload.numar_factura ? 'Ref. factura ' + payload.numar_factura : '' });
 
-        // Reîncarcă
-        const fp = await ZFlowDB.fetchFacturiPlatit();
-        ZFlowStore.dateFacturiPlatit = fp || [];
-        const azi = new Date(); azi.setHours(0,0,0,0);
-        ZFlowStore.dateFurnizori = ZFlowStore.dateFurnizori.map(furn => {
-            const fps = ZFlowStore.dateFacturiPlatit.filter(fp2 => String(fp2.furnizor_id) === String(furn.id));
-            const sold = fps.filter(fp2 => fp2.status_plata !== "Platit").reduce((s, fp2) => s + (Number(fp2.valoare) || 0), 0);
-            const sumaScadenta = fps.reduce((acc, fac) => {
-                if (fac.status_plata !== "Platit" && fac.data_scadenta) {
-                    const d = new Date(fac.data_scadenta); d.setHours(0,0,0,0);
-                    if (d < azi) return acc + (Number(fac.valoare) || 0);
-                }
-                return acc;
-            }, 0);
-            return { ...furn, facturi: fps, sold, sumaScadenta };
-        });
-        renderFurnizori();
+        // [QUALITY-FIX] FIX 6 — recompilează dateFurnizori din store curent, fără fetchFacturiPlatit()
+        _recomputeFurnizoriData();
+        renderFurnizoriThrottled();
         updateFurnizoriKPI();
         invalidateCashflowCache();
         incarcaDashboard(); // Actualizează chart Home cu datele noi
@@ -3017,22 +3028,10 @@ function stergeFacturaPlatitModal() {
             try {
                 await ZFlowDB.deleteFacturaPlatit(id);
                 inchideModal("modal-factura-platit");
-                const fp = await ZFlowDB.fetchFacturiPlatit();
-                ZFlowStore.dateFacturiPlatit = fp || [];
-                const azi = new Date(); azi.setHours(0,0,0,0);
-                ZFlowStore.dateFurnizori = ZFlowStore.dateFurnizori.map(furn => {
-                    const fps = ZFlowStore.dateFacturiPlatit.filter(fp2 => String(fp2.furnizor_id) === String(furn.id));
-                    const sold = fps.filter(fp2 => fp2.status_plata !== "Platit").reduce((s, fp2) => s + (Number(fp2.valoare) || 0), 0);
-                    const sumaScadenta = fps.reduce((acc, fac) => {
-                        if (fac.status_plata !== "Platit" && fac.data_scadenta) {
-                            const d = new Date(fac.data_scadenta); d.setHours(0,0,0,0);
-                            if (d < azi) return acc + (Number(fac.valoare) || 0);
-                        }
-                        return acc;
-                    }, 0);
-                    return { ...furn, facturi: fps, sold, sumaScadenta };
-                });
-                renderFurnizori();
+                // [QUALITY-FIX] FIX 6 — ștergere optimistă din store, fără re-fetch din DB
+                ZFlowStore.dateFacturiPlatit = (ZFlowStore.dateFacturiPlatit || []).filter(f => String(f.id) !== String(id));
+                _recomputeFurnizoriData();
+                renderFurnizoriThrottled();
                 updateFurnizoriKPI();
                 invalidateCashflowCache();
                 incarcaDashboard(); // Actualizează chart Home
@@ -5880,6 +5879,10 @@ async function importaDateSaga(tipImport = 'clienti') {
                         ]);
                         ZFlowStore.dateFacturiBI = fcRes.data || [];
                         ZFlowStore._facturiTotal = fcRes.count || 0;
+                        // [PERF-FIX] FIX 2 — avertizare limită 500 facturi după import
+                        if (fcRes.count > 500) {
+                            showNotification(`Afișezi 500 din ${fcRes.count} facturi. Folosiți filtrul de client pentru a vedea toate facturile.`, 'warning');
+                        }
                         const aziR = new Date(); aziR.setHours(0, 0, 0, 0);
                         ZFlowStore.dateLocal = (clNew || []).map(c => {
                             const fcs = ZFlowStore.dateFacturiBI.filter(f => String(f.client_id) === String(c.id));

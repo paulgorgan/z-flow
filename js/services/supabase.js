@@ -7,7 +7,14 @@ const URL_Z = "https://exrypxknksgrtrwnbtrl.supabase.co";
 // KEY_Z este cheia "publishable" (anon/public) — intenționat vizibilă pe client.
 // Securitatea datelor este asigurată prin politicile RLS (Row Level Security) din Supabase,
 // nu prin ascunderea acestei chei. Fiecare utilizator vede strict propriile rânduri (user_id = auth.uid()).
-const KEY_Z = "sb_publishable_nKFEv_6AOyKBFp3f_AnZmw_MMZ9MXl5";
+// [SEC-FIX] Cheia poate fi injectată extern — în producție folosiți:
+//   <meta name="zflow-key" content="CHEIA_TA"> în index.html
+//   sau window.__ZFLOW_CONFIG__ = { supabaseKey: 'CHEIA_TA' } dintr-un script server-side.
+const KEY_Z = (
+    window.__ZFLOW_CONFIG__?.supabaseKey ||
+    document.querySelector('meta[name="zflow-key"]')?.getAttribute('content') ||
+    "sb_publishable_nKFEv_6AOyKBFp3f_AnZmw_MMZ9MXl5" // fallback development
+);
 
 // Inițializăm clientul Supabase
 const zf = supabase.createClient(URL_Z, KEY_Z);
@@ -108,6 +115,9 @@ const _demoLS = {
 };
 
 const _demoOps = {
+    // [PERF-FIX] Cache pentru _restore() — evită citiri redundante din localStorage per sesiune
+    _restoreCache: new Set(),
+
     /** true dacă utilizatorul curent NU este autentificat Supabase (admin local SAU demo) */
     isLocal() {
         const e = window.ZFlowStore?.userSession?.user?.email;
@@ -129,11 +139,14 @@ const _demoOps = {
      * Apelat înainte de orice operație care citește datele.
      */
     _restore(lsKey, storeKey) {
+        // [PERF-FIX] dacă storeKey e deja restaurat în această sesiune, nu mai citi din localStorage
+        if (this._restoreCache.has(storeKey)) return;
         if (this.isAdminLocal() && window.ZFlowStore[storeKey] === undefined)
             window.ZFlowStore[storeKey] = _adminLS.get(lsKey) || [];
         if (this.isDemo() && window.ZFlowStore[storeKey] === undefined)
             window.ZFlowStore[storeKey] = _demoLS.get(lsKey) || [];
         if (!window.ZFlowStore[storeKey]) window.ZFlowStore[storeKey] = [];
+        this._restoreCache.add(storeKey); // marchează ca restaurat în această sesiune
     },
     /** Salvează în localStorage — admin → zflow_ad_, demo → zflow_dm_. */
     _persist(lsKey, storeKey) {
@@ -228,8 +241,10 @@ const _demoOps = {
     // ── CRUD facturi de plătit ────────────────────────────────────────
     insertFacturaPlatit(payload) {
         this._restore('facturi_platit', '_demoFacturiPlatit');
-        window.ZFlowStore._demoFacturiPlatit.push({ ...payload, id: 'fpDemo' + Date.now(), created_at: new Date().toISOString() });
+        const id = 'fpDemo' + Date.now();
+        window.ZFlowStore._demoFacturiPlatit.push({ ...payload, id, created_at: new Date().toISOString() });
         this._persist('facturi_platit', '_demoFacturiPlatit');
+        return id; // [QUALITY-FIX] returnează ID-ul nou — necesar pentru optimistic insert în FIX 6
     },
     updateFacturaPlatit(id, payload) {
         this._restore('facturi_platit', '_demoFacturiPlatit');
@@ -357,16 +372,21 @@ Object.assign(_demoOps, {
 
 /**
  * Normalizează câmpurile facturilor pentru compatibilitate cu ambele convenții de denumire
- * (DB: numar_factura/valoare/data_emiterii  ↔  legacy: nr_factura/suma/data_emitere)
+ * (DB canonical: numar_factura/valoare/data_emiterii  ↔  legacy: nr_factura/suma/data_emitere)
+ * [QUALITY-FIX] nr_factura, suma și data_emitere sunt alias-uri DEPRECATE.
+ * Vor fi eliminate după migrarea completă a codului la câmpurile canonice.
  */
 function _normalizeFacturi(arr) {
     return (arr || []).map(f => ({
         ...f,
         numar_factura:  f.numar_factura  || f.nr_factura    || '',
+        // DEPRECATED: nr_factura → folosiți numar_factura
         nr_factura:     f.nr_factura     || f.numar_factura  || '',
         valoare:        f.valoare        != null ? f.valoare        : (f.suma        != null ? f.suma        : 0),
+        // DEPRECATED: suma → folosiți valoare
         suma:           f.suma           != null ? f.suma           : (f.valoare     != null ? f.valoare     : 0),
         data_emiterii:  f.data_emiterii  || f.data_emitere  || '',
+        // DEPRECATED: data_emitere → folosiți data_emiterii
         data_emitere:   f.data_emitere   || f.data_emiterii || '',
     }));
 }
@@ -389,6 +409,9 @@ async function fetchClienti() {
 
 /**
  * Încarcă toate facturile din baza de date
+ * @deprecated Folosiți fetchFacturiPaginated() pentru fetch la init.
+ * Handler-ele Realtime folosesc acum update incremental din payload (după FIX 3).
+ * [QUALITY-FIX] Această funcție rămâne disponibilă pentru cazuri specifice (ex: export complet).
  */
 async function fetchFacturi() {
     if (_demoOps.isLocal()) {
@@ -592,6 +615,8 @@ async function signUp(email, password, metadata = {}) {
  * Deconectare
  */
 async function signOut() {
+    // [PERF-FIX] golește cache _restore la deconectare — sesiunea nouă va reîncărca din localStorage
+    _demoOps._restoreCache.clear();
     const { error } = await zf.auth.signOut();
     if (error) throw error;
 }
@@ -781,19 +806,22 @@ async function fetchFacturiPlatit() {
 
 /**
  * Inserează o factură de plătit
+ * Returnează ID-ul noii înregistrări (folosit de optimistic update din FIX 6)
  */
 async function insertFacturaPlatit(payload, strict = false) {
-    if (_demoOps.isDemo()) { _demoOps.insertFacturaPlatit(payload); return; }
-    if (_demoOps.isLocal()) { _demoOps.insertFacturaPlatit(payload); return; }
+    if (_demoOps.isDemo()) { return _demoOps.insertFacturaPlatit(payload); }
+    if (_demoOps.isLocal()) { return _demoOps.insertFacturaPlatit(payload); }
     const uid = _getCurrentUserId();
     const p = { ...payload, user_id: uid };
     try {
-        const { error } = await zf.from("facturi_platit").insert([p]);
+        // [QUALITY-FIX] select('id') returnează ID-ul noii înregistrări pentru optimistic insert
+        const { data, error } = await zf.from("facturi_platit").insert([p]).select('id').single();
         if (error) throw error;
+        return data?.id;
     } catch(e) {
         if (strict) throw e;
         console.warn('[insertFacturaPlatit] Supabase failed, fallback local:', e.message);
-        _demoOps.insertFacturaPlatit(payload);
+        return _demoOps.insertFacturaPlatit(payload);
     }
 }
 
@@ -963,31 +991,112 @@ function initRealtimeSubscriptions() {
     if (!zf) return;
     if (_realtimeChannel) return; // deja subscris
 
+    // [PERF-FIX] Handler-e separate INSERT/UPDATE/DELETE — actualizează store incremental
+    // fără re-fetch complet din DB, reducesând inutile round-trip-uri de rețea
     _realtimeChannel = zf.channel('zflow-realtime-v1')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'clienti' }, () => {
-            ZFlowDB.fetchClienti().then(d => {
-                if (window.ZFlowStore) window.ZFlowStore.dateLocal = d;
-                if (typeof renderClienti === 'function') renderClienti();
-            }).catch(() => {});
+        // ── clienti ──
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'clienti' }, (payload) => {
+            // [PERF-FIX] Adaugă incremental în store — fără fetch complet
+            if (window.ZFlowStore) {
+                window.ZFlowStore.dateLocal = [
+                    { ...payload.new, facturi: [], sold: 0, sumaScadenta: 0 },
+                    ...(window.ZFlowStore.dateLocal || [])
+                ];
+            }
+            if (typeof renderMain === 'function') renderMain();
         })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'facturi' }, () => {
-            ZFlowDB.fetchFacturi().then(d => {
-                if (window.ZFlowStore) window.ZFlowStore.dateFacturiBI = d;
-                if (typeof renderFacturi === 'function') renderFacturi();
-                if (typeof verificaScadenteNotificari === 'function') verificaScadenteNotificari();
-            }).catch(() => {});
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'clienti' }, (payload) => {
+            // [PERF-FIX] Actualizare incrementală — păstrează câmpurile computate (facturi, sold)
+            if (window.ZFlowStore?.dateLocal) {
+                const i = window.ZFlowStore.dateLocal.findIndex(c => String(c.id) === String(payload.new.id));
+                if (i !== -1) window.ZFlowStore.dateLocal[i] = { ...window.ZFlowStore.dateLocal[i], ...payload.new };
+            }
+            if (typeof renderMain === 'function') renderMain();
         })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'furnizori' }, () => {
-            ZFlowDB.fetchFurnizori().then(d => {
-                if (window.ZFlowStore) window.ZFlowStore.dateFurnizori = d;
-                if (typeof renderFurnizori === 'function') renderFurnizori();
-            }).catch(() => {});
+        .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'clienti' }, (payload) => {
+            // [PERF-FIX] Ștergere incrementală din store
+            if (window.ZFlowStore?.dateLocal) {
+                window.ZFlowStore.dateLocal = window.ZFlowStore.dateLocal.filter(c => String(c.id) !== String(payload.old.id));
+            }
+            if (typeof renderMain === 'function') renderMain();
         })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'facturi_platit' }, () => {
-            ZFlowDB.fetchFacturiPlatit().then(d => {
-                if (window.ZFlowStore) window.ZFlowStore.dateFacturiPlatit = d;
-                if (typeof renderFurnizori === 'function') renderFurnizori();
-            }).catch(() => {});
+        // ── facturi ──
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'facturi' }, (payload) => {
+            // [PERF-FIX] Adaugă incremental factură în store + normalizează câmpurile
+            if (window.ZFlowStore) {
+                const newFact = _normalizeFacturi([payload.new])[0];
+                window.ZFlowStore.dateFacturiBI = [newFact, ...(window.ZFlowStore.dateFacturiBI || [])];
+            }
+            if (typeof renderMain === 'function') renderMain();
+            if (typeof verificaScadenteNotificari === 'function') verificaScadenteNotificari();
+        })
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'facturi' }, (payload) => {
+            // [PERF-FIX] Actualizare incrementală factură cu normalizare câmpuri
+            if (window.ZFlowStore?.dateFacturiBI) {
+                const normalized = _normalizeFacturi([payload.new])[0];
+                const i = window.ZFlowStore.dateFacturiBI.findIndex(f => String(f.id) === String(payload.new.id));
+                if (i !== -1) window.ZFlowStore.dateFacturiBI[i] = normalized;
+            }
+            if (typeof renderMain === 'function') renderMain();
+            if (typeof verificaScadenteNotificari === 'function') verificaScadenteNotificari();
+        })
+        .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'facturi' }, (payload) => {
+            // [PERF-FIX] Ștergere incrementală factură din store
+            if (window.ZFlowStore?.dateFacturiBI) {
+                window.ZFlowStore.dateFacturiBI = window.ZFlowStore.dateFacturiBI.filter(f => String(f.id) !== String(payload.old.id));
+            }
+            if (typeof renderMain === 'function') renderMain();
+        })
+        // ── furnizori ──
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'furnizori' }, (payload) => {
+            // [PERF-FIX] Adaugă incremental furnizor în store
+            if (window.ZFlowStore) {
+                window.ZFlowStore.dateFurnizori = [
+                    { ...payload.new, facturi: [], sold: 0, sumaScadenta: 0 },
+                    ...(window.ZFlowStore.dateFurnizori || [])
+                ];
+            }
+            if (typeof renderFurnizori === 'function') renderFurnizori();
+        })
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'furnizori' }, (payload) => {
+            // [PERF-FIX] Actualizare incrementală furnizor — păstrează câmpurile computate
+            if (window.ZFlowStore?.dateFurnizori) {
+                const i = window.ZFlowStore.dateFurnizori.findIndex(f => String(f.id) === String(payload.new.id));
+                if (i !== -1) window.ZFlowStore.dateFurnizori[i] = { ...window.ZFlowStore.dateFurnizori[i], ...payload.new };
+            }
+            if (typeof renderFurnizori === 'function') renderFurnizori();
+        })
+        .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'furnizori' }, (payload) => {
+            // [PERF-FIX] Ștergere incrementală furnizor din store
+            if (window.ZFlowStore?.dateFurnizori) {
+                window.ZFlowStore.dateFurnizori = window.ZFlowStore.dateFurnizori.filter(f => String(f.id) !== String(payload.old.id));
+            }
+            if (typeof renderFurnizori === 'function') renderFurnizori();
+        })
+        // ── facturi_platit ──
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'facturi_platit' }, (payload) => {
+            // [PERF-FIX] Adaugă incremental factură de plătit în store + normalizează
+            if (window.ZFlowStore) {
+                const newFP = _normalizeFacturi([payload.new])[0];
+                window.ZFlowStore.dateFacturiPlatit = [newFP, ...(window.ZFlowStore.dateFacturiPlatit || [])];
+            }
+            if (typeof renderFurnizori === 'function') renderFurnizori();
+        })
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'facturi_platit' }, (payload) => {
+            // [PERF-FIX] Actualizare incrementală factură de plătit
+            if (window.ZFlowStore?.dateFacturiPlatit) {
+                const normalized = _normalizeFacturi([payload.new])[0];
+                const i = window.ZFlowStore.dateFacturiPlatit.findIndex(f => String(f.id) === String(payload.new.id));
+                if (i !== -1) window.ZFlowStore.dateFacturiPlatit[i] = normalized;
+            }
+            if (typeof renderFurnizori === 'function') renderFurnizori();
+        })
+        .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'facturi_platit' }, (payload) => {
+            // [PERF-FIX] Ștergere incrementală factură de plătit din store
+            if (window.ZFlowStore?.dateFacturiPlatit) {
+                window.ZFlowStore.dateFacturiPlatit = window.ZFlowStore.dateFacturiPlatit.filter(f => String(f.id) !== String(payload.old.id));
+            }
+            if (typeof renderFurnizori === 'function') renderFurnizori();
         })
         .subscribe((status, err) => {
             if (status === 'SUBSCRIBED') {
