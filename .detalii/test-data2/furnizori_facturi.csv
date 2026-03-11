@@ -1,0 +1,19 @@
+CUI,DENUMIRE,ADRESA,LOCALITATE,JUDET,NR. FACTURA,DATA EMITERE,DATA SCADENTA,VALOARE,STATUS,DESCRIERE
+RO60708192,MetalPrim SRL,Str. Industriilor nr. 3,Cluj-Napoca,Cluj,MP-2026-F001,15.01.2026,14.02.2026,15200.00,Platit,Tabla zincata lot 1 - achitat
+RO60708192,MetalPrim SRL,Str. Industriilor nr. 3,Cluj-Napoca,Cluj,MP-2026-F002,28.01.2026,27.02.2026,8900.00,,Profile aluminiu - RESTANT (scadenta depasita)
+RO60708192,MetalPrim SRL,Str. Industriilor nr. 3,Cluj-Napoca,Cluj,MP-2026-F003,15.02.2026,17.03.2026,19400.00,,Tabla inox si accesorii - scadent curand
+RO60708192,MetalPrim SRL,Str. Industriilor nr. 3,Cluj-Napoca,Cluj,MP-2026-F004,28.02.2026,30.03.2026,12500.00,,Otel laminat comenzi speciale - scadenta viitoare
+RO70819203,UniTrans SRL,Bd. Independentei nr. 77,Ploiesti,Prahova,UT-2026-F001,10.01.2026,09.02.2026,4800.00,Platit,Transport marfa rutier ianuarie - achitat
+RO70819203,UniTrans SRL,Bd. Independentei nr. 77,Ploiesti,Prahova,UT-2026-F002,25.01.2026,24.02.2026,3600.00,,Transport distributie zona Muntenia - RESTANT
+RO70819203,UniTrans SRL,Bd. Independentei nr. 77,Ploiesti,Prahova,UT-2026-F003,10.02.2026,12.03.2026,5200.00,,Transport urgent zona Moldova - scadent curand
+RO70819203,UniTrans SRL,Bd. Independentei nr. 77,Ploiesti,Prahova,UT-2026-F004,25.02.2026,27.03.2026,3100.00,,Transport marfa retur si livrari - scadenta viitoare
+RO80920314,LuminaTech SRL,Aleea Electrica nr. 14,Pitesti,Arges,LT-2026-F001,05.01.2026,04.02.2026,22000.00,Platit,Corpuri iluminat LED industrial - achitat
+RO80920314,LuminaTech SRL,Aleea Electrica nr. 14,Pitesti,Arges,LT-2026-F002,20.01.2026,19.02.2026,8500.00,,Tablouri electrice - RESTANT (scadenta depasita)
+RO80920314,LuminaTech SRL,Aleea Electrica nr. 14,Pitesti,Arges,LT-2026-F003,05.02.2026,07.03.2026,6700.00,,Cabluri si echipamente - scadent curand
+RO80920314,LuminaTech SRL,Aleea Electrica nr. 14,Pitesti,Arges,LT-2026-F004,20.02.2026,22.03.2026,9800.00,,Sisteme UPS si protectie - scadenta viitoare
+RO91031425,PackSmart SRL,Str. Ambalajelor nr. 9,Buzau,Buzau,PS-2026-F001,12.01.2026,11.02.2026,3200.00,Platit,Cutii carton 3 straturi - achitat
+RO91031425,PackSmart SRL,Str. Ambalajelor nr. 9,Buzau,Buzau,PS-2026-F002,25.01.2026,24.02.2026,4500.00,,Folie stretch si paleti - RESTANT (scadenta depasita)
+RO91031425,PackSmart SRL,Str. Ambalajelor nr. 9,Buzau,Buzau,PS-2026-F003,15.02.2026,17.03.2026,2760.00,,Ambalaje speciale comanda - scadenta viitoare
+RO12345098,CloudHost SRL,Str. Serverelor nr. 1,Bucuresti,Ilfov,CH-2026-F001,05.01.2026,04.02.2026,9600.00,Platit,Abonament hosting si CDN anual - achitat
+RO12345098,CloudHost SRL,Str. Serverelor nr. 1,Bucuresti,Ilfov,CH-2026-F002,05.02.2026,07.03.2026,5400.00,Platit,Support tehnic si mentenanta Q1 - achitat
+RO12345098,CloudHost SRL,Str. Serverelor nr. 1,Bucuresti,Ilfov,CH-2026-F003,05.03.2026,04.04.2026,5400.00,,Abonament lunar martie 2026 - scadenta viitoare
