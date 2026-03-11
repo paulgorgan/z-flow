@@ -300,6 +300,7 @@ function arataDetaliiFurnizor(id) {
     const cardEl = document.getElementById("card-detaliu-furnizor");
     if (cardEl) {
         const _esc = typeof escapeHTML === 'function' ? escapeHTML : (s => String(s||''));
+        const sumaScadenta = furnizor.sumaScadenta || 0;
         cardEl.innerHTML = `
             <div class="flex justify-between items-start mb-4">
                 <div>
@@ -315,10 +316,86 @@ function arataDetaliiFurnizor(id) {
                 ${furnizor.contact_email ? `<div><p class="text-red-300 text-[9px] uppercase font-bold">Email</p><p class="font-semibold truncate">${_esc(furnizor.contact_email)}</p></div>` : ""}
                 ${furnizor.iban ? `<div class="col-span-2"><p class="text-red-300 text-[9px] uppercase font-bold">IBAN</p><p class="font-semibold font-mono text-xs">${_esc(furnizor.iban)}</p></div>` : ""}
             </div>
-            <button onclick="deschideModalFacturaPlatit('${id}')" class="mt-5 w-full bg-white/10 hover:bg-white/20 text-white py-3 rounded-2xl text-[11px] font-bold uppercase transition-all flex items-center justify-center gap-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
-                Adaugă Factură de Plătit
-            </button>`;
+            ${sumaScadenta > 0 ? `
+            <div class="mt-4 py-3 px-4 bg-red-500/20 rounded-2xl border border-red-400/50 flex justify-between items-center animate-pulse">
+                <div class="flex items-center gap-2">
+                    <svg class="w-4 h-4 text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
+                    <p class="text-[8px] font-black text-red-300 uppercase tracking-widest">Facturi Depășite</p>
+                </div>
+                <p class="text-red-200 font-black text-[14px] leading-none">${Math.round(sumaScadenta).toLocaleString()} lei</p>
+            </div>` : ""}`;
+    }
+
+    // Secțiunea Istoric Plăți Furnizor
+    const istoricPlatiContainer = document.getElementById("istoric-plati-furnizor");
+    if (istoricPlatiContainer && furnizor.facturi && furnizor.facturi.length > 0) {
+        const facturiPlatite = furnizor.facturi.filter(fac => fac.status_plata === "Platit");
+        const facturiNeplatite = furnizor.facturi.filter(fac => fac.status_plata !== "Platit");
+        const totalPlatit = facturiPlatite.reduce((sum, fac) => sum + Number(fac.valoare || 0), 0);
+        const totalNeplatit = facturiNeplatite.reduce((sum, fac) => sum + Number(fac.valoare || 0), 0);
+        const rataPlata = furnizor.facturi.length > 0 ? Math.round((facturiPlatite.length / furnizor.facturi.length) * 100) : 0;
+
+        const ultimelePlati = facturiPlatite
+            .filter(fac => fac.data_plata)
+            .sort((a, b) => new Date(b.data_plata) - new Date(a.data_plata))
+            .slice(0, 5);
+
+        const _esc = typeof escapeHTML === 'function' ? escapeHTML : (s => String(s||''));
+        const timelineHtml = ultimelePlati.length > 0 ? ultimelePlati.map(fac => `
+            <div class="flex items-center gap-3 py-2 border-b border-slate-100 last:border-0">
+                <div class="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                    <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-[11px] font-bold text-slate-700 truncate">#${_esc(fac.numar_factura)}</p>
+                    <p class="text-[9px] text-slate-400">${formateazaDataZFlow(fac.data_plata)}</p>
+                </div>
+                <p class="text-[12px] font-black text-emerald-600">${Number(fac.valoare || 0).toLocaleString()} lei</p>
+            </div>
+        `).join('') : `
+            <div class="text-center py-4">
+                <p class="text-[10px] text-slate-400 italic">Nu există plăți înregistrate cu dată</p>
+            </div>
+        `;
+
+        istoricPlatiContainer.innerHTML = `
+            <div class="bg-white rounded-2xl border border-slate-100 p-4 mb-4">
+                <div class="flex items-center gap-2 mb-4">
+                    <svg class="w-4 h-4 text-red-800" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <h4 class="text-[11px] font-black text-slate-800 uppercase tracking-wider">Istoric Plăți</h4>
+                </div>
+                <div class="grid grid-cols-3 gap-2 mb-4">
+                    <div class="bg-emerald-50 rounded-xl p-3 text-center">
+                        <p class="text-[18px] font-black text-emerald-600">${rataPlata}%</p>
+                        <p class="text-[8px] font-bold text-emerald-700 uppercase">Rată plată</p>
+                    </div>
+                    <div class="bg-slate-50 rounded-xl p-3 text-center">
+                        <p class="text-[14px] font-black text-slate-700">${facturiPlatite.length}</p>
+                        <p class="text-[8px] font-bold text-slate-500 uppercase">Achitate</p>
+                    </div>
+                    <div class="bg-amber-50 rounded-xl p-3 text-center">
+                        <p class="text-[14px] font-black text-amber-600">${facturiNeplatite.length}</p>
+                        <p class="text-[8px] font-bold text-amber-700 uppercase">În așteptare</p>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <div class="flex justify-between text-[9px] font-bold mb-1">
+                        <span class="text-emerald-600">${totalPlatit.toLocaleString()} lei plătit</span>
+                        <span class="text-slate-400">${totalNeplatit.toLocaleString()} lei restant</span>
+                    </div>
+                    <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
+                        <div class="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full transition-all" style="width: ${rataPlata}%"></div>
+                    </div>
+                </div>
+                <div class="border-t border-slate-100 pt-3">
+                    <p class="text-[9px] font-bold text-slate-400 uppercase mb-2">Ultimele Plăți</p>
+                    ${timelineHtml}
+                </div>
+            </div>
+        `;
+        istoricPlatiContainer.classList.remove('hidden');
+    } else if (istoricPlatiContainer) {
+        istoricPlatiContainer.classList.add('hidden');
     }
 
     const listaEl = document.getElementById("lista-facturi-platit-detaliu");
@@ -350,6 +427,10 @@ function arataDetaliiFurnizor(id) {
                 const isPlatit = fac.status_plata === "Platit";
                 const isDepasit = !isPlatit && fac.data_scadenta && new Date(fac.data_scadenta).setHours(0,0,0,0) < azi;
                 const isImported = fac.is_imported === true || fac.is_imported === 1;
+                const spvClass = isImported ? 'bg-slate-50 border-slate-100' : (isPlatit ? 'bg-emerald-50 border-emerald-100' : 'bg-amber-50 border-amber-200 animate-pulse');
+                const spvDotClass = isImported ? 'bg-slate-400' : (isPlatit ? 'bg-emerald-500' : 'bg-amber-500');
+                const spvTextClass = isImported ? 'text-slate-500' : (isPlatit ? 'text-emerald-700' : 'text-amber-700');
+                const spvLabel = isImported ? 'SPV IMPORTAT' : (isPlatit ? 'SPV VERIFICAT' : 'SPV AȘTEPTARE');
                 const toggleBtn = isImported
                     ? `<button disabled title="Factură SAGA — status blocat"
                             class="w-8 h-8 rounded-lg flex items-center justify-center bg-slate-50 text-slate-300 cursor-not-allowed border border-slate-100">
@@ -360,25 +441,33 @@ function arataDetaliiFurnizor(id) {
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
                        </button>`;
                 return `
-<div class="card-flow flex items-center justify-between min-h-[65px] mb-2 ${isPlatit ? "bg-white" : "bg-red-50/40 border-red-100"}">
-    <div class="flex items-center gap-3">
-        <span class="w-2 h-2 rounded-full flex-shrink-0 ${isPlatit ? "bg-emerald-400" : isDepasit ? "bg-red-500" : "bg-amber-400"}"></span>
-        <div>
-            <p class="text-[11px] font-black text-slate-800 uppercase">#${fac.numar_factura || "—"}${isImported ? ' <span class="text-[8px] font-bold text-slate-300 normal-case">SAGA</span>' : ''}</p>
-            <p class="text-[8px] font-bold text-slate-400 uppercase">E: ${formateazaDataZFlow(fac.data_emiterii)} | S: ${fac.data_scadenta ? formateazaDataZFlow(fac.data_scadenta) : "—"}</p>
-        </div>
+<div class="card-flow flex flex-col gap-2 p-3 mb-2 ${isPlatit ? "bg-white" : "bg-red-50/40 border-red-100"}">
+    <div class="flex items-center gap-2 ${spvClass} border px-2 py-1.5 rounded-xl">
+        <span class="flex h-2 w-2 relative">
+            <span class="relative inline-flex rounded-full h-2 w-2 ${spvDotClass}"></span>
+        </span>
+        <span class="text-[9px] font-black uppercase tracking-tighter ${spvTextClass}">${spvLabel}</span>
     </div>
-    <div class="flex items-center gap-3">
-        <div class="text-right">
-            <b class="text-xs ${isPlatit ? "text-blue-900" : "text-red-600"}">${Number(fac.valoare).toLocaleString()} lei</b>
-            <p class="text-[7px] text-slate-400 uppercase">${fac.status_plata}</p>
+    <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <span class="w-2 h-2 rounded-full flex-shrink-0 ${isPlatit ? "bg-emerald-400" : isDepasit ? "bg-red-500" : "bg-amber-400"}"></span>
+            <div>
+                <p class="text-[11px] font-black text-slate-800 uppercase">#${fac.numar_factura || "—"}${isImported ? ' <span class="text-[8px] font-bold text-slate-300 normal-case">SAGA</span>' : ''}</p>
+                <p class="text-[8px] font-bold text-slate-400 uppercase">E: ${formateazaDataZFlow(fac.data_emiterii)} | S: ${fac.data_scadenta ? formateazaDataZFlow(fac.data_scadenta) : "—"}</p>
+            </div>
         </div>
-        <div class="flex flex-col gap-1">
-            ${toggleBtn}
-            <button onclick="event.stopPropagation(); deschideModalFacturaPlatit('${id}', '${fac.id}')"
-                    class="w-8 h-8 bg-slate-100 hover:bg-blue-100 text-slate-400 hover:text-blue-600 rounded-lg flex items-center justify-center transition-all">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"/></svg>
-            </button>
+        <div class="flex items-center gap-3">
+            <div class="text-right">
+                <b class="text-xs ${isPlatit ? "text-blue-900" : "text-red-600"}">${Number(fac.valoare).toLocaleString()} lei</b>
+                <p class="text-[7px] text-slate-400 uppercase">${fac.status_plata}</p>
+            </div>
+            <div class="flex flex-col gap-1">
+                ${toggleBtn}
+                <button onclick="event.stopPropagation(); deschideModalFacturaPlatit('${id}', '${fac.id}')"
+                        class="w-8 h-8 bg-slate-100 hover:bg-blue-100 text-slate-400 hover:text-blue-600 rounded-lg flex items-center justify-center transition-all">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"/></svg>
+                </button>
+            </div>
         </div>
     </div>
 </div>`;

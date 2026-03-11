@@ -37,8 +37,8 @@
 
     <!-- Runtime dependencies — heavy libs (jsPDF, xlsx, Chart.js) are loaded on-demand by JS modules -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" defer></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.4/html5-qrcode.min.js" defer></script>
 
     <!-- Vue.js 3 — production build (minified, no dev warnings) -->
@@ -1326,6 +1326,7 @@
             id="card-detaliu-furnizor"
             class="bg-red-900 text-white p-8 rounded-[32px] shadow-2xl mb-8 relative"
           ></div>
+          <div id="istoric-plati-furnizor" class="hidden"></div>
           <div id="lista-facturi-platit-detaliu" class="space-y-4 pb-10"></div>
         </div>
       </section>
@@ -1679,7 +1680,6 @@
       </button>
       <button
         id="nav-btn-actions"
-        data-action="toggleFAB"
         class="nav-item"
         style="display: none"
       >
@@ -2254,13 +2254,6 @@
             >
               ANAF
             </button>
-            <button
-              data-action="verificaEFacturaCUI"
-              title="Verifică statut e-Factura ANAF"
-              class="px-3 bg-emerald-700 text-white rounded-xl text-[9px] font-black uppercase"
-            >
-              e-Fact
-            </button>
           </div>
           <input
             type="text"
@@ -2603,13 +2596,6 @@
               class="px-4 bg-blue-900 text-white rounded-xl text-[9px] font-black uppercase"
             >
               ANAF
-            </button>
-            <button
-              data-action="verificaEFacturaFurnizor"
-              title="Verifică statut e-Factura ANAF"
-              class="px-3 bg-emerald-700 text-white rounded-xl text-[9px] font-black uppercase"
-            >
-              e-Fact
             </button>
           </div>
           <input
@@ -3189,19 +3175,19 @@
           <span id="auth-error-text"></span>
         </div>
         <a href="landing.html" target="_blank" rel="noopener noreferrer"
-           class="flex items-center justify-between w-full px-4 py-3 mb-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-2xl group hover:from-blue-100 hover:to-indigo-100 transition-all cursor-pointer no-underline">
-          <div class="flex items-center gap-3">
-            <div class="w-9 h-9 bg-blue-900 rounded-xl flex items-center justify-center flex-shrink-0 shadow-md shadow-blue-900/20">
-              <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+           class="flex items-center justify-between w-full px-5 py-4 mb-5 bg-gradient-to-r from-blue-700 to-indigo-700 border border-blue-600 rounded-2xl group hover:from-blue-800 hover:to-indigo-800 transition-all cursor-pointer no-underline shadow-lg shadow-blue-900/25">
+          <div class="flex items-center gap-3.5">
+            <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
+              <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/>
               </svg>
             </div>
             <div>
-              <p class="text-[11px] font-black text-blue-900 leading-tight">Nou la Z-FLOW?</p>
-              <p class="text-[10px] text-blue-500 font-semibold mt-0.5">Descoperă funcționalitățile →</p>
+              <p class="text-[12px] font-black text-white leading-tight">Nou la Z-FLOW?</p>
+              <p class="text-[11px] text-blue-200 font-semibold mt-0.5">Descoperă toate funcționalitățile →</p>
             </div>
           </div>
-          <svg class="w-4 h-4 text-blue-300 group-hover:text-blue-500 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <svg class="w-5 h-5 text-blue-300 group-hover:text-white transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/>
           </svg>
         </a>
@@ -3589,12 +3575,11 @@
     <script src="js/modules/utils.js" defer></script>
     <script src="js/modules/auth.js" defer></script>
     <script src="js/modules/maintenance.js" defer></script>
-    <script src="js/app.js" defer></script>
-    <script src="js/modules/analytics.js" defer></script>
-
-    <!-- 4b. Split modules — financiar & crud (after app.js, use debounce/globals) -->
+    <!-- financiar & crud BEFORE app.js so renderMain/renderFurnizori are defined when app.js init() runs -->
     <script src="js/modules/financiar.js" defer></script>
     <script src="js/modules/crud.js" defer></script>
+    <script src="js/app.js" defer></script>
+    <script src="js/modules/analytics.js" defer></script>
 
     <!-- 4. Module Depozit & Logistic (after app.js, use global functions) -->
     <script src="js/modules/depozit.js" defer></script>

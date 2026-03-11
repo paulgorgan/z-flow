@@ -66,7 +66,7 @@ function schimbaViewLogistic(view, updateStore = true) {
                 }
             }
             if (typeof window.renderHartaVehicule === 'function') window.renderHartaVehicule();
-        }, 300); // 300ms: așteaptă Promise.all să completeze initLogistic
+        }, 400); // 400ms: permite initLogistic() să termine fetch-urile + reflow înainte de markere
     }
 }
 

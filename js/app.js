@@ -481,10 +481,10 @@ async function init(goHome = true) {
         }
 
         // [PERF-FIX] FIX 1 — render o singură dată după procesarea completă a tuturor datelor
-        renderMain();
+        if (typeof renderMain === 'function') renderMain();
         updateDashboardKPI();
-        renderFurnizori();
-        updateFurnizoriKPI();
+        if (typeof renderFurnizori === 'function') renderFurnizori();
+        if (typeof updateFurnizoriKPI === 'function') updateFurnizoriKPI();
 
         // === Depozit & Logistic (non-fatal) ===
         try {
@@ -638,11 +638,34 @@ async function verificaAuth() {
     // ADMIN: Acces complet, fără restricții demo
     const _adminStoredPass = localStorage.getItem('zflow_ad_admin_password') || '1234';
     if (email === "admin" && pass === _adminStoredPass) {
+        // Curăță localStorage-ul rezidual din sesiuni Supabase anterioare
+        // (previne afișarea soldurilor greșite din date vechi cached)
+        try {
+            const keysToKeep = ['zflow_ad_admin_password', 'zflow_session_admin', 'zflow_remember_admin'];
+            Object.keys(localStorage)
+                .filter(k => k.startsWith('sb-') || (k.startsWith('zflow_') && !keysToKeep.includes(k)))
+                .forEach(k => localStorage.removeItem(k));
+        } catch(e) {}
+
         ZFlowStore.userSession = { user: { email: 'admin' }, isDemo: false };
         const rememberMe = document.getElementById('auth-remember')?.checked || false;
         saveDemoSession('admin', 'admin', false, rememberMe);
         setUserRole('admin');
         document.getElementById("modal-auth").classList.remove("active");
+
+        // Golire date reziduale din sesiunile anterioare — admin vede mereu date proprii, goale
+        ZFlowStore.dateLocal = [];
+        ZFlowStore.dateFacturiBI = [];
+        ZFlowStore.dateFurnizori = [];
+        ZFlowStore.dateFacturiPlatit = [];
+        ZFlowStore.dateProduse = [];
+        ZFlowStore.dateMiscariStoc = [];
+        ZFlowStore.dateReceptii = [];
+        ZFlowStore.dateLivrari = [];
+        ZFlowStore.dateSoferi = [];
+        ZFlowStore.dateVehicule = [];
+        ZFlowStore.dateComenziTransport = [];
+        ZFlowStore.userProfile = null;
 
         const mainContent = document.querySelector('main');
         const header = document.querySelector('header');
@@ -1523,8 +1546,28 @@ function schimbaTab(id, btn) {
 
     const btnActions = document.getElementById("nav-btn-actions");
     if (btnActions) {
-        const esteInDetalii = !document.getElementById("view-detalii").classList.contains("hidden");
-        btnActions.style.display = id === "financiar" && !esteInDetalii ? "flex" : "none";
+        if (id === "financiar") {
+            const esteInDetalii = !document.getElementById("view-detalii").classList.contains("hidden");
+            const esteInDetaliiFurnizor = !document.getElementById("view-detalii-furnizor").classList.contains("hidden");
+            btnActions.style.display = "flex";
+            if (esteInDetalii) {
+                btnActions.querySelector("span").innerText = "DOC NOU";
+                btnActions.setAttribute("onclick", "deschideModalDirectFactura()");
+                btnActions.classList.add("text-blue-600", "animate-pulse");
+                btnActions.classList.remove("text-red-600");
+            } else if (esteInDetaliiFurnizor) {
+                btnActions.querySelector("span").innerText = "DOC NOU";
+                btnActions.setAttribute("onclick", "deschideModalFacturaPlatit(ZFlowStore.selectedFurnizorId)");
+                btnActions.classList.add("text-red-600", "animate-pulse");
+                btnActions.classList.remove("text-blue-600");
+            } else {
+                btnActions.querySelector("span").innerText = "ACȚIUNI";
+                btnActions.setAttribute("onclick", "toggleFAB()");
+                btnActions.classList.remove("text-blue-600", "text-red-600", "animate-pulse");
+            }
+        } else {
+            btnActions.style.display = "none";
+        }
     }
 
     if (id === "home") incarcaDashboard();
@@ -1592,8 +1635,8 @@ function comutaVedereFin(v, pushState = true) {
             genereazaBI();
         }
     }
-    else if (v === "firme") renderMain();
-    else if (v === "furnizori") renderFurnizori();
+    else if (v === "firme") { if (typeof renderMain === 'function') renderMain(); }
+    else if (v === "furnizori") { if (typeof renderFurnizori === 'function') renderFurnizori(); }
 
     // Gestionare History API — URL curat, fără hash
     if (pushState) {
@@ -2267,9 +2310,9 @@ function genereazaCardFactura(fac, client, azi) {
         <!-- Card Content -->
         <div class="swipe-content card-flow flex flex-col gap-3 p-4 bg-white border border-slate-100 rounded-2xl">
             <div class="grid grid-cols-2 gap-2">
-                <div class="flex items-center gap-2 bg-slate-50 border border-slate-100 px-2 py-2 rounded-xl">
+                <div class="flex items-center gap-2 ${fac.status_anaf === 'validated' ? 'bg-slate-50 border-slate-100' : 'bg-amber-50 border-amber-200 animate-pulse'} border px-2 py-2 rounded-xl">
                     <span class="flex h-2 w-2 relative">
-                        <span class="relative inline-flex rounded-full h-2 w-2 ${fac.status_anaf === 'validated' ? 'bg-emerald-500' : 'bg-amber-400'}"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 ${fac.status_anaf === 'validated' ? 'bg-emerald-500' : 'bg-amber-500'}"></span>
                     </span>
                     <span class="text-[9px] font-black uppercase tracking-tighter ${fac.status_anaf === 'validated' ? 'text-emerald-700' : 'text-amber-700'}">
                         ${fac.status_anaf === 'validated' ? 'SPV VALIDAT' : 'SPV AȘTEPTARE'}
@@ -2303,7 +2346,7 @@ function genereazaCardFactura(fac, client, azi) {
                         class="w-full ${fac.is_imported ? 'bg-slate-100 text-slate-300 cursor-not-allowed' : isIncasat ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 'bg-blue-900 text-white hover:bg-blue-800'} h-11 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-2 transition-all">
                     ${fac.is_imported ? '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/></svg> SAGA' : isIncasat ? 'ACHITAT' : 'NEACHITAT'}
                 </button>
-                <div class="grid grid-cols-9 gap-1.5 w-full">
+                <div class="grid grid-cols-7 gap-1.5 w-full">
                 <button onclick="deschideModal('modal-factura', '${fac.id}')"
                         class="h-11 bg-slate-50 text-slate-600 rounded-xl flex items-center justify-center border border-slate-100 hover:bg-amber-50 hover:text-amber-600 hover:border-amber-200 transition-all">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
@@ -2356,19 +2399,6 @@ function genereazaCardFactura(fac, client, azi) {
                 <button onclick="stergeFactura('${fac.id}')"
                         class="h-11 bg-red-50 text-red-500 rounded-xl flex items-center justify-center border border-red-100 hover:bg-red-100 hover:text-red-600 hover:border-red-200 transition-all">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                </button>
-                <button onclick="event.stopPropagation(); window.ZFlowEFactura && window.ZFlowEFactura.trimiteLaANAF('${fac.id}')"
-                        data-supabase-only
-                        class="h-11 text-[8px] font-black bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl flex items-center justify-center border border-blue-200 transition-all"
-                        title="Trimite la ANAF e-Factura">
-                    e-Fact
-                </button>
-                <button onclick="event.stopPropagation(); window.ZFlowEFactura && window.ZFlowEFactura.verificaStatus('${fac.id}')"
-                        data-supabase-only
-                        class="h-11 text-[8px] font-black bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-xl flex items-center justify-center border border-slate-200 transition-all"
-                        title="Verifica status ANAF"
-                        ${fac.anaf_upload_index ? '' : 'style="display:none"'}>
-                    Status
                 </button>
                 </div>
             </div>
@@ -5212,12 +5242,12 @@ function initMap() {
     // [R6-FIX 1] Guard: Leaflet se încarcă cu defer — poate să nu fie gata imediat
     if (typeof L === 'undefined') {
         _initMapRetries++;
-        if (_initMapRetries > 10) {
-            ZFlowLogger.error('Map', 'Leaflet nu s-a încărcat după 10 reîncercări — verifică CDN');
+        if (_initMapRetries > 20) {
+            ZFlowLogger.error('Map', 'Leaflet nu s-a încărcat după 20 reîncercări — verifică CDN');
             _initMapRetries = 0;
             return;
         }
-        ZFlowLogger.warn('Map', 'Leaflet nu e încărcat încă — retry ' + _initMapRetries + '/10');
+        ZFlowLogger.warn('Map', 'Leaflet nu e încărcat încă — retry ' + _initMapRetries + '/20');
         setTimeout(initMap, 500);
         return;
     }
@@ -5408,12 +5438,15 @@ window.onload = async () => {
     // Ascultă schimbările de autentificare Supabase
     ZFlowDB.onAuthStateChange((event, session) => {
         ZFlowLogger.debug('app', 'Auth state changed:', event);
+        // Ignoră evenimentele Supabase când utilizatorul local (admin/demo) este activ
+        const _isLocalSession = ZFlowStore.userSession?.user?.email === 'admin' || ZFlowStore.userSession?.isDemo === true;
         if (event === 'SIGNED_OUT') {
-            logout();
+            if (!_isLocalSession) logout();
         }
         if (event === 'TOKEN_REFRESHED') {
             // [R5-FIX 5] Token reînnoit — actualizează sesiunea în store
-            if (session && ZFlowStore.userSession) {
+            // Guard: nu suprascrie sesiunea admin/demo cu o sesiune Supabase reziduală
+            if (session && ZFlowStore.userSession && !_isLocalSession) {
                 ZFlowStore.userSession = session;
                 ZFlowLogger.debug('app', '[Auth] Token reînnoit, sesiune actualizată');
             }

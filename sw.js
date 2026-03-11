@@ -105,23 +105,24 @@ self.addEventListener('fetch', event => {
   // Skip Supabase API calls
   if (url.hostname.includes('supabase')) return;
   
-  // HTML (app shell): Cache First — reda instant din cache, revalideaza in background
+  // HTML (app shell): Network First — asigura ca refresh-ul incarca codul nou;
+  // fallback la cache doar cand reteaua lipseste (offline).
+  // IMPORTANT: caches.match normalizeaza URL-ul la './index.html' pentru Live Server.
   if (event.request.mode === 'navigate' || url.pathname.endsWith('.html')) {
     event.respondWith(
-      caches.match(event.request).then(cached => {
-        // Porneste revalidarea in background indiferent de cache
-        const networkFetch = fetch(event.request)
-          .then(response => {
-            if (response && response.ok) {
-              const clone = response.clone();
-              caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-            }
-            return response;
-          })
-          .catch(() => cached);
-        // Returneaza cache-ul imediat (LCP instant) sau reteaua daca nu e cache
-        return cached || networkFetch;
-      })
+      fetch(event.request)
+        .then(response => {
+          if (response && response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          }
+          return response;
+        })
+        .catch(() => {
+          // Offline: incearca cache exact, apoi fallback la index.html
+          return caches.match(event.request)
+            .then(cached => cached || caches.match('./index.html') || caches.match('./'));
+        })
     );
     return;
   }

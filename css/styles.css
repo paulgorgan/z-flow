@@ -1003,7 +1003,7 @@ input, select, button {
     margin-right: auto !important;
   }
 
-  /* [R5-FIX 2] Grid cu lățime minimă per card — previne carduri sub 280px */
+  /* [R5-FIX 2] Grid cu lățime minimă per card — previne carduri sub 320px */
   #lista-firme-global,
   #lista-furnizori-global {
     display: grid !important;
@@ -1557,6 +1557,22 @@ input, select, button {
   .btn-action {
     height: 48px;
     font-size: 14px;
+  }
+}
+
+/* ============================================
+   RESPONSIVE - ULTRAWIDE (Peste 1440px)
+   Carduri mai late pentru ecrane mai largi
+   ============================================ */
+@media (min-width: 1440px) {
+  #lista-firme-global,
+  #lista-furnizori-global {
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)) !important;
+    gap: 24px !important;
+  }
+
+  main {
+    max-width: 1600px !important;
   }
 }
 
