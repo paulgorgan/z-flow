@@ -118,19 +118,19 @@ function renderMain(lista = null) {
         <p class="text-red-600 font-black text-[13px] leading-none">${Math.round(sumaScadenta).toLocaleString()} lei</p>
     </div>` : ""}
     </div>
-    <div class="grid grid-cols-[1fr_1fr_40px] gap-2 pt-4 mt-3">
+    <div class="flex gap-2 pt-4 mt-3">
         <button onclick="event.stopPropagation(); arataDetalii('${f.id}')"
-                class="h-11 rounded-xl text-[10px] font-bold uppercase bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-700 transition-all flex items-center justify-center gap-1.5 border border-blue-100 hover:border-blue-600">
+                class="flex-1 h-10 min-w-0 whitespace-nowrap rounded-xl text-[10px] font-bold uppercase bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-700 transition-all flex items-center justify-center gap-1.5 border border-blue-100 hover:border-blue-600">
             <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
             Facturi
         </button>
         <button onclick="event.stopPropagation(); deschideModal('modal-client', '${f.id}')"
-                class="h-11 rounded-xl text-[10px] font-bold uppercase bg-slate-50 hover:bg-slate-700 hover:text-white text-slate-600 transition-all flex items-center justify-center gap-1.5 border border-slate-200 hover:border-slate-700">
+                class="flex-1 h-10 min-w-0 whitespace-nowrap rounded-xl text-[10px] font-bold uppercase bg-slate-50 hover:bg-slate-700 hover:text-white text-slate-600 transition-all flex items-center justify-center gap-1.5 border border-slate-200 hover:border-slate-700">
             <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
             Profil
         </button>
         <button onclick="event.stopPropagation(); stergeFirma('${f.id}')" title="Șterge client"
-                class="h-11 w-full rounded-xl bg-red-50 hover:bg-red-600 hover:text-white text-red-400 transition-all flex items-center justify-center border border-red-100 hover:border-red-600" data-permission="delete">
+                class="h-10 w-10 flex-shrink-0 rounded-xl bg-red-50 hover:bg-red-600 hover:text-white text-red-400 transition-all flex items-center justify-center border border-red-100 hover:border-red-600" data-permission="delete">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
         </button>
     </div>
@@ -240,19 +240,19 @@ function renderFurnizori(lista) {
         <p class="text-red-600 font-black text-[13px] leading-none">${Math.round(f.sumaScadenta).toLocaleString()} lei</p>
     </div>` : ""}
     </div>
-    <div class="grid grid-cols-[1fr_1fr_40px] gap-2 pt-4 mt-3">
+    <div class="flex gap-2 pt-4 mt-3">
         <button onclick="event.stopPropagation(); arataDetaliiFurnizor('${f.id}')"
-                class="h-11 rounded-xl text-[10px] font-bold uppercase bg-red-50 hover:bg-red-700 hover:text-white text-red-700 transition-all flex items-center justify-center gap-1.5 border border-red-100 hover:border-red-700">
+                class="flex-1 h-10 min-w-0 whitespace-nowrap rounded-xl text-[10px] font-bold uppercase bg-red-50 hover:bg-red-700 hover:text-white text-red-700 transition-all flex items-center justify-center gap-1.5 border border-red-100 hover:border-red-700">
             <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
             Facturi
         </button>
         <button onclick="event.stopPropagation(); deschideModalFurnizor('${f.id}')"
-                class="h-11 rounded-xl text-[10px] font-bold uppercase bg-slate-50 hover:bg-slate-700 hover:text-white text-slate-600 transition-all flex items-center justify-center gap-1.5 border border-slate-200 hover:border-slate-700">
+                class="flex-1 h-10 min-w-0 whitespace-nowrap rounded-xl text-[10px] font-bold uppercase bg-slate-50 hover:bg-slate-700 hover:text-white text-slate-600 transition-all flex items-center justify-center gap-1.5 border border-slate-200 hover:border-slate-700">
             <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
             Profil
         </button>
         <button onclick="event.stopPropagation(); stergeFurnizorDirect('${f.id}')" title="Șterge furnizor"
-                class="h-11 w-full rounded-xl bg-red-50 hover:bg-red-600 hover:text-white text-red-400 transition-all flex items-center justify-center border border-red-100 hover:border-red-600" data-permission="delete">
+                class="h-10 w-10 flex-shrink-0 rounded-xl bg-red-50 hover:bg-red-600 hover:text-white text-red-400 transition-all flex items-center justify-center border border-red-100 hover:border-red-600" data-permission="delete">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
         </button>
     </div>
