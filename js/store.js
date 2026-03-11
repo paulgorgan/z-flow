@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Z-FLOW Enterprise v7.14
  * Store - State Management (Vue 3 Reactive)
  */
@@ -149,7 +149,7 @@ function setUserRole(role) {
     ZFlowStore.userRole = validRole;
     ZFlowStore.userPermissions = { ...ROLE_PERMISSIONS[validRole] };
     updateUIForRole();
-    console.log(`🔐 Rol setat: ${validRole}`, ZFlowStore.userPermissions);
+    ZFlowLogger.debug('store', `🔐 Rol setat: ${validRole}`, ZFlowStore.userPermissions);
 }
 
 /**
@@ -229,7 +229,7 @@ function saveZFlowData() {
             }));
         }
     } catch (e) {
-        console.warn("localStorage indisponibil:", e);
+        ZFlowLogger.warn('store', "localStorage indisponibil:", e);
     }
 }
 
@@ -271,7 +271,7 @@ async function checkSession() {
             }
         }
     } catch (e) {
-        console.warn("Demo session check error:", e);
+        ZFlowLogger.warn('store', "Demo session check error:", e);
     }
     
     // 2. Verifică sesiune Supabase
@@ -286,7 +286,7 @@ async function checkSession() {
         }
         return false;
     } catch (e) {
-        console.warn("Supabase session check error:", e);
+        ZFlowLogger.warn('store', "Supabase session check error:", e);
         return false;
     }
 }
@@ -323,7 +323,7 @@ function loadTheme() {
             document.documentElement.classList.add("dark");
         }
     } catch (e) {
-        console.warn("Dark mode error:", e);
+        ZFlowLogger.warn('store', "Dark mode error:", e);
     }
 }
 

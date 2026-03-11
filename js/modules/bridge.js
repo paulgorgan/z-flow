@@ -43,8 +43,8 @@ async function importDinSAGAXML(file) {
     if (isZFlow) {
         // Format ZFlow export propriu
         doc.querySelectorAll('FacturiIncasare Factura, FacturiPlata Factura').forEach(function(node) {
-            var get = function(tag) {
-                var el = node.querySelector(tag);
+            const get = function(tag) {
+                const el = node.querySelector(tag);
                 return el ? (el.textContent || '').trim() : '';
             };
             facturi.push({
@@ -60,20 +60,20 @@ async function importDinSAGAXML(file) {
         });
     } else {
         // Format SAGA — campuri specifice SAGA Accounting
-        var nodes = doc.querySelectorAll('factura, Factura, document, Document');
+        const nodes = doc.querySelectorAll('factura, Factura, document, Document');
         nodes.forEach(function(node) {
-            var get = function() {
-                for (var i = 0; i < arguments.length; i++) {
-                    var el = node.querySelector(arguments[i]);
+            const get = function() {
+                for (let i = 0; i < arguments.length; i++) {
+                    const el = node.querySelector(arguments[i]);
                     if (el) {
-                        var val = (el.textContent || '').trim();
+                        const val = (el.textContent || '').trim();
                         if (val) return val;
                     }
                 }
                 return '';
             };
-            var valBruta = parseFloat(get('total', 'valoare_totala', 'suma_totala')) || 0;
-            var tva = parseFloat(get('tva', 'valoare_tva')) || 0;
+            const valBruta = parseFloat(get('total', 'valoare_totala', 'suma_totala')) || 0;
+            const tva = parseFloat(get('tva', 'valoare_tva')) || 0;
             facturi.push({
                 numar_factura: get('nrdoc', 'nr_document', 'numar'),
                 valoare:       valBruta || (parseFloat(get('valoare', 'suma')) + tva),
@@ -94,23 +94,23 @@ async function importDinSAGAXML(file) {
  * Afiseaza un preview al facturilor inainte de import definitiv.
  */
 function deschideImportBridgeXML() {
-    var input = document.createElement('input');
+    const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.xml';
     input.onchange = async function(e) {
-        var file = e.target.files[0];
+        const file = e.target.files[0];
         if (!file) return;
         setLoader(true);
         try {
-            var facturi = await importDinSAGAXML(file);
+            const facturi = await importDinSAGAXML(file);
             if (!facturi.length) {
                 showNotification('Nu au fost gasite facturi in fisierul XML', 'warning');
                 return;
             }
-            var preview = facturi.slice(0, 3).map(function(f) {
+            const preview = facturi.slice(0, 3).map(function(f) {
                 return f.numar_factura + ' — ' + f.valoare + ' RON (' + f.data_emiterii + ')';
             }).join('\n');
-            var total = facturi.length;
+            const total = facturi.length;
             showNotification(
                 total + ' facturi gasite in XML. Primele 3:\n' + preview + '\n\nFoloseste consolele de import pentru a le procesa.',
                 'info',

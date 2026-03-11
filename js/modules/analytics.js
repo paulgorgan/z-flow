@@ -303,25 +303,25 @@ function calculeazaCashflowProiectie(zile, soldInitial) {
     zile = parseInt(zile) || 90;
     soldInitial = parseFloat(soldInitial) || 0;
 
-    var facturiInc  = (window.ZFlowStore && window.ZFlowStore.dateFacturiBI) ? window.ZFlowStore.dateFacturiBI : [];
-    var facturiPlat = (window.ZFlowStore && window.ZFlowStore.dateFacturiPlatit) ? window.ZFlowStore.dateFacturiPlatit : [];
+    const facturiInc  = (window.ZFlowStore && window.ZFlowStore.dateFacturiBI) ? window.ZFlowStore.dateFacturiBI : [];
+    const facturiPlat = (window.ZFlowStore && window.ZFlowStore.dateFacturiPlatit) ? window.ZFlowStore.dateFacturiPlatit : [];
 
     // Construieste map: data ISO → { intrari, iesiri }
-    var zilMap = {};
-    var azi = new Date();
+    const zilMap = {};
+    const azi = new Date();
     azi.setHours(0, 0, 0, 0);
 
     // Pre-populaza toate zilele cu 0
-    for (var i = 0; i < zile; i++) {
-        var d = new Date(azi.getTime() + i * 86400000);
-        var key = d.toISOString().split('T')[0];
+    for (let i = 0; i < zile; i++) {
+        const d = new Date(azi.getTime() + i * 86400000);
+        const key = d.toISOString().split('T')[0];
         zilMap[key] = { intrari: 0, iesiri: 0 };
     }
 
     // Distribuie facturile neincasate pe ziua de scadenta
     facturiInc.forEach(function(f) {
         if (f.status_plata === 'Incasat') return;
-        var key2 = (f.data_scadenta || '').split('T')[0];
+        const key2 = (f.data_scadenta || '').split('T')[0];
         if (zilMap[key2]) {
             zilMap[key2].intrari += parseFloat(f.valoare || 0);
         }
@@ -329,20 +329,20 @@ function calculeazaCashflowProiectie(zile, soldInitial) {
 
     facturiPlat.forEach(function(f) {
         if (f.status_plata === 'Platit') return;
-        var key3 = (f.data_scadenta || '').split('T')[0];
+        const key3 = (f.data_scadenta || '').split('T')[0];
         if (zilMap[key3]) {
             zilMap[key3].iesiri += parseFloat(f.valoare || 0);
         }
     });
 
     // Calculeaza sold cumulativ
-    var soldCurent = soldInitial;
-    var rezultat = Object.entries(zilMap)
+    let soldCurent = soldInitial;
+    const rezultat = Object.entries(zilMap)
         .sort(function(a, b) { return a[0].localeCompare(b[0]); })
         .map(function(entry) {
-            var data = entry[0];
-            var intrari = entry[1].intrari;
-            var iesiri = entry[1].iesiri;
+            const data = entry[0];
+            const intrari = entry[1].intrari;
+            const iesiri = entry[1].iesiri;
             soldCurent += intrari - iesiri;
             return { data: data, sold_estimat: Math.round(soldCurent * 100) / 100, intrari: intrari, iesiri: iesiri };
         });
@@ -358,10 +358,10 @@ window.calculeazaCashflowProiectie = calculeazaCashflowProiectie;
  * @param {number} soldInitial
  */
 function verificaAlertaCashflow(soldInitial) {
-    var proiectie30 = calculeazaCashflowProiectie(30, soldInitial || 0);
-    var primaZiNegativa = proiectie30.find(function(z) { return z.sold_estimat < 0; });
+    const proiectie30 = calculeazaCashflowProiectie(30, soldInitial || 0);
+    const primaZiNegativa = proiectie30.find(function(z) { return z.sold_estimat < 0; });
     if (primaZiNegativa) {
-        var formatData = new Date(primaZiNegativa.data).toLocaleDateString('ro-RO', {
+        const formatData = new Date(primaZiNegativa.data).toLocaleDateString('ro-RO', {
             day: '2-digit', month: 'short'
         });
         if (typeof showNotification === 'function') {
@@ -390,13 +390,13 @@ window.verificaAlertaCashflow = verificaAlertaCashflow;
  */
 async function renderCashflowProiectieGraf(containerId, zile, soldInitial) {
     zile = parseInt(zile) || 90;
-    var container = document.getElementById(containerId);
+    const container = document.getElementById(containerId);
     if (!container) return;
 
     // Asigura Chart.js
     if (!window.Chart) {
         await new Promise(function(resolve, reject) {
-            var s = document.createElement('script');
+            const s = document.createElement('script');
             s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js';
             s.onload = resolve;
             s.onerror = reject;
@@ -404,16 +404,16 @@ async function renderCashflowProiectieGraf(containerId, zile, soldInitial) {
         });
     }
 
-    var proiectie = calculeazaCashflowProiectie(zile, soldInitial);
-    var labels = proiectie.map(function(p) {
+    const proiectie = calculeazaCashflowProiectie(zile, soldInitial);
+    const labels = proiectie.map(function(p) {
         return new Date(p.data).toLocaleDateString('ro-RO', { day: '2-digit', month: 'short' });
     });
-    var values = proiectie.map(function(p) { return p.sold_estimat; });
+    const values = proiectie.map(function(p) { return p.sold_estimat; });
 
-    var pointColors = values.map(function(v) { return v >= 0 ? 'rgba(16,185,129,0.8)' : 'rgba(239,68,68,0.8)'; });
-    var lineColor   = values.some(function(v) { return v < 0; }) ? 'rgba(239,68,68,0.9)' : 'rgba(16,185,129,0.9)';
+    const pointColors = values.map(function(v) { return v >= 0 ? 'rgba(16,185,129,0.8)' : 'rgba(239,68,68,0.8)'; });
+    const lineColor   = values.some(function(v) { return v < 0; }) ? 'rgba(239,68,68,0.9)' : 'rgba(16,185,129,0.9)';
 
-    var canvas = container.querySelector('canvas#cashflow-proiectie-canvas');
+    let canvas = container.querySelector('canvas#cashflow-proiectie-canvas');
     if (!canvas) {
         container.innerHTML = '<canvas id="cashflow-proiectie-canvas" style="max-height:220px"></canvas>';
         canvas = container.querySelector('canvas');
@@ -450,8 +450,8 @@ async function renderCashflowProiectieGraf(containerId, zile, soldInitial) {
                 tooltip: {
                     callbacks: {
                         label: function(ctx) {
-                            var v = ctx.raw;
-                            var pz = proiectie[ctx.dataIndex];
+                            const v = ctx.raw;
+                            const pz = proiectie[ctx.dataIndex];
                             return [
                                 ' Sold: ' + v.toLocaleString('ro-RO') + ' RON',
                                 ' Intrari: +' + pz.intrari.toLocaleString('ro-RO'),

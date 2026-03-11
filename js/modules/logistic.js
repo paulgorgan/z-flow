@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Z-FLOW Enterprise v7.14
  * Modul Logistic — Comenzi Transport, Șoferi, Vehicule, Tracking
  */
@@ -89,12 +89,9 @@ function renderComenziTransport() {
         .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
         .filter(c => !q || (c.ruta_de||'').toLowerCase().includes(q) || (c.ruta_la||'').toLowerCase().includes(q) || (c.tracking_code||'').toLowerCase().includes(q));
     ZFlowStore._comenziFiltrate = all;
-    const ps  = ZFlowStore.comenziPageSize ?? 10;
-    const pg  = ZFlowStore.comenziCurrentPage || 1;
-    const tp  = ps === 0 ? 1 : Math.ceil(all.length / ps);
-    if (pg > tp) ZFlowStore.comenziCurrentPage = 1;
-    const s0  = ps === 0 ? 0 : ((ZFlowStore.comenziCurrentPage||1) - 1) * ps;
-    const list = ps === 0 ? all : all.slice(s0, s0 + ps);
+    const pagC = pagineaza(all, ZFlowStore.comenziPageSize ?? 10, ZFlowStore.comenziCurrentPage || 1);
+    ZFlowStore.comenziCurrentPage = pagC.currentPage;
+    const list = pagC.items;
     const pgEl = document.getElementById('comenzi-pagination');
 
     if (!all.length) {
@@ -144,7 +141,7 @@ function renderComenziTransport() {
               </div>
             </div>`;
         } catch (itemErr) {
-            console.warn('[Logistic] renderComenziTransport item error:', itemErr);
+            ZFlowLogger.warn('logistic', '[Logistic] renderComenziTransport item error:', itemErr);
             return `<div class="text-xs text-red-400 px-4 py-2 bg-red-50 rounded-xl mb-1">Eroare afișare comandă</div>`;
         }
     }).join('');
@@ -203,7 +200,7 @@ function renderSoferi() {
         </div>
       </div>`;
         } catch (itemErr) {
-            console.warn('[Logistic] renderSoferi item error:', itemErr);
+            ZFlowLogger.warn('logistic', '[Logistic] renderSoferi item error:', itemErr);
             return `<div class="text-xs text-red-400 px-4 py-2 bg-red-50 rounded-xl mb-1">Eroare afișare șofer</div>`;
         }
     }).join('');
@@ -270,7 +267,7 @@ function renderVehicule() {
         </div>
       </div>`;
         } catch (itemErr) {
-            console.warn('[Logistic] renderVehicule item error:', itemErr);
+            ZFlowLogger.warn('logistic', '[Logistic] renderVehicule item error:', itemErr);
             return `<div class="text-xs text-red-400 px-4 py-2 bg-red-50 rounded-xl mb-1">Eroare afișare vehicul</div>`;
         }
     }).join('');
@@ -534,9 +531,9 @@ async function initLogistic() {
         ZFlowStore.dateSoferi             = soferi;
         ZFlowStore.dateVehicule           = vehicule;
         ZFlowStore.dateComenziTransport   = comenzi;
-        console.log(`🚛 Logistic: ${soferi.length} șoferi, ${vehicule.length} vehicule, ${comenzi.length} comenzi`);
+        ZFlowLogger.debug('logistic', `🚛 Logistic: ${soferi.length} șoferi, ${vehicule.length} vehicule, ${comenzi.length} comenzi`);
     } catch (err) {
-        console.warn('[Logistic] Eroare inițializare (non-fatal):', err.message);
+        ZFlowLogger.warn('logistic', '[Logistic] Eroare inițializare (non-fatal):', err.message);
         ZFlowStore.dateSoferi           = ZFlowStore.dateSoferi           || [];
         ZFlowStore.dateVehicule         = ZFlowStore.dateVehicule         || [];
         ZFlowStore.dateComenziTransport = ZFlowStore.dateComenziTransport || [];
@@ -630,7 +627,7 @@ window.syncSafefleetVehicule          = syncSafefleetVehicule;
  */
 function trackeazaVehicul(vehiculId) {
     if (typeof L === 'undefined') {
-        console.warn('[GPS] Leaflet nedisponibil, reîncercare în 500ms...');
+        ZFlowLogger.warn('logistic', '[GPS] Leaflet nedisponibil, reîncercare în 500ms...');
         setTimeout(() => trackeazaVehicul(vehiculId), 500);
         return;
     }
@@ -682,14 +679,14 @@ const SAFEFLEET_CONFIG = window.SAFEFLEET_CONFIG || { apiUrl: null, apiKey: null
 
 async function initSafefleet() {
     if (!SAFEFLEET_CONFIG.apiUrl || !SAFEFLEET_CONFIG.apiKey) {
-        console.info('[Safefleet] Nu este configurat. Setați window.SAFEFLEET_CONFIG = { apiUrl, apiKey } pentru activare.');
+        ZFlowLogger.info('logistic', '[Safefleet] Nu este configurat. Setați window.SAFEFLEET_CONFIG = { apiUrl, apiKey } pentru activare.');
         return;
     }
     try {
         await syncSafefleetVehicule();
-        console.info('[Safefleet] Sincronizare vehicule completă.');
+        ZFlowLogger.info('logistic', '[Safefleet] Sincronizare vehicule completă.');
     } catch (err) {
-        console.warn('[Safefleet] Eroare inițializare (non-fatal):', err.message);
+        ZFlowLogger.warn('logistic', '[Safefleet] Eroare inițializare (non-fatal):', err.message);
     }
 }
 
@@ -702,7 +699,7 @@ async function syncSafefleetVehicule() {
     // const data = await resp.json();
     // ZFlowStore.dateVehicule = data.vehicles.map(v => ({ ...v, _safefleet: true }));
     // renderVehicule();
-    console.info('[Safefleet] syncSafefleetVehicule — stub, nu implementat.');
+    ZFlowLogger.info('logistic', '[Safefleet] syncSafefleetVehicule — stub, nu implementat.');
 }
 
 // ==========================================
@@ -743,7 +740,7 @@ async function importaSoferiCSV() {
                         observatii: get(row, 'observatii') || null,
                     });
                     importate++;
-                } catch(err) { console.warn('[ImportSoferi]', err.message); erori++; }
+                } catch(err) { ZFlowLogger.warn('logistic', '[ImportSoferi]', err.message); erori++; }
             }
             ZFlowStore.dateSoferi = await ZFlowDB.fetchSoferi().catch(() => ZFlowStore.dateSoferi);
             renderSoferi();
@@ -788,7 +785,7 @@ async function importaVehiculeCSV() {
                         observatii:       get(row, 'observatii') || null,
                     });
                     importate++;
-                } catch(err) { console.warn('[ImportVehicule]', err.message); erori++; }
+                } catch(err) { ZFlowLogger.warn('logistic', '[ImportVehicule]', err.message); erori++; }
             }
             ZFlowStore.dateVehicule = await ZFlowDB.fetchVehicule().catch(() => ZFlowStore.dateVehicule);
             renderVehicule();
@@ -852,7 +849,7 @@ async function importaComenziCSV() {
                 try {
                     await ZFlowDB.insertComandaTransport(payload);
                     importate++;
-                } catch(err) { console.warn('[ImportComenzi]', err.message); erori++; }
+                } catch(err) { ZFlowLogger.warn('logistic', '[ImportComenzi]', err.message); erori++; }
             }
             ZFlowStore.dateComenziTransport = await ZFlowDB.fetchComenziTransport().catch(() => ZFlowStore.dateComenziTransport || []);
             renderComenziTransport();
@@ -904,24 +901,24 @@ async function renderHartaVehicule() {
         if (!ZFlowStore.map) return;
     }
 
-    var map = ZFlowStore.map;
-    var uid = ZFlowStore.userSession && ZFlowStore.userSession.user && ZFlowStore.userSession.user.id;
+    const map = ZFlowStore.map;
+    const uid = ZFlowStore.userSession && ZFlowStore.userSession.user && ZFlowStore.userSession.user.id;
     if (!uid) return;
 
     // ── Incarca pozitiile curente (ultima pozitie per vehicul) ─────────
-    var acum24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    var result = await ZFlowDB._supabase()
+    const acum24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const result = await ZFlowDB._supabase()
         .from('vehicule_pozitii')
         .select('*, vehicule(nr_inmatriculare, soferi(nume))')
         .eq('user_id', uid)
         .gte('ts', acum24h)
         .order('ts', { ascending: true });
-    var pozitii = result.data;
+    const pozitii = result.data;
 
     if (!pozitii || !pozitii.length) return;
 
     // Grupeaza pe vehicul_id
-    var perVehicul = {};
+    const perVehicul = {};
     pozitii.forEach(function(p) {
         if (!perVehicul[p.vehicul_id]) perVehicul[p.vehicul_id] = [];
         perVehicul[p.vehicul_id].push(p);
@@ -929,22 +926,22 @@ async function renderHartaVehicule() {
 
     // ── Deseneaza markere si polylines ────────────────────────────────
     Object.entries(perVehicul).forEach(function(entry) {
-        var vehiculId = entry[0];
-        var poz = entry[1];
-        var ultima = poz[poz.length - 1];
-        var nrInmatr = (ultima.vehicule && ultima.vehicule.nr_inmatriculare) ? ultima.vehicule.nr_inmatriculare : vehiculId.slice(0, 8);
-        var sofer = (ultima.vehicule && ultima.vehicule.soferi && ultima.vehicule.soferi.nume) ? ultima.vehicule.soferi.nume : 'Nealocat';
+        const vehiculId = entry[0];
+        const poz = entry[1];
+        const ultima = poz[poz.length - 1];
+        const nrInmatr = (ultima.vehicule && ultima.vehicule.nr_inmatriculare) ? ultima.vehicule.nr_inmatriculare : vehiculId.slice(0, 8);
+        const sofer = (ultima.vehicule && ultima.vehicule.soferi && ultima.vehicule.soferi.nume) ? ultima.vehicule.soferi.nume : 'Nealocat';
 
         // Icon cu numarul de inmatriculare
-        var iconHtml = '<div style="background:' + (ultima.status === 'oprit' ? '#64748b' : '#1e3a8a') + ';color:#fff;font-size:9px;font-weight:900;padding:3px 6px;border-radius:6px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.3);border:2px solid #fff' + (ultima.status === 'oprit' ? ';opacity:0.6' : '') + '">' + nrInmatr + '</div>';
-        var icon = L.divIcon({
+        const iconHtml = '<div style="background:' + (ultima.status === 'oprit' ? '#64748b' : '#1e3a8a') + ';color:#fff;font-size:9px;font-weight:900;padding:3px 6px;border-radius:6px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.3);border:2px solid #fff' + (ultima.status === 'oprit' ? ';opacity:0.6' : '') + '">' + nrInmatr + '</div>';
+        const icon = L.divIcon({
             className: '',
             html: iconHtml,
             iconAnchor: [20, 10],
         });
 
         // Popup cu informatii
-        var popupContent = '<div style="font-family:system-ui;font-size:11px;min-width:140px">'
+        const popupContent = '<div style="font-family:system-ui;font-size:11px;min-width:140px">'
             + '<p style="font-weight:900;color:#1e3a8a;margin:0 0 4px">' + nrInmatr + '</p>'
             + '<p style="margin:2px 0">\uD83D\uDC64 ' + sofer + '</p>'
             + '<p style="margin:2px 0">\uD83D\uDE80 ' + (ultima.viteza || 0) + ' km/h</p>'
@@ -955,7 +952,7 @@ async function renderHartaVehicule() {
         if (_gpsMarkere[vehiculId]) {
             _gpsMarkere[vehiculId].setLatLng([ultima.lat, ultima.lng]);
             _gpsMarkere[vehiculId].setIcon(icon);
-            var pop = _gpsMarkere[vehiculId].getPopup();
+            const pop = _gpsMarkere[vehiculId].getPopup();
             if (pop) pop.setContent(popupContent);
         } else {
             _gpsMarkere[vehiculId] = L.marker([ultima.lat, ultima.lng], { icon: icon })
@@ -964,7 +961,7 @@ async function renderHartaVehicule() {
         }
 
         // Polyline ruta ultimele 24h
-        var coords = poz.map(function(p) { return [p.lat, p.lng]; });
+        const coords = poz.map(function(p) { return [p.lat, p.lng]; });
         if (coords.length > 1) {
             if (_gpsPolylines[vehiculId]) {
                 _gpsPolylines[vehiculId].setLatLngs(coords);
@@ -980,7 +977,7 @@ async function renderHartaVehicule() {
     });
 
     // Fit bounds la toate vehiculele
-    var allCoords = Object.values(_gpsMarkere).map(function(m) { return m.getLatLng(); });
+    const allCoords = Object.values(_gpsMarkere).map(function(m) { return m.getLatLng(); });
     if (allCoords.length > 0) {
         map.fitBounds(L.latLngBounds(allCoords), { padding: [30, 30], maxZoom: 14 });
     }
@@ -996,20 +993,20 @@ async function renderHartaVehicule() {
             table: 'vehicule_pozitii',
             filter: 'user_id=eq.' + uid
         }, function(payload) {
-            var p = payload.new;
+            const p = payload.new;
             if (!p || !p.vehicul_id || !p.lat || !p.lng) return;
 
-            var existingMarker = _gpsMarkere[p.vehicul_id];
+            const existingMarker = _gpsMarkere[p.vehicul_id];
             if (existingMarker) {
                 existingMarker.setLatLng([p.lat, p.lng]);
-                var pop2 = existingMarker.getPopup();
+                const pop2 = existingMarker.getPopup();
                 if (pop2) {
-                    var c = pop2.getContent() || '';
+                    const c = pop2.getContent() || '';
                     pop2.setContent(c.replace(/\uD83D\uDE80 \d+ km\/h/, '\uD83D\uDE80 ' + (p.viteza || 0) + ' km/h'));
                 }
-                var poly = _gpsPolylines[p.vehicul_id];
+                const poly = _gpsPolylines[p.vehicul_id];
                 if (poly) {
-                    var coords2 = poly.getLatLngs();
+                    const coords2 = poly.getLatLngs();
                     coords2.push(L.latLng(p.lat, p.lng));
                     poly.setLatLngs(coords2);
                 }

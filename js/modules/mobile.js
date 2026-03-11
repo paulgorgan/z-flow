@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Z-FLOW Enterprise v7.14
  * Module: Mobile - Handlers pentru dispozitive mobile
  * 
@@ -233,7 +233,7 @@ const ZFlowMobile = {
         this.initSwipe('#lista-facturi-content');
         this.initSwipe('#rezultat-analiza');
         
-        console.log('📱 ZFlowMobile initialized');
+        ZFlowLogger.debug('mobile', '📱 ZFlowMobile initialized');
     }
 };
 

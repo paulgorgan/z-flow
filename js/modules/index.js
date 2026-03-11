@@ -40,7 +40,7 @@
   // -------------------------------------------------------------------------
 
   /** @type {Object.<string, function(Element): void>} */
-  var SPECIALS = {
+  const SPECIALS = {
     /** Navighează la tab-ul Home și marchează butonul nav corespunzător. */
     navHome: function () {
       if (typeof schimbaTab === 'function')
@@ -103,19 +103,19 @@
 
     /** Verifică statutul e-Factura ANAF pentru CUI-ul din câmpul #in-cui. */
     verificaEFacturaCUI: function () {
-      var el = document.getElementById('in-cui');
+      const el = document.getElementById('in-cui');
       if (el && typeof verificaEFactura === 'function') verificaEFactura(el.value);
     },
 
     /** Șterge factura de plătit curent editată (id citit din input #in-fp-id). */
     stergeFacturaPlatitActiva: function () {
-      var el = document.getElementById('in-fp-id');
+      const el = document.getElementById('in-fp-id');
       if (el && typeof stergeFacturaPlatit === 'function') stergeFacturaPlatit(el.value);
     },
 
     /** Verifică statutul e-Factura ANAF pentru CUI-ul din câmpul #in-furn-cui. */
     verificaEFacturaFurnizor: function () {
-      var el = document.getElementById('in-furn-cui');
+      const el = document.getElementById('in-furn-cui');
       if (el && typeof verificaEFactura === 'function') verificaEFactura(el.value);
     },
 
@@ -124,10 +124,10 @@
      * @param {Element} btn - butonul apăsat (conține elementul .pf-arrow)
      */
     toggleFirmeMulti: function (btn) {
-      var c = document.getElementById('pf-firme-content');
+      const c = document.getElementById('pf-firme-content');
       if (!c) return;
       c.classList.toggle('hidden');
-      var arrow = btn.querySelector('.pf-arrow');
+      const arrow = btn.querySelector('.pf-arrow');
       if (arrow) arrow.innerText = c.classList.contains('hidden') ? '▼' : '▲';
       if (!c.classList.contains('hidden') && window.ZFlowMultiFirma)
         ZFlowMultiFirma.renderPanel('pf-firme-content');
@@ -135,8 +135,8 @@
 
     /** Copiază token-ul admin afișat în clipboard. */
     copieTokenAdmin: function () {
-      var el = document.getElementById('admin-token-output');
-      var text = el ? el.textContent : '';
+      const el = document.getElementById('admin-token-output');
+      const text = el ? el.textContent : '';
       navigator.clipboard.writeText(text).then(function () {
         if (typeof showNotification === 'function') showNotification('Copiat!', 'success');
       });
@@ -152,25 +152,25 @@
 
     /** Ascunde panoul de extindere abonament din dashboard-ul admin. */
     ascundeAdminExtend: function () {
-      var el = document.getElementById('admin-extend-panel');
+      const el = document.getElementById('admin-extend-panel');
       if (el) el.classList.add('hidden');
     },
 
     /** Ascunde panoul de notificare rapidă din dashboard-ul admin. */
     ascundeAdminNotif: function () {
-      var el = document.getElementById('admin-notif-panel');
+      const el = document.getElementById('admin-notif-panel');
       if (el) el.classList.add('hidden');
     },
 
     /** Închide modalul de schimbare cont utilizator. */
     inchideModalSchimbaCont: function () {
-      var el = document.getElementById('modal-schimba-cont');
+      const el = document.getElementById('modal-schimba-cont');
       if (el) el.classList.remove('active');
     },
 
     /** Închide modalul Multi-Firmă. */
     inchideModalMultifirma: function () {
-      var el = document.getElementById('modal-multifirma');
+      const el = document.getElementById('modal-multifirma');
       if (el) el.classList.remove('active');
     },
 
@@ -179,7 +179,7 @@
      * @param {Element} btn - containerul care conține un <input type="date">
      */
     showNestedPicker: function (btn) {
-      var input = btn.querySelector('input');
+      const input = btn.querySelector('input');
       if (input && typeof input.showPicker === 'function') input.showPicker();
     },
 
@@ -188,9 +188,9 @@
      * @param {Element} btn - elementul cu atributul data-target="idElement"
      */
     showPickerFor: function (btn) {
-      var targetId = btn.dataset.target;
+      const targetId = btn.dataset.target;
       if (!targetId) return;
-      var el = document.getElementById(targetId);
+      const el = document.getElementById(targetId);
       if (el && typeof el.showPicker === 'function') el.showPicker();
     },
 
@@ -214,7 +214,7 @@
      * @param {Element} btn - butonul de filtru apăsat
      */
     setFiltruStatusBI: function (btn) {
-      var arg0 = parseArg(btn.dataset.arg !== undefined ? btn.dataset.arg : btn.dataset.arg0);
+      const arg0 = parseArg(btn.dataset.arg !== undefined ? btn.dataset.arg : btn.dataset.arg0);
       if (typeof window.setFiltruStatusBI === 'function')
         window.setFiltruStatusBI(arg0, btn);
     },
@@ -224,10 +224,10 @@
   // Listener delegat principal (faza de bubbling)
   // -------------------------------------------------------------------------
   document.addEventListener('click', function (e) {
-    var btn = e.target.closest('[data-action]');
+    const btn = e.target.closest('[data-action]');
     if (!btn) return;
 
-    var action = btn.dataset.action;
+    const action = btn.dataset.action;
 
     // Acțiuni speciale cu logică proprie
     if (Object.prototype.hasOwnProperty.call(SPECIALS, action)) {
@@ -236,13 +236,13 @@
     }
 
     // Acțiuni simple: argumente opționale extrase din data-arg / data-arg0 / data-arg1
-    var raw0 = btn.dataset.arg !== undefined ? btn.dataset.arg : btn.dataset.arg0;
-    var raw1 = btn.dataset.arg1;
-    var args = [];
+    const raw0 = btn.dataset.arg !== undefined ? btn.dataset.arg : btn.dataset.arg0;
+    const raw1 = btn.dataset.arg1;
+    const args = [];
     if (raw0 !== undefined) args.push(parseArg(raw0));
     if (raw1 !== undefined) args.push(parseArg(raw1));
 
-    var fn = window[action];
+    const fn = window[action];
     if (typeof fn === 'function') fn.apply(null, args);
   });
 
@@ -250,7 +250,7 @@
   // Backdrop #fab-menu: click în afara .sheet-content închide meniul FAB
   // -------------------------------------------------------------------------
   document.addEventListener('DOMContentLoaded', function () {
-    var fabMenu = document.getElementById('fab-menu');
+    const fabMenu = document.getElementById('fab-menu');
     if (!fabMenu) return;
     fabMenu.addEventListener('click', function (e) {
       if (!e.target.closest('.sheet-content') && typeof toggleFAB === 'function')

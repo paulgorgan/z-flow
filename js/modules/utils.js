@@ -242,13 +242,39 @@ window.ZFlowUtils = {
     escapeHTML,
     deepClone,
     isEmpty,
-    throttle
+    throttle,
+    escapeHtml(str) {
+        if (str === null || str === undefined) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#x27;');
+    },
+    pagineaza(lista, pageSize, currentPage) {
+        if (pageSize === 0) return { items: lista, total: lista.length, totalPages: 1, currentPage: 1, hasNext: false, hasPrev: false, from: lista.length ? 1 : 0, to: lista.length };
+        const total = lista.length;
+        const totalPages = Math.max(1, Math.ceil(total / pageSize));
+        const page = Math.min(Math.max(1, currentPage), totalPages);
+        const from = (page - 1) * pageSize;
+        return {
+            items: lista.slice(from, from + pageSize),
+            total, totalPages, currentPage: page,
+            hasNext: page < totalPages,
+            hasPrev: page > 1,
+            from: from + 1,
+            to: Math.min(from + pageSize, total)
+        };
+    }
 };
 
 // Export individual
 window.validareCUI  = validareCUI;
 window.validareIBAN = validareIBAN;
 window.escapeHTML   = escapeHTML;
+window.escapeHtml   = (str) => window.ZFlowUtils.escapeHtml(str);
+window.pagineaza    = (l, ps, cp) => window.ZFlowUtils.pagineaza(l, ps, cp);
 
 // Export individual pentru compatibilitate cu codul existent
 window.debounce = debounce;

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Z-FLOW Emoji Cleanup Script
  * Removes emoji prefixes from showNotification() text args across all JS files
  * Replaces visible UI emoji with text or SVG markers for later HTML substitution

@@ -3,10 +3,13 @@
  * Versiune Refactorizată cu Arhitectură Modulară
  */
 
-const CACHE_NAME = 'zflow-v61.1';
+// Load build version — single source of truth for cache busting
+try { importScripts('/z-flow/js/version.js'); } catch (e) {}
+const CACHE_NAME = 'zflow-' + (typeof ZFLOW_BUILD !== 'undefined' ? ZFLOW_BUILD : 'v61.1');
 const STATIC_ASSETS = [
   '/z-flow/',
   '/z-flow/index.html',
+  '/z-flow/js/version.js',
   '/z-flow/css/styles.css',
   '/z-flow/js/app.js',
   '/z-flow/js/store.js',

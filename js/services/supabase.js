@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Z-FLOW Enterprise v7.14
  * Supabase Service - Database Operations
  */
@@ -44,7 +44,7 @@ async function withRetry(fn, maxRetries = 3, baseDelay = 1000) {
             if (status === 401 || status === 403 || error?.code === '23505') throw error;
             if (attempt < maxRetries) {
                 const delay = baseDelay * Math.pow(2, attempt); // 1s → 2s → 4s
-                console.warn(`[Retry] Tentativa ${attempt + 1}/${maxRetries} eșuată. Reîncerc în ${delay}ms:`, error?.message || error);
+                ZFlowLogger.warn('supabase', `[Retry] Tentativa ${attempt + 1}/${maxRetries} eșuată. Reîncerc în ${delay}ms:`, error?.message || error);
                 await new Promise(resolve => setTimeout(resolve, delay));
             }
         }
@@ -63,7 +63,7 @@ function _getCurrentUserId() {
     // Pentru utilizatorii Supabase, user_id este obligatoriu
     const id = window.ZFlowStore?.userSession?.user?.id;
     if (!id) {
-        console.error('[Security] user_id lipsă pentru sesiune non-locală — operație blocată');
+        ZFlowLogger.error('supabase', '[Security] user_id lipsă pentru sesiune non-locală — operație blocată');
         throw new Error('Autentificare Supabase necesară');
     }
     return id;
@@ -469,7 +469,7 @@ async function fetchFacturiPage(limit = 100, offset = 0) {
         if (error) throw error;
         return { data: _normalizeFacturi(data || []), count: count || 0 };
     } catch (e) {
-        console.error('[fetchFacturiPage]', e);
+        ZFlowLogger.error('supabase', '[fetchFacturiPage]', e);
         return { data: [], count: 0 };
     }
 }
@@ -487,7 +487,7 @@ async function insertFactura(payload, strict = false) {
         if (error) throw error;
     } catch(e) {
         if (strict) throw e;
-        console.warn('[insertFactura] Supabase failed, fallback local:', e.message);
+        ZFlowLogger.warn('supabase', '[insertFactura] Supabase failed, fallback local:', e.message);
         _demoOps.insertFactura(payload);
     }
 }
@@ -528,14 +528,14 @@ async function insertClient(payload, strict = false) {
     } catch(e) {
         // Dacă CUI există deja (unique constraint 23505), preluăm ID-ul real
         if (e.code === '23505' && payload.cui) {
-            console.warn('[insertClient] CUI existent, preiau ID real din Supabase:', payload.cui);
+            ZFlowLogger.warn('supabase', '[insertClient] CUI existent, preiau ID real din Supabase:', payload.cui);
             try {
                 const { data: existing } = await zf.from('clienti').select('id').eq('cui', payload.cui).single();
                 if (existing?.id) return existing.id;
             } catch(e2) {}
         }
         if (strict) throw e;
-        console.warn('[insertClient] Supabase failed, fallback local:', e.message);
+        ZFlowLogger.warn('supabase', '[insertClient] Supabase failed, fallback local:', e.message);
         return _demoOps.insertClient(payload);
     }
 }
@@ -572,9 +572,9 @@ async function deletePDFFromStorage(publicUrl) {
         if (idx === -1) return; // URL necunoscut, nu facem nimic
         const filePath = decodeURIComponent(publicUrl.slice(idx + marker.length));
         const { error } = await zf.storage.from('facturi-pdf').remove([filePath]);
-        if (error) console.warn('[Storage] Eroare ștergere fișier:', error.message);
+        if (error) ZFlowLogger.warn('supabase', '[Storage] Eroare ștergere fișier:', error.message);
     } catch (e) {
-        console.warn('[Storage] Eroare ștergere fișier:', e);
+        ZFlowLogger.warn('supabase', '[Storage] Eroare ștergere fișier:', e);
     }
 }
 
@@ -694,10 +694,10 @@ async function fetchProfile() {
         } catch(e) {}
         if (data) return data;
         // Supabase profiles gol — fallback pe cache per-user
-        console.warn('[Profile] profiles table empty, fallback pe cache per-user');
+        ZFlowLogger.warn('supabase', '[Profile] profiles table empty, fallback pe cache per-user');
         try { const s = localStorage.getItem('zflow_prc_' + user.id); return s ? JSON.parse(s) : null; } catch(e) { return null; }
     } catch(e) {
-        console.warn('[Profile] fetchProfile error:', e.message);
+        ZFlowLogger.warn('supabase', '[Profile] fetchProfile error:', e.message);
         return null;
     }
 }
@@ -727,7 +727,7 @@ async function upsertProfile(payload) {
             .from("profiles")
             .upsert({ ...payload, id: user.id, user_id: user.id, updated_at: new Date().toISOString() }, { onConflict: 'id' });
         if (!error) saved = true;
-    } catch(e) { console.warn('[Profile] upsert payload complet eșuat, încerc minimal:', e.message); }
+    } catch(e) { ZFlowLogger.warn('supabase', '[Profile] upsert payload complet eșuat, încerc minimal:', e.message); }
     if (!saved) {
         const { error } = await zf
             .from("profiles")
@@ -772,14 +772,14 @@ async function insertFurnizor(payload, strict = false) {
     } catch(e) {
         // Dacă CUI există deja, preluăm ID-ul real
         if (e.code === '23505' && payload.cui) {
-            console.warn('[insertFurnizor] CUI existent, preiau ID real:', payload.cui);
+            ZFlowLogger.warn('supabase', '[insertFurnizor] CUI existent, preiau ID real:', payload.cui);
             try {
                 const { data: existing } = await zf.from('furnizori').select('id').eq('cui', payload.cui).single();
                 if (existing?.id) return existing.id;
             } catch(e2) {}
         }
         if (strict) throw e;
-        console.warn('[insertFurnizor] Supabase failed, fallback local:', e.message);
+        ZFlowLogger.warn('supabase', '[insertFurnizor] Supabase failed, fallback local:', e.message);
         return _demoOps.insertFurnizor(payload);
     }
 }
@@ -840,7 +840,7 @@ async function insertFacturaPlatit(payload, strict = false) {
         return data?.id;
     } catch(e) {
         if (strict) throw e;
-        console.warn('[insertFacturaPlatit] Supabase failed, fallback local:', e.message);
+        ZFlowLogger.warn('supabase', '[insertFacturaPlatit] Supabase failed, fallback local:', e.message);
         return _demoOps.insertFacturaPlatit(payload);
     }
 }
@@ -929,7 +929,7 @@ async function validateSubscriptionToken(token) {
         if (data.expires_at && new Date(data.expires_at) < new Date()) return null;
         return { valid: true, plan_type: data.plan_type || 'standard', duration_days: data.duration_days || 365 };
     } catch(e) {
-        console.warn('[validateSubscriptionToken]', e.message);
+        ZFlowLogger.warn('supabase', '[validateSubscriptionToken]', e.message);
         return null;
     }
 }
@@ -953,7 +953,7 @@ async function consumeSubscriptionToken(token, email, password) {
                 hasSession = true;
             } catch(loginErr) {
                 // Email confirmation activ — token se consumă la primul login real (R7-FIX 5)
-                console.warn('[consumeSubscriptionToken] Sesiune indisponibilă — token pending:', loginErr.message);
+                ZFlowLogger.warn('supabase', '[consumeSubscriptionToken] Sesiune indisponibilă — token pending:', loginErr.message);
                 try { localStorage.setItem('zflow_pending_token', token.trim().toUpperCase()); } catch(_) {}
                 return;
             }
@@ -966,7 +966,7 @@ async function consumeSubscriptionToken(token, email, password) {
                 .eq('token', token.trim().toUpperCase());
         }
     } catch(e) {
-        console.warn('[consumeSubscriptionToken]', e.message);
+        ZFlowLogger.warn('supabase', '[consumeSubscriptionToken]', e.message);
     }
 }
 
@@ -981,7 +981,7 @@ async function fetchProduse() {
         const { data, error } = await zf.from('produse').select('*').order('nume').eq('user_id', uid);
         if (error) throw error;
         return data || [];
-    } catch(e) { console.warn('[DB] fetchProduse:', e.message); return []; }
+    } catch(e) { ZFlowLogger.warn('supabase', '[DB] fetchProduse:', e.message); return []; }
 }
 async function insertProdus(payload) {
     if (_demoOps.isLocal()) { _demoOps.insertProdus(payload); return; }
@@ -1010,7 +1010,7 @@ async function fetchMiscariStoc() {
         const { data, error } = await zf.from('miscari_stoc').select('*').order('data', {ascending:false}).order('created_at', {ascending:false}).eq('user_id', uid);
         if (error) throw error;
         return data || [];
-    } catch(e) { console.warn('[DB] fetchMiscariStoc:', e.message); return []; }
+    } catch(e) { ZFlowLogger.warn('supabase', '[DB] fetchMiscariStoc:', e.message); return []; }
 }
 async function insertMiscare(payload) {
     if (_demoOps.isLocal()) { _demoOps.insertMiscare(payload); return; }
@@ -1139,11 +1139,11 @@ function initRealtimeSubscriptions() {
         })
         .subscribe((status, err) => {
             if (status === 'SUBSCRIBED') {
-                console.info('[Realtime] Canal activ — schimbările din DB vor apărea în timp real');
+                ZFlowLogger.info('supabase', '[Realtime] Canal activ — schimbările din DB vor apărea în timp real');
             } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-                console.error('[Realtime] Eroare canal:', status, err?.message || '');
+                ZFlowLogger.error('supabase', '[Realtime] Eroare canal:', status, err?.message || '');
             } else {
-                console.info('[Realtime] status:', status);
+                ZFlowLogger.info('supabase', '[Realtime] status:', status);
             }
         });
 }
@@ -1161,7 +1161,7 @@ function stopRealtimeSubscriptions() {
 async function fetchReceptii() {
     if (_demoOps.isLocal()) return _demoOps.fetchReceptii();
     const uid = _getCurrentUserId();
-    try { const { data, error } = await zf.from('receptii').select('*').order('created_at', {ascending:false}).eq('user_id', uid); if (error) throw error; return data || []; } catch(e) { console.warn('[DB] fetchReceptii:', e.message); return []; }
+    try { const { data, error } = await zf.from('receptii').select('*').order('created_at', {ascending:false}).eq('user_id', uid); if (error) throw error; return data || []; } catch(e) { ZFlowLogger.warn('supabase', '[DB] fetchReceptii:', e.message); return []; }
 }
 async function insertReceptie(payload) {
     if (_demoOps.isLocal()) { _demoOps.insertReceptie(payload); return; }
@@ -1176,7 +1176,7 @@ async function insertReceptie(payload) {
 async function fetchLivrari() {
     if (_demoOps.isLocal()) return _demoOps.fetchLivrari();
     const uid = _getCurrentUserId();
-    try { const { data, error } = await zf.from('livrari').select('*').order('created_at', {ascending:false}).eq('user_id', uid); if (error) throw error; return data || []; } catch(e) { console.warn('[DB] fetchLivrari:', e.message); return []; }
+    try { const { data, error } = await zf.from('livrari').select('*').order('created_at', {ascending:false}).eq('user_id', uid); if (error) throw error; return data || []; } catch(e) { ZFlowLogger.warn('supabase', '[DB] fetchLivrari:', e.message); return []; }
 }
 async function insertLivrare(payload) {
     if (_demoOps.isLocal()) { _demoOps.insertLivrare(payload); return; }
@@ -1191,7 +1191,7 @@ async function insertLivrare(payload) {
 async function fetchSoferi() {
     if (_demoOps.isLocal()) return _demoOps.fetchSoferi();
     const uid = _getCurrentUserId();
-    try { const { data, error } = await zf.from('soferi').select('*').order('nume').eq('user_id', uid); if (error) throw error; return data || []; } catch(e) { console.warn('[DB] fetchSoferi:', e.message); return []; }
+    try { const { data, error } = await zf.from('soferi').select('*').order('nume').eq('user_id', uid); if (error) throw error; return data || []; } catch(e) { ZFlowLogger.warn('supabase', '[DB] fetchSoferi:', e.message); return []; }
 }
 async function insertSofer(payload) {
     if (_demoOps.isLocal()) { _demoOps.insertSofer(payload); return; }
@@ -1216,7 +1216,7 @@ async function deleteSofer(id) {
 async function fetchVehicule() {
     if (_demoOps.isLocal()) return _demoOps.fetchVehicule();
     const uid = _getCurrentUserId();
-    try { const { data, error } = await zf.from('vehicule').select('*').order('nr_inmatriculare').eq('user_id', uid); if (error) throw error; return data || []; } catch(e) { console.warn('[DB] fetchVehicule:', e.message); return []; }
+    try { const { data, error } = await zf.from('vehicule').select('*').order('nr_inmatriculare').eq('user_id', uid); if (error) throw error; return data || []; } catch(e) { ZFlowLogger.warn('supabase', '[DB] fetchVehicule:', e.message); return []; }
 }
 async function insertVehicul(payload) {
     if (_demoOps.isLocal()) { _demoOps.insertVehicul(payload); return; }
@@ -1241,7 +1241,7 @@ async function deleteVehicul(id) {
 async function fetchComenziTransport() {
     if (_demoOps.isLocal()) return _demoOps.fetchComenzi();
     const uid = _getCurrentUserId();
-    try { const { data, error } = await zf.from('comenzi_transport').select('*').order('created_at', {ascending:false}).eq('user_id', uid); if (error) throw error; return data || []; } catch(e) { console.warn('[DB] fetchComenziTransport:', e.message); return []; }
+    try { const { data, error } = await zf.from('comenzi_transport').select('*').order('created_at', {ascending:false}).eq('user_id', uid); if (error) throw error; return data || []; } catch(e) { ZFlowLogger.warn('supabase', '[DB] fetchComenziTransport:', e.message); return []; }
 }
 async function insertComandaTransport(payload) {
     // [R6-FIX 2] Verificare user_id înainte de insert
@@ -1284,7 +1284,7 @@ async function adminGetUserData(targetEmail) {
         const { data: rpcData, error: rpcErr } = await zf.rpc('admin_get_user_by_email', { p_email: email });
         if (!rpcErr && rpcData) return rpcData;
     } catch (e) {
-        console.warn('[adminGetUserData] RPC indisponibil, încerc fallback profiles');
+        ZFlowLogger.warn('supabase', '[adminGetUserData] RPC indisponibil, încerc fallback profiles');
     }
     try {
         const { data, error } = await zf
@@ -1295,7 +1295,7 @@ async function adminGetUserData(targetEmail) {
         if (error) throw error;
         return data;
     } catch (e) {
-        console.warn('[adminGetUserData] Nu s-a putut găsi utilizatorul:', e.message);
+        ZFlowLogger.warn('supabase', '[adminGetUserData] Nu s-a putut găsi utilizatorul:', e.message);
         return null;
     }
 }
@@ -1314,10 +1314,10 @@ async function adminDeleteUserData(targetUserId, tables) {
                 .eq('user_id', targetUserId);
             if (error) throw error;
             rezultate[table] = { success: true, deleted: count || 0 };
-            console.log(`[adminDelete] ${table}: ${count} înregistrări șterse`);
+            ZFlowLogger.debug('supabase', `[adminDelete] ${table}: ${count} înregistrări șterse`);
         } catch (e) {
             rezultate[table] = { success: false, error: e.message };
-            console.error(`[adminDelete] Eroare la ${table}:`, e.message);
+            ZFlowLogger.error('supabase', `[adminDelete] Eroare la ${table}:`, e.message);
         }
     }
     return rezultate;
@@ -1337,7 +1337,7 @@ async function adminSendNotification(targetEmail, mesaj) {
         if (error) throw error;
         return true;
     } catch (e) {
-        console.warn('[adminSendNotification]', e.message);
+        ZFlowLogger.warn('supabase', '[adminSendNotification]', e.message);
         return false;
     }
 }
@@ -1351,7 +1351,7 @@ async function adminSendNotification(targetEmail, mesaj) {
  */
 function resetLocalSession() {
     _demoOps._restoreCache.clear();
-    console.log('[Auth] _demoOps._restoreCache resetat — date admin local vor fi re-încarcate la re-login');
+    ZFlowLogger.debug('supabase', '[Auth] _demoOps._restoreCache resetat — date admin local vor fi re-încarcate la re-login');
 }
 
 // [R9-FIX 1] Admin dashboard — lista completa utilizatori
@@ -1361,7 +1361,7 @@ async function adminGetAllUsers() {
         if (error) throw error;
         return data || [];
     } catch(e) {
-        console.warn('[adminGetAllUsers]', e.message);
+        ZFlowLogger.warn('supabase', '[adminGetAllUsers]', e.message);
         return [];
     }
 }
@@ -1377,7 +1377,7 @@ async function adminExtendSubscription(email, days, plan) {
         if (error) throw error;
         return !!data;
     } catch(e) {
-        console.warn('[adminExtendSubscription]', e.message);
+        ZFlowLogger.warn('supabase', '[adminExtendSubscription]', e.message);
         return false;
     }
 }

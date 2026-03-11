@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Z-FLOW Enterprise v7.14
  * Module: ANAF - Căutare date firmă la ANAF
  * 
@@ -59,7 +59,7 @@ const ZFlowANAF = {
                 window.ZFlowUI?.showNotification(err.message, 'warning');
                 throw err;
             }
-            console.error('Eroare căutare ANAF:', e);
+            ZFlowLogger.error('anaf', 'Eroare căutare ANAF:', e);
             throw e;
         }
     },

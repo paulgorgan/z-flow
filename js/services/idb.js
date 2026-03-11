@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Z-FLOW Enterprise — IndexedDB Offline Cache
  * #7 — Cache transparent pentru funcționare offline
  *
@@ -59,7 +59,7 @@ async function idbSave(storeName, records) {
             tx.onerror    = (e) => { db.close(); reject(e.target.error); };
         });
     } catch (err) {
-        console.warn('[IDB] Eroare la scriere', storeName, err);
+        ZFlowLogger.warn('idb', '[IDB] Eroare la scriere', storeName, err);
     }
 }
 
@@ -78,7 +78,7 @@ async function idbGetAll(storeName) {
             req.onerror   = (e) => { db.close(); reject(e.target.error); };
         });
     } catch (err) {
-        console.warn('[IDB] Eroare la citire', storeName, err);
+        ZFlowLogger.warn('idb', '[IDB] Eroare la citire', storeName, err);
         return [];
     }
 }
@@ -119,7 +119,7 @@ async function idbClearAll() {
             tx.onerror    = (e) => { db.close(); reject(e.target.error); };
         });
     } catch (err) {
-        console.warn('[IDB] Eroare la ștergere cache', err);
+        ZFlowLogger.warn('idb', '[IDB] Eroare la ștergere cache', err);
     }
 }
 
@@ -154,7 +154,7 @@ async function idbSavePendingOp(op) {
             await reg.sync.register('sync-invoices');
         }
     } catch (e) {
-        console.warn('[idbSavePendingOp]', e);
+        ZFlowLogger.warn('idb', '[idbSavePendingOp]', e);
     }
 }
 

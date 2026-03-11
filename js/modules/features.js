@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Z-FLOW Enterprise v8.0
  * Modul: Features — Funcționalități Noi
  *
@@ -52,7 +52,7 @@ async function verificaEFactura(cui) {
         }
     } catch (corsErr) {
         // CORS probabil — folosim datele din store dacă există
-        console.warn('[e-Factura] CORS blocat — verificare locală', corsErr.message);
+        ZFlowLogger.warn('features', '[e-Factura] CORS blocat — verificare locală', corsErr.message);
     }
 
     // Dacă nu s-a putut face fetch (CORS), afișăm un dialog informativ
@@ -975,7 +975,7 @@ function importaXMLANAF() {
                 const text = await file.text();
                 const doc = new DOMParser().parseFromString(text, 'application/xml');
                 const err = doc.querySelector('parsererror');
-                if (err) { erori++; console.warn('[XML ANAF] Parse error:', file.name); continue; }
+                if (err) { erori++; ZFlowLogger.warn('features', '[XML ANAF] Parse error:', file.name); continue; }
 
                 const facturaData = _parseazaUBL(doc, file.name);
                 if (!facturaData) { erori++; continue; }
@@ -1001,7 +1001,7 @@ function importaXMLANAF() {
                 ok++;
             } catch(parseErr) {
                 erori++;
-                console.error('[XML ANAF] Eroare:', file.name, parseErr);
+                ZFlowLogger.error('features', '[XML ANAF] Eroare:', file.name, parseErr);
             }
         }
 
@@ -1070,7 +1070,7 @@ function _parseazaUBL(doc, filename) {
 
         return rezultat;
     } catch(e) {
-        console.error('[UBL Parse] Eroare la', filename, e);
+        ZFlowLogger.error('features', '[UBL Parse] Eroare la', filename, e);
         return null;
     }
 }

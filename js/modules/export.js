@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Z-FLOW Enterprise v7.14
  * Module: Export - Generare PDF și Excel
  * 
@@ -123,7 +123,7 @@ const ZFlowExport = {
     generateExcel(facturi, options = {}) {
         const XLSX = window.XLSX;
         if (!XLSX) {
-            console.error('XLSX library not loaded');
+            ZFlowLogger.error('export', 'XLSX library not loaded');
             return null;
         }
         
@@ -188,7 +188,7 @@ const ZFlowExport = {
             document.body.removeChild(a);
             setTimeout(() => URL.revokeObjectURL(url), 1000);
         } catch(e) {
-            console.error('[ZFlowExport] saveExcel error:', e);
+            ZFlowLogger.error('export', '[ZFlowExport] saveExcel error:', e);
             // Fallback la writeFile dacă Blob nu funcționează
             window.XLSX.writeFile(result.workbook, result.filename);
         }

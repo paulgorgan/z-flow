@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Z-FLOW Enterprise v7.14
  * Module: Import - Import date din SAGA și alte surse
  * 
@@ -95,7 +95,7 @@ const ZFlowImport = {
 
         // Diagnosticare headere — afișat o singură dată
         if (sagaData.length > 0) {
-            console.log('[Import] Headere detectate în CSV:', Object.keys(sagaData[0]));
+            ZFlowLogger.debug('import', '[Import] Headere detectate în CSV:', Object.keys(sagaData[0]));
         }
 
         // Helper: caută prima cheie existentă în row (case-insensitive + trim + strip BOM + underscore↔space)
@@ -246,13 +246,13 @@ const ZFlowImport = {
             if (an.length === 2) an = '20' + an;
             // Validare intervaliditate: zi/lună imposibilă → log și ignoră
             if (zi < 1 || zi > 31 || luna < 1 || luna > 12) {
-                console.warn(`[Import] Dată invalidă ignorată: "${dateStr}" (zi=${zi}, luna=${luna})`);
+                ZFlowLogger.warn('import', `[Import] Dată invalidă ignorată: "${dateStr}" (zi=${zi}, luna=${luna})`);
                 return null;
             }
             // Verificare cu obiect Date (prinde 31 februarire etc.)
             const testDate = new Date(parseInt(an), luna - 1, zi);
             if (testDate.getDate() !== zi || testDate.getMonth() !== luna - 1) {
-                console.warn(`[Import] Dată inexistentă ignorată: "${dateStr}"`);
+                ZFlowLogger.warn('import', `[Import] Dată inexistentă ignorată: "${dateStr}"`);
                 return null;
             }
             return `${an}-${String(luna).padStart(2,'0')}-${String(zi).padStart(2,'0')}`;

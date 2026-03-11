@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Z-FLOW Enterprise v7.14
  * Module: Auth - Autentificare și Rate Limiting
  * 
@@ -44,12 +44,12 @@ const ZFlowAuth = {
      */
     recordFailedAttempt() {
         this.rateLimitConfig.attempts++;
-        console.log(`⚠️ Încercare eșuată: ${this.rateLimitConfig.attempts}/${this.rateLimitConfig.maxAttempts}`);
+        ZFlowLogger.debug('auth', `⚠️ Încercare eșuată: ${this.rateLimitConfig.attempts}/${this.rateLimitConfig.maxAttempts}`);
         
         if (this.rateLimitConfig.attempts >= this.rateLimitConfig.maxAttempts) {
             this.rateLimitConfig.lockedUntil = Date.now() + this.rateLimitConfig.lockoutDuration;
             const minutes = Math.ceil(this.rateLimitConfig.lockoutDuration / 60000);
-            console.log(`🔒 Cont blocat pentru ${minutes} minute`);
+            ZFlowLogger.debug('auth', `🔒 Cont blocat pentru ${minutes} minute`);
         }
     },
 
@@ -78,7 +78,7 @@ const ZFlowAuth = {
                 }
             }
         } catch (e) {
-            console.warn("Demo session check error:", e);
+            ZFlowLogger.warn('auth', "Demo session check error:", e);
         }
         return null;
     },

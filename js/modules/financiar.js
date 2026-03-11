@@ -73,11 +73,9 @@ function renderMain(lista = null) {
 
     // Paginare clienți
     ZFlowStore._clientiFiltrati = sursa;
-    const psC = ZFlowStore.clientiPageSize;
-    const totalPagesC = psC === 0 ? 1 : Math.ceil(sursa.length / psC);
-    if (ZFlowStore.clientiCurrentPage > totalPagesC) ZFlowStore.clientiCurrentPage = 1;
-    const startC = psC === 0 ? 0 : (ZFlowStore.clientiCurrentPage - 1) * psC;
-    const paginatC = psC === 0 ? sursa : sursa.slice(startC, startC + psC);
+    const pagC = pagineaza(sursa, ZFlowStore.clientiPageSize, ZFlowStore.clientiCurrentPage);
+    ZFlowStore.clientiCurrentPage = pagC.currentPage;
+    const paginatC = pagC.items;
 
     container.innerHTML = paginatC
         .map((f) => {
@@ -208,11 +206,9 @@ function renderFurnizori(lista) {
 
     // Paginare furnizori
     ZFlowStore._furnizoriFiltrati = sursa;
-    const psF = ZFlowStore.furnizoriPageSize;
-    const totalPagesF = psF === 0 ? 1 : Math.ceil(sursa.length / psF);
-    if (ZFlowStore.furnizoriCurrentPage > totalPagesF) ZFlowStore.furnizoriCurrentPage = 1;
-    const startF = psF === 0 ? 0 : (ZFlowStore.furnizoriCurrentPage - 1) * psF;
-    const paginatF = psF === 0 ? sursa : sursa.slice(startF, startF + psF);
+    const pagF = pagineaza(sursa, ZFlowStore.furnizoriPageSize, ZFlowStore.furnizoriCurrentPage);
+    ZFlowStore.furnizoriCurrentPage = pagF.currentPage;
+    const paginatF = pagF.items;
 
     container.innerHTML = paginatF.map((f) => {
         const _esc = typeof escapeHTML === 'function' ? escapeHTML : (s => String(s||''));

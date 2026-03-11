@@ -34,8 +34,8 @@ async function salveazaClient() {
     // Normalizare CUI: elimina prefix RO/ro și spații
     const cuiNorm = dateFirma.cui.toString().trim().replace(/^RO/i, '').trim();
     const cuiRegex = /^\d{2,10}$/;
-    if (!dateFirma.nume_firma || !cuiNorm) return alert("Denumirea și CUI-ul sunt obligatorii!");
-    if (!cuiRegex.test(cuiNorm)) return alert("CUI-ul invalid: doar cifre (2-10 caractere)");
+    if (!dateFirma.nume_firma || !cuiNorm) { showNotification('Denumirea și CUI-ul sunt obligatorii!', 'error'); return; }
+    if (!cuiRegex.test(cuiNorm)) { showNotification('CUI-ul invalid: doar cifre (2-10 caractere)', 'error'); return; }
     dateFirma.cui = cuiNorm; // salvează fără prefix RO
     if (typeof validareCUI === 'function' && !validareCUI(cuiNorm)) {
         if (!confirm("CUI-ul nu trece validarea cifrei de control ANAF. Continuați oricum?")) return;
@@ -51,7 +51,6 @@ async function salveazaClient() {
 
     // Verificare duplicat client (doar la inserare, nu la editare)
     if (!id) {
-        const cuiNorm = (dateFirma.cui || '').toString().trim();
         const numeNorm = (dateFirma.nume_firma || '').toLowerCase().trim();
         const existent = ZFlowStore.dateLocal.find(c =>
             (cuiNorm && String(c.cui || '').trim() === cuiNorm) ||
@@ -75,8 +74,8 @@ async function salveazaClient() {
         await init(false);
         if (id) arataDetalii(id);
     } catch (e) {
-        console.error("Eroare Supabase:", e);
-        alert("Eroare Schema: " + e.message);
+        ZFlowLogger.error('salveazaClient', e);
+        showNotification('Eroare la salvare: ' + e.message, 'error');
     } finally {
         setLoader(false);
     }
@@ -110,7 +109,7 @@ async function salveazaFacturaOrchestrator() {
     const note = document.getElementById("in-fac-note")?.value || "";
     const fileInput = document.getElementById("in-fac-file");
 
-    if (!cid || !nr || !val) return alert("Selectează clientul, seria și suma!");
+    if (!cid || !nr || !val) { showNotification('Selectează clientul, seria și suma!', 'error'); return; }
 
     // Verificare duplicat factură client (doar la inserare, nu la editare)
     if (!id && nr) {
@@ -170,8 +169,8 @@ async function salveazaFacturaOrchestrator() {
         await init();
         if (cid) arataDetalii(cid);
     } catch (err) {
-        console.error("Eroare salvare:", err);
-        alert("Eroare: " + err.message);
+        ZFlowLogger.error('salveazaFacturaOrchestrator', err);
+        showNotification('Eroare la salvare: ' + err.message, 'error');
     } finally {
         setLoader(false);
     }
@@ -184,7 +183,7 @@ async function toggleStatusPlata(id, currentStatus) {
     const f = ZFlowStore.dateFacturiBI.find((x) => String(x.id) === String(id));
 
     if (f && (f.is_imported || f.id_descarcare_anaf)) {
-        return alert("SAGA factură - Nu poate fi modificată");
+        return showNotification('Factură importată din SAGA/ANAF — nu poate fi modificată', 'warning');
     }
 
     const noulStatus = currentStatus === "Incasat" ? "Neincasat" : "Incasat";
@@ -201,7 +200,8 @@ async function toggleStatusPlata(id, currentStatus) {
             saveZFlowData();
             if (f) arataDetalii(f.client_id);
         } catch (err) {
-            alert(err.message);
+            ZFlowLogger.error('toggleStatusPlata', err);
+            showNotification(err.message, 'error');
         } finally {
             setLoader(false);
         }
@@ -304,7 +304,8 @@ async function stergeFirma(id) {
 function trimiteEmailDebitor(email, nr, suma) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email || email === "undefined" || email === "null" || !emailRegex.test(email)) {
-        return alert("Eroare: Adresa de email nu este validă!");
+        showNotification('Adresa de email nu este validă!', 'error');
+        return;
     }
     const subiect = encodeURIComponent(`Notificare plată factură nr. ${nr}`);
     const corp = encodeURIComponent(`Bună ziua,\n\nVă reamintim de plata facturii nr. ${nr} în valoare de ${suma} RON.\n\nVă mulțumim!`);
@@ -410,7 +411,7 @@ function printInvoice(id) {
         const client = ZFlowStore.dateLocal.find(c => String(c.id) === String(invoice?.client_id));
 
         if (!invoice || !client) {
-            alert("Factură nu a fost găsită!");
+            showNotification('Factură nu a fost găsită!', 'error');
             return;
         }
 
@@ -435,9 +436,110 @@ function printInvoice(id) {
         w.print();
         w.close();
     } catch (err) {
-        console.error("Eroare print:", err);
-        alert("Eroare la print: " + err.message);
+        ZFlowLogger.error('printInvoice', err);
+        showNotification('Eroare la print: ' + err.message, 'error');
     }
+}
+
+/**
+ * Salvează factură de plătit (furnizor)
+ */
+async function salveazaFacturaPlatit() {
+    const id = document.getElementById("in-fp-id")?.value.trim();
+    const furnizorId = document.getElementById("in-fp-furnizor")?.value.trim() ||
+                       document.getElementById("in-fp-furnizor-id")?.value.trim();
+    const val = parseFloat(document.getElementById("in-fp-val")?.value) || 0;
+
+    if (!furnizorId) { showNotification("Selectează furnizorul", "error"); return; }
+    if (val <= 0) { showNotification("Completează valoarea facturii", "error"); return; }
+
+    const nrFurnizor = document.getElementById("in-fp-nr")?.value.trim() || null;
+    if (!id && nrFurnizor) {
+        const dupFP = ZFlowStore.dateFacturiPlatit.find(f =>
+            String(f.furnizor_id) === String(furnizorId) &&
+            String(f.numar_factura || '').trim().toLowerCase() === String(nrFurnizor).trim().toLowerCase()
+        );
+        if (dupFP) {
+            showNotification(`Factura "${escapeHtml(nrFurnizor)}" există deja pentru acest furnizor!`, 'warning', 6000);
+            return;
+        }
+    }
+
+    setLoader(true);
+    try {
+        const payload = {
+            furnizor_id: furnizorId,
+            numar_factura: nrFurnizor,
+            valoare: val,
+            data_emiterii: document.getElementById("in-fp-emisie")?.value || null,
+            data_scadenta: document.getElementById("in-fp-scad")?.value || null,
+            note: document.getElementById("in-fp-note")?.value.trim() || null,
+            status_plata: "Neplatit",
+            updated_at: new Date().toISOString()
+        };
+
+        if (id) {
+            await ZFlowDB.updateFacturaPlatit(id, payload);
+            const fpIdx = (ZFlowStore.dateFacturiPlatit || []).findIndex(f => String(f.id) === String(id));
+            if (fpIdx !== -1) ZFlowStore.dateFacturiPlatit[fpIdx] = { ...ZFlowStore.dateFacturiPlatit[fpIdx], ...payload };
+            showNotification("Factură actualizată!", "success");
+        } else {
+            const newId = await ZFlowDB.insertFacturaPlatit(payload);
+            ZFlowStore.dateFacturiPlatit = [
+                { ...payload, id: newId || ('tmp_' + Date.now()), created_at: new Date().toISOString() },
+                ...(ZFlowStore.dateFacturiPlatit || [])
+            ];
+            showNotification("Factură adăugată!", "success");
+        }
+
+        inchideModal("modal-factura-platit");
+        if (!id) showCorrelationPrompt('intrare', { obs: payload.numar_factura ? 'Ref. factura ' + payload.numar_factura : '' });
+        if (typeof _recomputeFurnizoriData === 'function') _recomputeFurnizoriData();
+        if (typeof renderFurnizoriThrottled === 'function') renderFurnizoriThrottled();
+        if (typeof updateFurnizoriKPI === 'function') updateFurnizoriKPI();
+        if (typeof invalidateCashflowCache === 'function') invalidateCashflowCache();
+        if (typeof incarcaDashboard === 'function') incarcaDashboard();
+        if (ZFlowStore.selectedFurnizorId && typeof arataDetaliiFurnizor === 'function') arataDetaliiFurnizor(ZFlowStore.selectedFurnizorId);
+    } catch (err) {
+        ZFlowLogger.error("crud", "salveazaFacturaPlatit eșuat", err);
+        showNotification("Eroare: " + err.message, "error");
+    } finally {
+        setLoader(false);
+    }
+}
+
+/**
+ * Șterge factură de plătit
+ */
+async function stergeFacturaPlatit(id) {
+    if (!id) {
+        id = document.getElementById("in-fp-id")?.value;
+        if (!id) return;
+    }
+    if (!hasPermission('canDelete')) {
+        showNotification("Nu ai permisiunea de a șterge facturi", "error");
+        return;
+    }
+    showConfirmModal("Ștergi această factură de plătit?", async () => {
+        setLoader(true);
+        try {
+            await ZFlowDB.deleteFacturaPlatit(id);
+            inchideModal("modal-factura-platit");
+            ZFlowStore.dateFacturiPlatit = (ZFlowStore.dateFacturiPlatit || []).filter(f => String(f.id) !== String(id));
+            if (typeof _recomputeFurnizoriData === 'function') _recomputeFurnizoriData();
+            if (typeof renderFurnizoriThrottled === 'function') renderFurnizoriThrottled();
+            if (typeof updateFurnizoriKPI === 'function') updateFurnizoriKPI();
+            if (typeof invalidateCashflowCache === 'function') invalidateCashflowCache();
+            if (typeof incarcaDashboard === 'function') incarcaDashboard();
+            if (ZFlowStore.selectedFurnizorId && typeof arataDetaliiFurnizor === 'function') arataDetaliiFurnizor(ZFlowStore.selectedFurnizorId);
+            showNotification("Factură ștearsă!", "success");
+        } catch (err) {
+            ZFlowLogger.error("crud", "stergeFacturaPlatit eșuat", err);
+            showNotification("Eroare: " + err.message, "error");
+        } finally {
+            setLoader(false);
+        }
+    });
 }
 
 
@@ -449,6 +551,8 @@ window.salveazaFacturaOrchestrator = salveazaFacturaOrchestrator;
 window.toggleStatusPlata = toggleStatusPlata;
 window.stergeFactura = stergeFactura;
 window.stergeFirma = stergeFirma;
+window.salveazaFacturaPlatit = salveazaFacturaPlatit;
+window.stergeFacturaPlatit = stergeFacturaPlatit;
 window.showConfirmModal = showConfirmModal;
 window.inchideModalConfirm = inchideModalConfirm;
 window.deschideModalConfirm = showConfirmModal;

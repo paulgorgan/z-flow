@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Z-FLOW Enterprise v7.14
  * Module: Attachments - Gestiune atașamente PDF
  * 
@@ -131,7 +131,7 @@ const ZFlowAttachments = {
                 }
                 
             } catch (e) {
-                console.error(`Eroare upload ${file.name}:`, e);
+                ZFlowLogger.error('attachments', `Eroare upload ${file.name}:`, e);
             }
         }
         
@@ -161,7 +161,7 @@ const ZFlowAttachments = {
             
             return !error;
         } catch (e) {
-            console.error('Eroare la ștergere atașament:', e);
+            ZFlowLogger.error('attachments', 'Eroare la ștergere atașament:', e);
             return false;
         }
     },
@@ -298,7 +298,7 @@ const ZFlowAttachments = {
             else errors++;
         }
 
-        console.log(`[Cleanup] Factură ${facturaId}: ${deleted} fișier(e) șterse din storage, ${errors} erori.`);
+        ZFlowLogger.debug('attachments', `[Cleanup] Factură ${facturaId}: ${deleted} fișier(e) șterse din storage, ${errors} erori.`);
         return { deleted, errors };
     },
 
@@ -311,7 +311,7 @@ const ZFlowAttachments = {
     async cleanupOrphanedFiles() {
         const zf = window.zf;
         if (!zf) {
-            console.warn('[Cleanup] Supabase client nu este inițializat.');
+            ZFlowLogger.warn('attachments', '[Cleanup] Supabase client nu este inițializat.');
             return { checked: 0, orphans: 0, deleted: 0, errors: 0 };
         }
 
@@ -323,7 +323,7 @@ const ZFlowAttachments = {
 
             if (listErr) throw listErr;
             if (!files || files.length === 0) {
-                console.log('[Cleanup] Bucket gol, nimic de verificat.');
+                ZFlowLogger.debug('attachments', '[Cleanup] Bucket gol, nimic de verificat.');
                 return { checked: 0, orphans: 0, deleted: 0, errors: 0 };
             }
 
@@ -360,18 +360,18 @@ const ZFlowAttachments = {
                     .remove([orphan.name]);
                 if (delErr) {
                     errors++;
-                    console.warn('[Cleanup] Eroare la ștergerea orfanului:', orphan.name, delErr.message);
+                    ZFlowLogger.warn('attachments', '[Cleanup] Eroare la ștergerea orfanului:', orphan.name, delErr.message);
                 } else {
                     deleted++;
-                    console.log('[Cleanup] Orfan șters:', orphan.name);
+                    ZFlowLogger.debug('attachments', '[Cleanup] Orfan șters:', orphan.name);
                 }
             }
 
             const result = { checked: files.length, orphans: orphans.length, deleted, errors };
-            console.log('[Cleanup] Finalizat:', result);
+            ZFlowLogger.debug('attachments', '[Cleanup] Finalizat:', result);
             return result;
         } catch (e) {
-            console.error('[Cleanup] Eroare critică la curățarea storage-ului:', e);
+            ZFlowLogger.error('attachments', '[Cleanup] Eroare critică la curățarea storage-ului:', e);
             return { checked: 0, orphans: 0, deleted: 0, errors: 1 };
         }
     }

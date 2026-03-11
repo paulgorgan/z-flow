@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Z-FLOW Enterprise v7.14
  * Modul Depozit — Gestionare Stoc, Produse, Recepții, Livrări
  */
@@ -181,12 +181,9 @@ function renderProduse() {
         return matchQ;
     });
     ZFlowStore._produseFiltrate = all;
-    const ps  = ZFlowStore.produsePageSize ?? 10;
-    const pg  = ZFlowStore.produseCurrentPage || 1;
-    const tp  = ps === 0 ? 1 : Math.ceil(all.length / ps);
-    if (pg > tp) ZFlowStore.produseCurrentPage = 1;
-    const s0  = ps === 0 ? 0 : ((ZFlowStore.produseCurrentPage||1) - 1) * ps;
-    const list = ps === 0 ? all : all.slice(s0, s0 + ps);
+    const pagP = pagineaza(all, ZFlowStore.produsePageSize ?? 10, ZFlowStore.produseCurrentPage || 1);
+    ZFlowStore.produseCurrentPage = pagP.currentPage;
+    const list = pagP.items;
     const pgEl = document.getElementById('produse-pagination');
 
     if (!all.length) {
@@ -231,7 +228,7 @@ function renderProduse() {
               </div>
             </div>`;
         } catch (itemErr) {
-            console.warn('[Depozit] renderProduse item error:', itemErr);
+            ZFlowLogger.warn('depozit', '[Depozit] renderProduse item error:', itemErr);
             return `<div class="text-xs text-red-400 px-4 py-2 bg-red-50 rounded-xl mb-1">Eroare afișare produs</div>`;
         }
     }).join('');
@@ -264,12 +261,9 @@ function renderMiscariStoc() {
                    (m.tip||'').toLowerCase().includes(q);
         });
     ZFlowStore._miscariFiltrate = all;
-    const ps  = ZFlowStore.miscariPageSize ?? 10;
-    const pg  = ZFlowStore.miscariCurrentPage || 1;
-    const tp  = ps === 0 ? 1 : Math.ceil(all.length / ps);
-    if (pg > tp) ZFlowStore.miscariCurrentPage = 1;
-    const s0  = ps === 0 ? 0 : ((ZFlowStore.miscariCurrentPage||1) - 1) * ps;
-    const list = ps === 0 ? all : all.slice(s0, s0 + ps);
+    const pagM = pagineaza(all, ZFlowStore.miscariPageSize ?? 10, ZFlowStore.miscariCurrentPage || 1);
+    ZFlowStore.miscariCurrentPage = pagM.currentPage;
+    const list = pagM.items;
     const pgEl = document.getElementById('miscari-pagination');
 
     if (!all.length) {
@@ -294,7 +288,7 @@ function renderMiscariStoc() {
               <b class="text-sm font-black tabular-nums ${isIn ? 'text-emerald-600' : 'text-red-600'}">${isIn ? '+' : '-'}${m.cantitate} ${p?.um || 'buc'}</b>
             </div>`;
         } catch (itemErr) {
-            console.warn('[Depozit] renderMiscariStoc item error:', itemErr);
+            ZFlowLogger.warn('depozit', '[Depozit] renderMiscariStoc item error:', itemErr);
             return `<div class="text-xs text-red-400 px-4 py-2 bg-red-50 rounded-xl mb-1">Eroare afișare mișcare</div>`;
         }
     }).join('');
@@ -340,7 +334,7 @@ function renderReceptiiDepozit() {
               <b class="text-sm font-black text-slate-700 tabular-nums">${val > 0 ? Math.round(val).toLocaleString() + ' lei' : '—'}</b>
             </div>`;
         } catch (itemErr) {
-            console.warn('[Depozit] renderReceptiiDepozit item error:', itemErr);
+            ZFlowLogger.warn('depozit', '[Depozit] renderReceptiiDepozit item error:', itemErr);
             return `<div class="text-xs text-red-400 px-4 py-2 bg-red-50 rounded-xl mb-1">Eroare afișare recepție</div>`;
         }
     }).join('');
@@ -384,7 +378,7 @@ function renderLivrariDepozit() {
               <span class="text-[9px] font-black uppercase px-2.5 py-1 rounded-full ${stCls}">${l.status || 'Draft'}</span>
             </div>`;
         } catch (itemErr) {
-            console.warn('[Depozit] renderLivrariDepozit item error:', itemErr);
+            ZFlowLogger.warn('depozit', '[Depozit] renderLivrariDepozit item error:', itemErr);
             return `<div class="text-xs text-red-400 px-4 py-2 bg-red-50 rounded-xl mb-1">Eroare afișare livrare</div>`;
         }
     }).join('');
@@ -554,9 +548,9 @@ async function initDepozit() {
         ZFlowStore.dateMiscariStoc = miscari;
         ZFlowStore.dateReceptii    = receptii;
         ZFlowStore.dateLivrari     = livrari;
-        console.log(`📦 Depozit: ${produse.length} produse, ${miscari.length} mișcări`);
+        ZFlowLogger.debug('depozit', `📦 Depozit: ${produse.length} produse, ${miscari.length} mișcări`);
     } catch (err) {
-        console.warn('[Depozit] Eroare inițializare (non-fatal):', err.message);
+        ZFlowLogger.warn('depozit', '[Depozit] Eroare inițializare (non-fatal):', err.message);
         ZFlowStore.dateProduse     = ZFlowStore.dateProduse     || [];
         ZFlowStore.dateMiscariStoc = ZFlowStore.dateMiscariStoc || [];
         ZFlowStore.dateReceptii    = ZFlowStore.dateReceptii    || [];
@@ -692,11 +686,11 @@ async function importaProduse() {
                 if (duplicate > 0) mesaj += `, ${duplicate} duplicate ignorate`;
                 const tipNotif = importate > 0 ? 'success' : (erori.length > 0 ? 'error' : 'warning');
                 if (typeof showNotification === 'function') showNotification(mesaj, tipNotif);
-                if (erori.length > 0) console.warn('[Depozit Import Produse] Erori:', erori);
+                if (erori.length > 0) ZFlowLogger.warn('depozit', '[Depozit Import Produse] Erori:', erori);
 
             } catch(err) {
                 if (typeof showNotification === 'function') showNotification('Eroare import produse: ' + err.message, 'error');
-                console.error('[Depozit Import Produse]', err);
+                ZFlowLogger.error('depozit', '[Depozit Import Produse]', err);
             } finally {
                 if (typeof setLoader === 'function') setLoader(false);
                 fileInput.value = '';
@@ -1087,14 +1081,14 @@ const DEPOZIT_SERVER_CONFIG = window.DEPOZIT_SERVER_CONFIG || {
 
 async function initDepozitServer() {
     if (!DEPOZIT_SERVER_CONFIG.serverUrl || !DEPOZIT_SERVER_CONFIG.apiKey) {
-        console.info('[DepozitServer] Nu este configurat. Setați window.DEPOZIT_SERVER_CONFIG = { serverUrl, apiKey, userId } pentru activare.');
+        ZFlowLogger.info('depozit', '[DepozitServer] Nu este configurat. Setați window.DEPOZIT_SERVER_CONFIG = { serverUrl, apiKey, userId } pentru activare.');
         return;
     }
     try {
         await syncDepozitServer();
-        console.info('[DepozitServer] Sincronizare inițială completă.');
+        ZFlowLogger.info('depozit', '[DepozitServer] Sincronizare inițială completă.');
     } catch (err) {
-        console.warn('[DepozitServer] Eroare inițializare (non-fatal):', err.message);
+        ZFlowLogger.warn('depozit', '[DepozitServer] Eroare inițializare (non-fatal):', err.message);
     }
 }
 
@@ -1116,7 +1110,7 @@ async function syncDepozitServer() {
     // calculeazaKPIDepozit();
     // renderDepozit();
 
-    console.info('[DepozitServer] syncDepozitServer — stub, nu implementat.');
+    ZFlowLogger.info('depozit', '[DepozitServer] syncDepozitServer — stub, nu implementat.');
 }
 
 async function uploadMiscareServer(miscare) {
@@ -1132,5 +1126,5 @@ async function uploadMiscareServer(miscare) {
     //     body: JSON.stringify({ ...miscare, userId: DEPOZIT_SERVER_CONFIG.userId })
     // });
 
-    console.info('[DepozitServer] uploadMiscareServer — stub, nu implementat.', miscare);
+    ZFlowLogger.info('depozit', '[DepozitServer] uploadMiscareServer — stub, nu implementat.', miscare);
 }

@@ -1357,7 +1357,7 @@
           </div>
           <div class="card-flow text-center py-4">
             <p class="text-2xl font-black text-purple-700" id="logistic-kpi-soferi">0</p>
-            <p class="text-[9px] font-bold text-slate-400 uppercase mt-0.5">È˜oferi</p>
+            <p class="text-[9px] font-bold text-slate-400 uppercase mt-0.5">Șoferi</p>
           </div>
           <div class="card-flow text-center py-4">
             <p class="text-2xl font-black text-slate-700" id="logistic-kpi-vehicule">0</p>
@@ -1368,7 +1368,7 @@
         <!-- Sub-nav Pilluri -->
         <div class="pill-nav">
           <button class="pill-btn logistic-pill active" data-view="comenzi" data-action="schimbaViewLogistic" data-arg0="comenzi" data-arg1="true">Comenzi</button>
-          <button class="pill-btn logistic-pill" data-view="soferi" data-action="schimbaViewLogistic" data-arg0="soferi" data-arg1="true">È˜oferi</button>
+          <button class="pill-btn logistic-pill" data-view="soferi" data-action="schimbaViewLogistic" data-arg0="soferi" data-arg1="true">Șoferi</button>
           <button class="pill-btn logistic-pill" data-view="vehicule" data-action="schimbaViewLogistic" data-arg0="vehicule" data-arg1="true">Vehicule</button>
         </div>
 
@@ -1406,7 +1406,7 @@
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
               </button>
               <button data-action="deschideModalSofer" data-arg="" class="px-4 py-2 bg-purple-700 text-white rounded-2xl text-xs font-black uppercase shadow-md" data-permission="edit">
-                + È˜ofer
+                + Șofer
               </button>
             </div>
           </div>
@@ -3573,6 +3573,7 @@
     <!-- ==================== JAVASCRIPT - ORDINE CORECTĂ ==================== -->
     <!-- 1. Services (no dependencies) -->
     <script src="js/services/idb.js" defer></script>
+    <script src="js/version.js" defer></script>
     <script src="js/services/supabase.js" defer></script>
 
     <!-- 2. Store (depends on Vue) -->
@@ -3583,6 +3584,8 @@
 
     <!-- 4. Main App (contains all functionality) -->
         <script src="js/modules/logger.js" defer></script>
+    <script src="js/modules/utils.js" defer></script>
+    <script src="js/modules/auth.js" defer></script>
     <script src="js/modules/maintenance.js" defer></script>
     <script src="js/app.js" defer></script>
 

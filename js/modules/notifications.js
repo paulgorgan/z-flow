@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Z-FLOW Enterprise v7.14
  * Module: Notifications - Notificări și Alerte
  * 
@@ -12,7 +12,7 @@ const ZFlowNotifications = {
      */
     async checkPermission() {
         if (!('Notification' in window)) {
-            console.log('Browser-ul nu suportă notificări');
+            ZFlowLogger.debug('notifications', 'Browser-ul nu suportă notificări');
             return false;
         }
         
