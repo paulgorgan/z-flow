@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Z-FLOW Enterprise V2 (v8.0)
  * App Principal - Vue 3 CDN + Arhitectură Modulară
  * 
@@ -30,7 +30,7 @@ let pendingPDFFiles = []; // #23 - multiple attachments
 function isLoginBlocked() { return false; }         // [R4-FIX 3] no-op
 function getLoginLockoutRemaining() { return 0; }    // [R4-FIX 3] no-op
 function recordFailedLoginAttempt() {
-    console.log("[Auth] Încercare eşuată — rate limiting gestionat de Supabase");
+    console.log("[Auth] Încercare eșuată — rate limiting gestionat de Supabase");
 }
 function resetLoginAttempts() {}                     // [R4-FIX 3] no-op
 
@@ -633,7 +633,7 @@ async function verificaAuth() {
     if (_errDiv) _errDiv.classList.add('hidden');
     // [R4-FIX 3] Rate limiting eliminat din client — gestionat de Supabase Auth
     // Supabase returnează eroare HTTP 429 (Too Many Requests) după încercări repetate
-    // Eroarea e prinsă automat în blocul catch de mai jos şi afişată utilizatorului
+    // Eroarea e prinsă automat în blocul catch de mai jos și afișată utilizatorului
     
     const email = document.getElementById("auth-username").value.trim();
     const pass = document.getElementById("auth-password").value;
@@ -842,10 +842,10 @@ async function logout() {
         ZFlowStore.dateComenziTransport = [];
         ZFlowStore.userProfile = null;
 
-        // [R5-FIX 3] NU ştergăm IDB-ul la logout — datele rămân ca cache pentru
+        // [R5-FIX 3] NU ștergăm IDB-ul la logout — datele rămân ca cache pentru
         // re-login rapid. IDB-ul e per-browser, nu conține date sensibile că sunt
         // protejate de RLS în Supabase. La re-login, fetch-ul Supabase suprascrie IDB.
-        // IDB se şterge DOAR la cerere explicită (buton "Golire cache" din profil).
+        // IDB se șterge DOAR la cerere explicită (buton "Golire cache" din profil).
         console.log('[Logout] Cache IDB păstrat pentru re-login rapid'); // [R5-FIX 3]
 
         // Ascunde interfața
@@ -879,7 +879,7 @@ async function logout() {
 async function clearIDBCache() {
     try {
         await ZFlowIDB.clearAll();
-        showNotification('Cache local şters. La next refresh datele se re-descarcă din cloud.', 'info');
+        showNotification('Cache local șters. La next refresh datele se re-descarcă din cloud.', 'info');
     } catch(e) {
         showNotification('Eroare la golirea cache-ului', 'error');
     }
@@ -1007,7 +1007,7 @@ async function trimiteResetParola() {
 }
 
 /**
- * Schimbă email-ul şi/sau parola contului Supabase curent
+ * Schimbă email-ul și/sau parola contului Supabase curent
  */
 async function schimbaDateCont() {
     const email = document.getElementById('cont-nou-email')?.value.trim();
@@ -1942,7 +1942,7 @@ function incarcaDashboard() {
     const elPeriod = document.getElementById("home-chart-period");
     if (elPeriod) elPeriod.innerText = perioadaFmt(perioadaStartDate) + " – " + perioadaFmt(aziChart);
 
-    // [R4-FIX 7] Chart cashflow eliminat din Home — canvas şters din index.html
+    // [R4-FIX 7] Chart cashflow eliminat din Home — canvas șters din index.html
     // KPI-urile rămân funcționale (home-kpi-facturat, home-kpi-neincasat, etc.)
     if (window._homeCashflowChart) {
         window._homeCashflowChart.destroy();
@@ -2743,7 +2743,7 @@ async function loadMoreFacturiClient() {
                 const clientFacturi = ZFlowStore.dateFacturiBI.filter(
                     f => String(f.client_id) === String(clientId)
                 );
-                // Re-sortează şi actualizează
+                // Re-sortează și actualizează
                 ZFlowStore.facturiSortateClient = clientFacturi.sort((a, b) => {
                     // Păstrează logica de sortare existentă: restante primele
                     const aDepas = a.status_plata !== 'Incasat' && a.data_scadenta && new Date(a.data_scadenta) < new Date();
@@ -5698,7 +5698,7 @@ window.exportareDateAdmin = exportareDateAdmin;
 
 /**
  * Export complet: XLSX multi-sheet + JSON — disponibil doar pentru admin local.
- * Foloseşte SheetJS (XLSX) deja încărcat în pagină.
+ * Folosește SheetJS (XLSX) deja încărcat în pagină.
  */
 function exportareCompleta() {
     if (ZFlowStore.userSession?.user?.email !== 'admin') {
@@ -5719,7 +5719,7 @@ function exportareCompleta() {
         'Vehicule':           'zflow_ad_vehicule',
         'Comenzi Transport':  'zflow_ad_comenzi_transport',
     };
-    // Construieşte workbook XLSX cu câte o foaie per categorie
+    // Construiește workbook XLSX cu câte o foaie per categorie
     try {
         const wb = XLSX.utils.book_new();
         let hasData = false;
@@ -5755,8 +5755,8 @@ window.exportareCompleta = exportareCompleta;
 
 /**
  * Resetare unificată — se comportă diferit în funcție de tipul de cont:
- *  - admin local: şterge datele din localStorage (zflow_ad_*)
- *  - Supabase user: şterge datele din Supabase + IDB
+ *  - admin local: șterge datele din localStorage (zflow_ad_*)
+ *  - Supabase user: șterge datele din Supabase + IDB
  */
 function resetDateUnificat() {
     const email = ZFlowStore.userSession?.user?.email || '';

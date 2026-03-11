@@ -853,7 +853,7 @@ async function importaComenziCSV() {
             if (importate === 0 && sarite > 0 && erori === 0) {
                 (typeof showNotification === 'function' ? showNotification : alert)(
                     `Import comenzi: ${sarite} înregistrări există deja în baza de date (duplicate după tracking_code). ` +
-                    `Dacă vrei să re-imporți, şterge mai întâi comenzile existente din Logistic.`,
+                    `Dacă vrei să re-imporți, șterge mai întâi comenzile existente din Logistic.`,
                     'info'
                 );
                 resolve();

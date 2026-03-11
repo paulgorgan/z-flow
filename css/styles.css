@@ -1013,7 +1013,7 @@ input, select, button {
     box-sizing: border-box !important;
   }
 
-  /* Forțează cardurile să nu depăşească coloana */
+  /* Forțează cardurile să nu depășească coloana */
   #lista-firme-global .card-flow,
   #lista-furnizori-global .card-flow {
     min-width: 0 !important;         /* fix clasic pentru grid children overflow */

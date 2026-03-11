@@ -152,7 +152,7 @@ const ZFlowImport = {
                     'DATA FACTURA', 'data_factura', 'Data factura',
                     'DATA DOC.', 'Data doc.', 'DAT', 'dat'));
                 const dataScadenta = this.parseDataSAGA(_col(row,
-                    'DATA SCADENTA', 'data_scadenta', 'DATA SCADENŢĂ', 'Data scadenta',
+                    'DATA SCADENTA', 'data_scadenta', 'DATA SCADENȚĂ', 'Data scadenta',
                     'SCADENTA', 'scadenta', 'Scadenta',
                     'DATA SCAD.', 'data_scad', 'Data scad',
                     'TERMEN PLATA', 'termen_plata', 'Termen plata',

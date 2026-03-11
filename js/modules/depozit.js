@@ -6,7 +6,7 @@
 // Filtru alerte stoc activ — setat de navigaLaAlerteStoc()
 let _filtruAlerteActiv = false;
 
-// [R6-FIX 3] Navighează la tab Depozit > Produse şi activează filtrul de alerte
+// [R6-FIX 3] Navighează la tab Depozit > Produse și activează filtrul de alerte
 function navigaLaAlerteStoc() {
     // Activează filtrul alerte
     _filtruAlerteActiv = true;

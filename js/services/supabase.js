@@ -1301,7 +1301,7 @@ async function adminGetUserData(targetEmail) {
 }
 
 async function adminDeleteUserData(targetUserId, tables) {
-    // [R4-FIX 5] Admin: şterge datele unui utilizator din tabelele selectate
+    // [R4-FIX 5] Admin: șterge datele unui utilizator din tabelele selectate
     // ATENTIE: Necesită RLS policy specială sau service_role — verifică în Supabase Dashboard
     if (!tables) tables = ['facturi', 'clienti', 'furnizori', 'facturi_platit'];
     if (!targetUserId) throw new Error('targetUserId lipsă');
@@ -1314,7 +1314,7 @@ async function adminDeleteUserData(targetUserId, tables) {
                 .eq('user_id', targetUserId);
             if (error) throw error;
             rezultate[table] = { success: true, deleted: count || 0 };
-            console.log(`[adminDelete] ${table}: ${count} înregistrări şterse`);
+            console.log(`[adminDelete] ${table}: ${count} înregistrări șterse`);
         } catch (e) {
             rezultate[table] = { success: false, error: e.message };
             console.error(`[adminDelete] Eroare la ${table}:`, e.message);
