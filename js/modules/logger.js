@@ -91,14 +91,15 @@ function _sendErrorToSupabase(context, message, data) {
     Promise.resolve().then(async () => {
         try {
             // ZFlowDB.supabase expune clientul brut; alternativ folosim fetch direct dacă disponibil
-            if (typeof ZFlowDB._rawClient === 'function') {
-                const client = ZFlowDB._rawClient();
+            // ZFlowDB._supabase() = clientul Supabase brut (expus în supabase.js)
+            if (typeof ZFlowDB._supabase === 'function') {
+                const client = ZFlowDB._supabase();
                 if (client) {
                     await client.from('error_logs').insert([payload]);
                     return;
                 }
             }
-            // Fallback: dacă există window.zf (clientul brut definit în supabase.js)
+            // Fallback direct prin window.zf dacă ZFlowDB nu e încă inițializat
             if (typeof window.zf !== 'undefined' && window.zf?.from) {
                 await window.zf.from('error_logs').insert([payload]);
             }

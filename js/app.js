@@ -12,109 +12,12 @@
  */
 
 // ==========================================
-// MOD MENTENANȚĂ — Admin poate bloca accesul utilizatorilor în timpul update-urilor
-// Stocare: localStorage 'zflow_maintenance' + Supabase user_metadata
+// MOD MENTENANȚĂ → js/modules/maintenance.js
+// Funcțiile getMaintenanceState, checkAndApplyMaintenanceMode,
+// toggleMaintenanceMode, _updateMaintenanceToggleUI au fost mutate
+// în modulul dedicat. Alias-urile window.* sunt menținute acolo.
 // ==========================================
-const MAINTENANCE_LS_KEY = 'zflow_maintenance';
 
-/**
- * Citește starea curentă a modului de mentenanță
- * @returns {{ active: boolean, message: string, enabledAt: string|null }}
- */
-function getMaintenanceState() {
-    try {
-        const raw = localStorage.getItem(MAINTENANCE_LS_KEY);
-        if (raw) return JSON.parse(raw);
-    } catch(e) {}
-    return { active: false, message: 'Se efectuează actualizări. Vă rugăm să reveniți în câteva minute.', enabledAt: null };
-}
-
-/**
- * Returnează true dacă utilizatorul curent este admin (local sau Supabase)
- */
-function _isAdminUser() {
-    const email = window.ZFlowStore?.userSession?.user?.email;
-    return email === 'admin';
-}
-
-/**
- * Verifică dacă trebuie afișat ecranul de mentenanță și îl afișează/ascunde
- * Apelat la start și după toggle
- */
-function checkAndApplyMaintenanceMode() {
-    const state = getMaintenanceState();
-    const overlay = document.getElementById('maintenance-overlay');
-    if (!overlay) return;
-
-    // Admin vede întotdeauna aplicația chiar dacă mentenanța e activă
-    if (_isAdminUser()) {
-        overlay.classList.add('hidden');
-        _updateMaintenanceToggleUI(state);
-        return;
-    }
-
-    if (state.active) {
-        const msgEl = document.getElementById('maintenance-message-display');
-        if (msgEl && state.message) msgEl.textContent = state.message;
-        overlay.classList.remove('hidden');
-    } else {
-        overlay.classList.add('hidden');
-    }
-}
-
-/**
- * Actualizează UI-ul toggle-ului din panoul admin
- */
-function _updateMaintenanceToggleUI(state) {
-    const btn = document.getElementById('btn-maintenance-toggle');
-    const knob = document.getElementById('maintenance-knob');
-    const statusText = document.getElementById('maintenance-status-text');
-    if (!btn) return;
-
-    if (state.active) {
-        btn.classList.remove('bg-slate-300');
-        btn.classList.add('bg-amber-500');
-        btn.setAttribute('aria-checked', 'true');
-        // [FIX 2] classList.replace() eşuează silentios dacă clasa sursă nu există — folosim remove+add
-        if (knob) { knob.classList.remove('translate-x-0.5'); knob.classList.add('translate-x-4'); }
-        if (statusText) statusText.textContent = `Status: ACTIV de la ${state.enabledAt ? new Date(state.enabledAt).toLocaleString('ro-RO') : '—'}`;
-        if (statusText) { statusText.classList.remove('text-slate-500'); statusText.classList.add('text-amber-700'); }
-    } else {
-        btn.classList.remove('bg-amber-500');
-        btn.classList.add('bg-slate-300');
-        btn.setAttribute('aria-checked', 'false');
-        if (knob) { knob.classList.remove('translate-x-4'); knob.classList.add('translate-x-0.5'); }
-        if (statusText) statusText.textContent = 'Status: Inactiv';
-        if (statusText) { statusText.classList.remove('text-amber-700'); statusText.classList.add('text-slate-500'); }
-    }
-}
-
-/**
- * Toggle modul de mentenanță (doar admin)
- */
-async function toggleMaintenanceMode() {
-    if (!_isAdminUser()) { showNotification('Acces restricționat', 'error'); return; }
-
-    const current = getMaintenanceState();
-    const newState = {
-        active: !current.active,
-        message: 'Se efectuează actualizări. Vă rugăm să reveniți în câteva minute.',
-        enabledAt: !current.active ? new Date().toISOString() : null
-    };
-    localStorage.setItem(MAINTENANCE_LS_KEY, JSON.stringify(newState));
-
-    // Sincronizare cu Supabase app_config (toți utilizatorii văd același status)
-    try {
-        if (typeof ZFlowDB !== 'undefined' && window.ZFlowStore?.userSession && !window.ZFlowStore?.userSession?.isDemo) {
-            await ZFlowDB.getSetAppConfig('maintenance_mode', newState);
-        }
-    } catch(e) { showNotification('Atenție: sincronizare Supabase eșuată. Rulați setup_maintenance.sql.', 'warning'); }
-
-    _updateMaintenanceToggleUI(newState);
-    showNotification(newState.active ? 'Mod mentenanță ACTIVAT — utilizatorii văd ecranul de blocare' : 'Mod mentenanță dezactivat — aplicația este accesibilă', newState.active ? 'warning' : 'success');
-}
-window.toggleMaintenanceMode = toggleMaintenanceMode;
-window.checkAndApplyMaintenanceMode = checkAndApplyMaintenanceMode;
 
 // #13 - Drag & Drop: fișier PDF pending drop (nu poate fi setat pe input.files direct)
 let pendingPDFFiles = []; // #23 - multiple attachments

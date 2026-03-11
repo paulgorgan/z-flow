@@ -1,11 +1,11 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="ro">
   <head>
     <meta charset="UTF-8" />
-    <!-- Z-FLOW Config: Ã®nlocuieÈ™te valoarea cu cheia ta realÄƒ Ã®n producÈ›ie -->
-    <!-- ÃŽn producÈ›ie/deploy, injecteazÄƒ server-side sau prin variabilÄƒ de mediu -->
-    <!-- supabase.js citeÈ™te aceastÄƒ valoare via document.querySelector('meta[name="zflow-key"]') -->
-    <!-- Fallback hardcodat existÄƒ Ã®n supabase.js pentru development local -->
+    <!-- Z-FLOW Config: înlocuiește valoarea cu cheia ta reală în producție -->
+    <!-- În producție/deploy, injectează server-side sau prin variabilă de mediu -->
+    <!-- supabase.js citește această valoare via document.querySelector('meta[name="zflow-key"]') -->
+    <!-- Fallback hardcodat există în supabase.js pentru development local -->
     <meta name="zflow-key" content="sb_publishable_nKFEv_6AOyKBFp3f_AnZmw_MMZ9MXl5"> <!-- [V3-FIX 6] -->
     <meta
       name="viewport"
@@ -96,7 +96,7 @@
           d="M18.364 5.636a9 9 0 010 12.728M15.536 8.464a5 5 0 010 7.072M3 3l18 18M10.584 10.587a2 2 0 002.828 2.83"
         />
       </svg>
-      FÄƒrÄƒ conexiune la internet â€” datele afiÈ™ate pot fi neactualizate
+      Fără conexiune la internet â€” datele afișate pot fi neactualizate
     </div>
     <div
       id="loader-global"
@@ -118,7 +118,7 @@
       <div
         class="flex items-center gap-3 cursor-pointer select-none active:opacity-70 transition-opacity"
         data-action="navHome"
-        title="AcasÄƒ"
+        title="Acasă"
         role="button"
         aria-label="Mergi la Home"
       >
@@ -141,9 +141,9 @@
         </div>
       </div>
       <div class="flex items-center gap-2">
-        <!-- Buton unificat: FirmÄƒ + Rol utilizator -->
-        <button data-action="deschideProfilFirma" title="Profil firmÄƒ & cont" id="multifirma-switcher-btn"
-            aria-label="SchimbÄƒ firma activÄƒ sau acceseazÄƒ profilul"
+        <!-- Buton unificat: Firmă + Rol utilizator -->
+        <button data-action="deschideProfilFirma" title="Profil firmă & cont" id="multifirma-switcher-btn"
+            aria-label="Schimbă firma activă sau accesează profilul"
             class="flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-200 transition-all max-w-[200px]">
             <svg class="w-3.5 h-3.5 text-blue-700 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21"/></svg>
             <div class="flex flex-col items-start min-w-0">
@@ -154,7 +154,7 @@
         <button
           data-action="init" data-arg="false"
           class="p-2 text-slate-400 hover:text-blue-900 transition-colors active:rotate-180"
-          aria-label="ReÃ®ncarcÄƒ datele"
+          aria-label="Reîncarcă datele"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -176,7 +176,7 @@
           data-action="toggleDarkMode"
           class="p-2 text-slate-400 hover:text-blue-900 transition-colors"
           aria-label="Toggle Dark Mode"
-          title="SchimbÄƒ tema (Ctrl+D)"
+          title="Schimbă tema (Ctrl+D)"
         >
           <svg id="dark-mode-svg" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
             <path id="dark-mode-icon" stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z"/>
@@ -255,7 +255,7 @@
               data-action="deschideProfilFirma"
               class="flex-shrink-0 text-[8px] font-black uppercase tracking-widest bg-white/10 px-3 py-1.5 rounded-xl hover:bg-white/20 transition-all border border-white/20"
             >
-              EditeazÄƒ
+              Editează
             </button>
           </div>
           <div
@@ -338,7 +338,7 @@
               </div>
               <span
                 class="text-[8px] font-black text-slate-400 uppercase tracking-wider leading-none"
-                >De Ã®ncasat</span
+                >De încasat</span
               >
             </div>
             <p
@@ -375,7 +375,7 @@
               </div>
               <span
                 class="text-[8px] font-black text-slate-400 uppercase tracking-wider leading-none"
-                >De plÄƒtit</span
+                >De plătit</span
               >
             </div>
             <p
@@ -428,13 +428,13 @@
           </div>
         </div>
 
-        <!-- Alerte UrgenÈ›e -->
+        <!-- Alerte Urgențe -->
         <div id="home-alerte" class="hidden space-y-2">
           <p
             class="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1 flex items-center gap-1"
           >
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="text-amber-500" style="color:#f59e0b"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-            UrgenÈ›e
+            Urgențe
           </p>
           <div id="home-alerte-list" class="space-y-2"></div>
         </div>
@@ -464,7 +464,7 @@
                 d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"
               />
             </svg>
-            ClienÈ›i
+            Clienți
           </button>
           <button
             id="btn-furnizori"
@@ -506,7 +506,7 @@
                 d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 21h16.5M16.5 3.75h2.25M16.5 3.75v16.5M16.5 21h2.25m-2.25-16.5H14.25M14.25 3.75v16.5M14.25 21h2.25m-12-3h2.25m0 0V12.75m0 16.5h2.25m0 0V12.75m-2.25 0H12"
               />
             </svg>
-            AnalizÄƒ
+            Analiză
           </button>
         </div>
 
@@ -517,7 +517,7 @@
               type="text"
               id="search-firme"
               oninput="filtreazaListaFirme()"
-              placeholder="CÄƒutare client..."
+              placeholder="Căutare client..."
               class="w-full h-14 pl-12 pr-4 bg-white rounded-2xl shadow-sm border-none outline-none text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-blue-100 transition-all"
             />
             <svg
@@ -542,7 +542,7 @@
             <p
               class="text-[10px] font-bold uppercase opacity-60 mb-1 tracking-widest"
             >
-              FACTURI DE ÃŽNCASAT
+              FACTURI DE ÎNCASAT
             </p>
             <h2
               id="total-general"
@@ -589,7 +589,7 @@
                 0
               </p>
               <span class="text-[7px] font-bold text-slate-400 uppercase"
-                >ÃŽncasat</span
+                >Încasat</span
               >
             </div>
             <div
@@ -619,7 +619,7 @@
                 0
               </p>
               <span class="text-[7px] font-bold text-slate-400 uppercase"
-                >RestanÈ›e</span
+                >Restanțe</span
               >
             </div>
             <div
@@ -644,7 +644,7 @@
               </div>
               <p id="kpi-clienti" class="text-sm font-black text-blue-900">0</p>
               <span class="text-[7px] font-bold text-slate-400 uppercase"
-                >ClienÈ›i</span
+                >Clienți</span
               >
             </div>
             <div
@@ -682,11 +682,11 @@
           <div
             id="lista-firme-global"
           ></div>
-          <!-- Paginare ClienÈ›i -->
+          <!-- Paginare Clienți -->
           <div id="clienti-pagination"></div>
         </div>
 
-        <!-- VIEW: ANALIZÄ‚ BI -->
+        <!-- VIEW: ANALIZĂ BI -->
         <div id="view-analiza" class="hidden space-y-3 w-full">
           <!-- Hidden cashflow helpers -->
           <span id="cf-intrari" class="hidden"></span>
@@ -744,7 +744,7 @@
                   <span
                     class="text-[10px] font-black text-slate-800 uppercase"
                     id="label-end"
-                    >PÃ¢nÄƒ la: --</span
+                    >Până la: --</span
                   >
                   <svg
                     class="w-4 h-4 text-slate-400"
@@ -783,14 +783,14 @@
                 data-action="setFiltruStatusBI" data-arg="Incasat"
                 class="bi-status-btn py-2 px-1 text-[9px] font-black uppercase rounded-lg text-slate-500 hover:text-emerald-600 transition-all flex items-center justify-center gap-1"
               >
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0"></span> ÃŽncasate
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0"></span> Încasate
               </button>
               <button
                 id="bi-btn-platit"
                 data-action="setFiltruStatusBI" data-arg="Platit"
                 class="bi-status-btn py-2 px-1 text-[9px] font-black uppercase rounded-lg text-slate-500 hover:text-red-700 transition-all flex items-center justify-center gap-1"
               >
-                <span class="w-1.5 h-1.5 rounded-full bg-red-600 flex-shrink-0"></span> NeplÄƒtite
+                <span class="w-1.5 h-1.5 rounded-full bg-red-600 flex-shrink-0"></span> Neplătite
               </button>
             </div>
 
@@ -802,7 +802,7 @@
               <div id="bi-total-clienti-col" class="flex flex-col items-end">
                 <span
                   class="text-[7px] font-semibold text-blue-700 uppercase tracking-widest"
-                  >ClienÈ›i</span
+                  >Clienți</span
                 >
                 <span
                   id="suma-selectata-bi"
@@ -827,7 +827,7 @@
               >
                 <span
                   class="text-[7px] font-semibold text-slate-400 uppercase tracking-widest"
-                  >DiferenÈ›Äƒ</span
+                  >Diferență</span
                 >
                 <span
                   id="cf-net"
@@ -842,7 +842,7 @@
               data-action="toggleFirmeCollapse"
               class="flex items-center justify-between w-full text-[9px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-all"
             >
-              <span>FiltreazÄƒ firme</span>
+              <span>Filtrează firme</span>
               <svg
                 id="firme-collapse-icon"
                 class="w-3 h-3 transition-transform duration-200"
@@ -864,13 +864,13 @@
                 type="text"
                 id="search-firme-collapse"
                 oninput="filtreazaFirmeInCollapse(this.value)"
-                placeholder="CautÄƒ dupÄƒ nume sau CUI..."
+                placeholder="Caută după nume sau CUI..."
                 class="w-full p-2.5 bg-slate-50 rounded-xl text-[10px] italic outline-none border border-transparent focus:border-blue-200 transition-all"
               />
               <div class="flex justify-between items-center">
                 <span
                   class="text-[9px] font-black text-slate-400 uppercase tracking-widest"
-                  >SelecÈ›ie</span
+                  >Selecție</span
                 >
                 <div class="flex gap-3">
                   <button
@@ -891,7 +891,7 @@
                 <div class="flex items-center mb-1">
                   <span
                     class="text-[9px] font-black text-blue-700 uppercase tracking-widest"
-                    >ClienÈ›i</span
+                    >Clienți</span
                   >
                 </div>
                 <div
@@ -916,7 +916,7 @@
             </div>
           </div>
 
-          <!-- Export â€” imediat dupÄƒ cardul de filtre, acÈ›ioneazÄƒ pe selecÈ›ia curentÄƒ -->
+          <!-- Export â€” imediat după cardul de filtre, acționează pe selecția curentă -->
           <div class="export-group flex gap-2">
             <button
               id="btn-export-pdf"
@@ -983,28 +983,28 @@
           </div><!-- /bi-left-panel -->
 
           <div class="bi-right-panel flex flex-col gap-3">
-          <!-- Bulk inline bar (Ã®nlocuieÈ™te rÃ¢ndul de cÄƒutare cÃ¢nd modul bulk e activ) -->
+          <!-- Bulk inline bar (înlocuiește rândul de căutare când modul bulk e activ) -->
           <div id="bulk-inline-bar" class="hidden flex gap-2 items-center">
             <button data-action="toggleBulkMode" class="p-3 bg-red-50 border border-red-200 text-red-500 rounded-xl hover:bg-red-100 transition-all flex-shrink-0 flex items-center justify-center">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
             <span class="flex-1 text-[10px] font-black text-slate-600 tabular-nums"><span id="bulk-count">0</span> facturi selectate</span>
-            <button id="btn-bulk-select-all" data-action="bulkSelectAll" class="px-3 py-2 bg-slate-800 text-white rounded-xl text-[10px] font-bold uppercase hover:bg-slate-900 transition-all flex-shrink-0">SelecteazÄƒ toate</button>
+            <button id="btn-bulk-select-all" data-action="bulkSelectAll" class="px-3 py-2 bg-slate-800 text-white rounded-xl text-[10px] font-bold uppercase hover:bg-slate-900 transition-all flex-shrink-0">Selectează toate</button>
           </div>
 
-          <!-- CÃ¢mp cÄƒutare + buton selecÈ›ie multiplÄƒ -->
+          <!-- Câmp căutare + buton selecție multiplă -->
           <div id="search-bi-row" class="flex gap-2 items-center">
             <input
               type="text"
               id="search-bi"
               oninput="filtreazaFirmeInBI()"
-              placeholder="CautÄƒ Ã®n lista de facturi..."
+              placeholder="Caută în lista de facturi..."
               class="flex-1 p-3 bg-white rounded-xl text-[10px] italic outline-none border border-slate-200 focus:border-blue-200 shadow-sm transition-all"
             />
             <button
               data-action="toggleBulkMode"
               id="btn-toggle-bulk"
-              title="SelecÈ›ie multiplÄƒ"
+              title="Selecție multiplă"
               class="p-3 bg-white border border-slate-200 text-slate-400 rounded-xl hover:text-blue-600 hover:border-blue-200 shadow-sm transition-all flex items-center justify-center"
             >
               <svg
@@ -1040,8 +1040,8 @@
             <button
               data-action="navHome"
               class="p-2 rounded-xl bg-slate-100 text-slate-500 hover:bg-blue-50 hover:text-blue-700 transition-all"
-              aria-label="AcasÄƒ"
-              title="AcasÄƒ"
+              aria-label="Acasă"
+              title="Acasă"
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
@@ -1065,7 +1065,7 @@
                   d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"
                 />
               </svg>
-              ÃŽnapoi
+              Înapoi
             </button>
             </div>
             <button
@@ -1095,7 +1095,7 @@
             class="bg-slate-900 text-white p-8 rounded-[32px] shadow-2xl mb-8 relative"
           ></div>
           <div id="istoric-plati-client" class="hidden"></div>
-          <!-- Header "Facturi de ÃŽncasat" + selector per-page sunt randate dinamic de arataDetalii() -->
+          <!-- Header "Facturi de Încasat" + selector per-page sunt randate dinamic de arataDetalii() -->
           <div id="lista-facturi-detaliu" class="pb-10"></div>
         </div>
 
@@ -1106,7 +1106,7 @@
               type="text"
               id="search-furnizori"
               oninput="filtreazaListaFurnizori()"
-              placeholder="CÄƒutare furnizor..."
+              placeholder="Căutare furnizor..."
               class="w-full h-14 pl-12 pr-4 bg-white rounded-2xl shadow-sm border-none outline-none text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-red-100 transition-all"
             />
             <svg
@@ -1131,7 +1131,7 @@
             <p
               class="text-[10px] font-bold uppercase opacity-60 mb-1 tracking-widest"
             >
-              FACTURI DE PLÄ‚TIT
+              FACTURI DE PLĂTIT
             </p>
             <h2
               id="total-general-platit"
@@ -1169,7 +1169,7 @@
                 0
               </p>
               <span class="text-[7px] font-bold text-slate-400 uppercase"
-                >PlÄƒtit</span
+                >Plătit</span
               >
             </div>
             <div
@@ -1199,7 +1199,7 @@
                 0
               </p>
               <span class="text-[7px] font-bold text-slate-400 uppercase"
-                >NeplÄƒtit</span
+                >Neplătit</span
               >
             </div>
             <div
@@ -1272,8 +1272,8 @@
             <button
               data-action="navHome"
               class="p-2 rounded-xl bg-slate-100 text-slate-500 hover:bg-red-50 hover:text-red-700 transition-all"
-              aria-label="AcasÄƒ"
-              title="AcasÄƒ"
+              aria-label="Acasă"
+              title="Acasă"
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
@@ -1297,7 +1297,7 @@
                   d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"
                 />
               </svg>
-              ÃŽnapoi
+              Înapoi
             </button>
             </div>
             <button
@@ -1359,7 +1359,7 @@
         <!-- VIEW: Comenzi -->
         <div id="logistic-view-comenzi" class="space-y-3">
           <div class="flex gap-2">
-            <input id="logistic-search" type="text" placeholder="CautÄƒ rutÄƒ sau trackingâ€¦" oninput="renderComenziTransportDebounced()"
+            <input id="logistic-search" type="text" placeholder="Caută rută sau trackingâ€¦" oninput="renderComenziTransportDebounced()"
               class="flex-1 min-w-0 px-4 py-2.5 bg-slate-50 rounded-2xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200 transition-all"/>
             <button data-action="importaComenziTransport" title="Import CSV comenzi transport" class="flex-shrink-0 px-3 py-2.5 bg-slate-100 text-slate-600 rounded-2xl text-xs font-black uppercase shadow-sm border border-slate-200 hover:bg-slate-200 transition-all" data-permission="edit">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
@@ -1368,20 +1368,20 @@
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
             </button>
             <button data-action="deschideModalComandaTransport" data-arg="" class="flex-shrink-0 px-4 py-2.5 bg-blue-900 text-white rounded-2xl text-xs font-black uppercase shadow-md" data-permission="edit">
-              + ComandÄƒ
+              + Comandă
             </button>
           </div>
           <!-- Comenzi noi (modul logistic) -->
           <div id="logistic-comenzi-list" class="space-y-2"></div>
           <div id="comenzi-pagination"></div>
-          <!-- Lista transporturi din facturi (pÄƒstratÄƒ din funcÈ›ionalitatea anterioarÄƒ) -->
+          <!-- Lista transporturi din facturi (păstrată din funcționalitatea anterioară) -->
           <div id="lista-transporturi" class="space-y-3 px-2"></div>
         </div>
 
         <!-- VIEW: È˜oferi -->
         <div id="logistic-view-soferi" class="hidden space-y-3">
           <div class="flex justify-between items-center">
-            <p class="text-xs font-black text-slate-500 uppercase">È˜oferi Ã®nregistraÈ›i</p>
+            <p class="text-xs font-black text-slate-500 uppercase">È˜oferi înregistrați</p>
             <div class="flex gap-2">
               <button data-action="importaSoferiCSV" title="Import CSV Å›oferi" class="p-2 bg-slate-100 text-slate-600 rounded-xl border border-slate-200 hover:bg-slate-200 transition-all" data-permission="edit">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
@@ -1395,7 +1395,7 @@
             </div>
           </div>
           <div class="relative text-slate-400">
-            <input type="text" id="search-soferi" oninput="filtreazaSoferi(this.value)" placeholder="CautÄƒ È™ofer dupÄƒ nume..." class="w-full h-10 pl-9 pr-4 bg-white rounded-2xl shadow-sm border border-slate-100 outline-none text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-purple-100 transition-all"/>
+            <input type="text" id="search-soferi" oninput="filtreazaSoferi(this.value)" placeholder="Caută șofer după nume..." class="w-full h-10 pl-9 pr-4 bg-white rounded-2xl shadow-sm border border-slate-100 outline-none text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-purple-100 transition-all"/>
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="absolute left-3 top-2.5 w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
           </div>
           <div id="logistic-soferi-list" class="space-y-2"></div>
@@ -1419,7 +1419,7 @@
             </div>
           </div>
           <div class="relative text-slate-400">
-            <input type="text" id="search-vehicule" oninput="filtreazaVehicule(this.value)" placeholder="CautÄƒ dupÄƒ nr. Ã®nmatriculare sau marcÄƒ..." class="w-full h-10 pl-9 pr-4 bg-white rounded-2xl shadow-sm border border-slate-100 outline-none text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-slate-200 transition-all"/>
+            <input type="text" id="search-vehicule" oninput="filtreazaVehicule(this.value)" placeholder="Caută după nr. înmatriculare sau marcă..." class="w-full h-10 pl-9 pr-4 bg-white rounded-2xl shadow-sm border border-slate-100 outline-none text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-slate-200 transition-all"/>
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="absolute left-3 top-2.5 w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
           </div>
           <div id="logistic-vehicule-list" class="space-y-2"></div>
@@ -1428,11 +1428,11 @@
           <div class="card-flow p-3 mt-3">
             <div class="flex justify-between items-center mb-2">
               <div>
-                <p class="text-xs font-black text-slate-700 uppercase tracking-wide">HartÄƒ GPS Vehicule</p>
+                <p class="text-xs font-black text-slate-700 uppercase tracking-wide">Hartă GPS Vehicule</p>
                 <p class="text-[9px] text-slate-400 font-bold">Simulat Â· Live GPS Â· Click pe vehicul pentru detalii</p>
               </div>
               <button data-action="actualizaMarkerePeHarta" class="text-[9px] font-black text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg uppercase transition-all">
-                ActualizeazÄƒ
+                Actualizează
               </button>
             </div>
             <div id="map"></div>
@@ -1448,7 +1448,7 @@
               <button data-action="safefleetRenderPanel" class="text-[8px] font-black text-blue-600 hover:underline uppercase">Config</button>
             </div>
             <div id="safefleet-panel-content">
-              <p class="text-[9px] text-slate-400 italic text-center py-2">Se iniÈ›ializeazÄƒ...</p>
+              <p class="text-[9px] text-slate-400 italic text-center py-2">Se inițializează...</p>
             </div>
           </div>
 
@@ -1456,13 +1456,13 @@
           <div class="card-flow mt-3">
             <div class="flex items-center justify-between mb-3">
               <div>
-                <p class="text-xs font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5"><svg class="w-4 h-4 text-slate-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/></svg>Raport km vs. LivrÄƒri</p>
-                <p class="text-[9px] text-slate-400">km parcurÈ™i Â· valoare transport Â· facturi livrate</p>
+                <p class="text-xs font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5"><svg class="w-4 h-4 text-slate-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/></svg>Raport km vs. Livrări</p>
+                <p class="text-[9px] text-slate-400">km parcurși Â· valoare transport Â· facturi livrate</p>
               </div>
-              <button data-action="renderRaportKm" class="text-[8px] font-black text-blue-600 hover:underline uppercase">ActualizeazÄƒ</button>
+              <button data-action="renderRaportKm" class="text-[8px] font-black text-blue-600 hover:underline uppercase">Actualizează</button>
             </div>
             <div id="raport-km-panel">
-              <p class="text-[9px] text-slate-400 italic text-center py-2">ApasÄƒ ActualizeazÄƒ pentru a genera raportul</p>
+              <p class="text-[9px] text-slate-400 italic text-center py-2">Apasă Actualizează pentru a genera raportul</p>
             </div>
           </div>
         </div>
@@ -1482,7 +1482,7 @@
             <p class="text-2xl font-black text-emerald-700 tabular-nums" id="depozit-kpi-valoare">0 lei</p>
             <p class="text-[9px] font-bold text-slate-400 uppercase mt-0.5">Valoare stoc</p>
           </div>
-          <div class="card-flow text-center py-4 cursor-pointer hover:shadow-lg active:scale-95 transition-all" data-action="navigaLaAlerteStoc" title="AfiÈ™ÄƒÄƒ produsele cu stoc sub limita minimÄƒ">
+          <div class="card-flow text-center py-4 cursor-pointer hover:shadow-lg active:scale-95 transition-all" data-action="navigaLaAlerteStoc" title="Afișăă produsele cu stoc sub limita minimă">
             <p class="text-2xl font-black text-red-500" id="depozit-kpi-alerte">0</p>
             <p class="text-[9px] font-bold text-slate-400 uppercase mt-0.5">Alerte stoc</p>
           </div>
@@ -1497,18 +1497,18 @@
         <!-- Sub-nav Stoc -->
         <div id="depozit-subnav-stoc" class="flex gap-1 mb-1">
           <button class="px-3 py-1 rounded-full text-[9px] font-black uppercase bg-blue-900 text-white depozit-subbtn-stoc" data-sub="produse" data-action="schimbaViewDepozit" data-arg0="produse" data-arg1="true">Produse</button>
-          <button class="px-3 py-1 rounded-full text-[9px] font-black uppercase bg-slate-100 text-slate-600 depozit-subbtn-stoc" data-sub="miscari" data-action="schimbaViewDepozit" data-arg0="miscari" data-arg1="true">MiÈ™cÄƒri</button>
+          <button class="px-3 py-1 rounded-full text-[9px] font-black uppercase bg-slate-100 text-slate-600 depozit-subbtn-stoc" data-sub="miscari" data-action="schimbaViewDepozit" data-arg0="miscari" data-arg1="true">Mișcări</button>
         </div>
         <!-- Sub-nav Documente -->
         <div id="depozit-subnav-documente" class="hidden gap-1 mb-1">
-          <button class="px-3 py-1 rounded-full text-[9px] font-black uppercase bg-emerald-700 text-white depozit-subbtn-doc" data-sub="receptii" data-action="schimbaViewDepozit" data-arg0="receptii" data-arg1="true">RecepÈ›ii</button>
-          <button class="px-3 py-1 rounded-full text-[9px] font-black uppercase bg-slate-100 text-slate-600 depozit-subbtn-doc" data-sub="livrari" data-action="schimbaViewDepozit" data-arg0="livrari" data-arg1="true">LivrÄƒri</button>
+          <button class="px-3 py-1 rounded-full text-[9px] font-black uppercase bg-emerald-700 text-white depozit-subbtn-doc" data-sub="receptii" data-action="schimbaViewDepozit" data-arg0="receptii" data-arg1="true">Recepții</button>
+          <button class="px-3 py-1 rounded-full text-[9px] font-black uppercase bg-slate-100 text-slate-600 depozit-subbtn-doc" data-sub="livrari" data-action="schimbaViewDepozit" data-arg0="livrari" data-arg1="true">Livrări</button>
         </div>
 
         <!-- VIEW: Produse -->
         <div id="depozit-view-produse" class="space-y-3">
           <div class="flex gap-2">
-            <input id="depozit-search-produse" type="text" placeholder="CautÄƒ produs sau SKUâ€¦" oninput="renderProduseDebounced()"
+            <input id="depozit-search-produse" type="text" placeholder="Caută produs sau SKUâ€¦" oninput="renderProduseDebounced()"
               class="flex-1 min-w-0 px-4 py-2.5 bg-slate-50 rounded-2xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200 transition-all"/>
             <button data-action="importaProduse" title="Import CSV produse" class="flex-shrink-0 px-3 py-2.5 bg-slate-100 text-slate-600 rounded-2xl text-xs font-black uppercase shadow-sm border border-slate-200 hover:bg-slate-200 transition-all" data-permission="edit">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
@@ -1524,48 +1524,48 @@
           <div id="produse-pagination"></div>
         </div>
 
-        <!-- VIEW: MiÈ™cÄƒri Stoc -->
+        <!-- VIEW: Mișcări Stoc -->
         <div id="depozit-view-miscari" class="hidden space-y-3">
           <div class="flex justify-between items-center">
-            <p class="text-xs font-black text-slate-500 uppercase">MiÈ™cÄƒri stoc</p>
+            <p class="text-xs font-black text-slate-500 uppercase">Mișcări stoc</p>
             <button data-action="deschideModalMiscare" data-arg="" class="px-4 py-2 bg-blue-900 text-white rounded-2xl text-xs font-black uppercase shadow-md" data-permission="edit">
-              + MiÈ™care
+              + Mișcare
             </button>
           </div>
           <div class="relative text-slate-400">
-            <input type="text" id="search-miscari" oninput="filtreazaMiscari(this.value)" placeholder="CautÄƒ produs sau observaÈ›ii..." class="w-full h-10 pl-9 pr-4 bg-white rounded-2xl shadow-sm border border-slate-100 outline-none text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-blue-100 transition-all"/>
+            <input type="text" id="search-miscari" oninput="filtreazaMiscari(this.value)" placeholder="Caută produs sau observații..." class="w-full h-10 pl-9 pr-4 bg-white rounded-2xl shadow-sm border border-slate-100 outline-none text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-blue-100 transition-all"/>
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="absolute left-3 top-2.5 w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
           </div>
           <div id="depozit-lista-miscari" class="space-y-2"></div>
           <div id="miscari-pagination"></div>
         </div>
 
-        <!-- VIEW: RecepÈ›ii -->
+        <!-- VIEW: Recepții -->
         <div id="depozit-view-receptii" class="hidden space-y-3">
           <div class="flex justify-between items-center">
-            <p class="text-xs font-black text-slate-500 uppercase">RecepÈ›ii de la furnizori</p>
+            <p class="text-xs font-black text-slate-500 uppercase">Recepții de la furnizori</p>
             <div class="flex gap-2">
               <button data-action="exportProduseCSV" title="Export CSV produse" class="p-2 bg-slate-100 text-slate-600 rounded-xl border border-slate-200 hover:bg-slate-200 transition-all">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
               </button>
               <button data-action="deschideModalReceptie" class="px-4 py-2 bg-emerald-700 text-white rounded-2xl text-xs font-black uppercase shadow-md" data-permission="edit">
-                + RecepÈ›ie
+                + Recepție
               </button>
             </div>
           </div>
           <div class="relative text-slate-400">
-            <input type="text" id="search-receptii" oninput="filtreazaReceptii(this.value)" placeholder="CautÄƒ dupÄƒ furnizor..." class="w-full h-10 pl-9 pr-4 bg-white rounded-2xl shadow-sm border border-slate-100 outline-none text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-100 transition-all"/>
+            <input type="text" id="search-receptii" oninput="filtreazaReceptii(this.value)" placeholder="Caută după furnizor..." class="w-full h-10 pl-9 pr-4 bg-white rounded-2xl shadow-sm border border-slate-100 outline-none text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-100 transition-all"/>
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="absolute left-3 top-2.5 w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
           </div>
           <div id="depozit-lista-receptii" class="space-y-2"></div>
         </div>
 
-        <!-- VIEW: LivrÄƒri -->
+        <!-- VIEW: Livrări -->
         <div id="depozit-view-livrari" class="hidden space-y-3">
           <div class="flex justify-between items-center">
             <p class="text-xs font-black text-slate-500 uppercase">Bonuri de livrare</p>
             <div class="flex gap-2">
-              <button data-action="exportMiscariStocCSV" title="Export CSV miÈ™cÄƒri stoc" class="p-2 bg-slate-100 text-slate-600 rounded-xl border border-slate-200 hover:bg-slate-200 transition-all">
+              <button data-action="exportMiscariStocCSV" title="Export CSV mișcări stoc" class="p-2 bg-slate-100 text-slate-600 rounded-xl border border-slate-200 hover:bg-slate-200 transition-all">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
               </button>
               <button data-action="deschideModalLivrare" class="px-4 py-2 bg-blue-700 text-white rounded-2xl text-xs font-black uppercase shadow-md" data-permission="edit">
@@ -1574,21 +1574,21 @@
             </div>
           </div>
           <div class="relative text-slate-400">
-            <input type="text" id="search-livrari" oninput="filtreazaLivrari(this.value)" placeholder="CautÄƒ dupÄƒ client..." class="w-full h-10 pl-9 pr-4 bg-white rounded-2xl shadow-sm border border-slate-100 outline-none text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-blue-100 transition-all"/>
+            <input type="text" id="search-livrari" oninput="filtreazaLivrari(this.value)" placeholder="Caută după client..." class="w-full h-10 pl-9 pr-4 bg-white rounded-2xl shadow-sm border border-slate-100 outline-none text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-blue-100 transition-all"/>
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="absolute left-3 top-2.5 w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
           </div>
           <div id="depozit-lista-livrari" class="space-y-2"></div>
         </div>
 
-        <!-- VIEW: Scanner (conÈ›inut original pÄƒstrat + result panel) -->
+        <!-- VIEW: Scanner (conținut original păstrat + result panel) -->
         <div id="depozit-view-scanner" class="hidden space-y-4 text-center">
           <div class="bg-slate-900 p-8 rounded-[40px] text-white shadow-2xl relative overflow-hidden">
             <h2 class="text-xl font-extrabold mb-4 uppercase italic">Scanner SKU / QR</h2>
-            <p class="text-[9px] text-slate-400 mb-4">ScaneazÄƒ produs Â· recepÈ›ie Â· livrare Â· comandÄƒ transport</p>
+            <p class="text-[9px] text-slate-400 mb-4">Scanează produs Â· recepție Â· livrare Â· comandă transport</p>
             <div id="reader"></div>
           </div>
           <div class="card-flow border-2 border-dashed border-slate-200">
-            <p id="barcode-value" class="text-xl font-extrabold text-blue-900">AÈ™teptare cod...</p>
+            <p id="barcode-value" class="text-xl font-extrabold text-blue-900">Așteptare cod...</p>
           </div>
           <!-- Panou rezultat scanare -->
           <div id="scanner-result-panel"></div>
@@ -1710,7 +1710,7 @@
         </h3>
 
         <div class="grid grid-cols-1 gap-3">
-          <!-- Import Facturi ClienÈ›i -->
+          <!-- Import Facturi Clienți -->
           <button
             data-action="importaClientiSaga"
             class="w-full min-h-[72px] bg-emerald-50 py-4 px-5 rounded-2xl flex items-start gap-4 active:bg-emerald-100 transition-all border border-emerald-200 hover:border-emerald-300 hover:shadow-md"
@@ -1733,8 +1733,8 @@
               </svg>
             </div>
             <div class="flex-1 text-left min-w-0">
-              <span class="font-bold text-sm text-emerald-700">Import Facturi ClienÈ›i</span>
-              <p class="text-[10px] text-emerald-600 truncate">CSV facturi de Ã®ncasat (SAGA)</p>
+              <span class="font-bold text-sm text-emerald-700">Import Facturi Clienți</span>
+              <p class="text-[10px] text-emerald-600 truncate">CSV facturi de încasat (SAGA)</p>
             </div>
           </button>
 
@@ -1762,7 +1762,7 @@
             </div>
             <div class="flex-1 text-left min-w-0">
               <span class="font-bold text-sm text-orange-700">Import Facturi Furnizori</span>
-              <p class="text-[10px] text-orange-600 truncate">CSV facturi de plÄƒtit (SAGA)</p>
+              <p class="text-[10px] text-orange-600 truncate">CSV facturi de plătit (SAGA)</p>
             </div>
           </button>
 
@@ -1788,7 +1788,7 @@
               </svg>
             </div>
             <div class="flex-1 text-left min-w-0">
-              <span class="font-bold text-sm">AdaugÄƒ FirmÄƒ</span>
+              <span class="font-bold text-sm">Adaugă Firmă</span>
               <p class="text-[10px] text-blue-200 truncate">
                 Client Â· Furnizor Â· Ambele
               </p>
@@ -1831,10 +1831,10 @@
             </div>
             <div class="flex-1 text-left min-w-0">
               <span class="font-bold text-sm text-slate-800"
-                >AdaugÄƒ FacturÄƒ</span
+                >Adaugă Factură</span
               >
               <p class="text-[10px] text-slate-400 truncate">
-                De Ã®ncasat Â· De plÄƒtit
+                De încasat Â· De plătit
               </p>
             </div>
             <svg
@@ -1852,7 +1852,7 @@
             </svg>
           </button>
 
-          <!-- Export CSV facturi (export complet) â€” butoane eliminate: acoperite de PDF/Excel din AnalizÄƒ -->
+          <!-- Export CSV facturi (export complet) â€” butoane eliminate: acoperite de PDF/Excel din Analiză -->
 
           <div
             class="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3"
@@ -1871,8 +1871,8 @@
               />
             </svg>
             <p class="text-[11px] font-medium text-amber-700 leading-relaxed">
-              Facturile adÄƒugate manual pot genera diferenÈ›e faÈ›Äƒ de soldul
-              oficial din SAGA. UtilizaÈ›i Importul pentru date exacte.
+              Facturile adăugate manual pot genera diferențe față de soldul
+              oficial din SAGA. Utilizați Importul pentru date exacte.
             </p>
           </div>
         </div>
@@ -1881,20 +1881,20 @@
           data-action="toggleFAB"
           class="w-full mt-6 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-500 font-bold text-sm rounded-2xl py-4 transition-all"
         >
-          ÃŽnchide meniu
+          Închide meniu
         </button>
       </div>
     </div>
 
-    <!-- ==================== MODAL ADAUGÄ‚ FIRMÄ‚ ==================== -->
+    <!-- ==================== MODAL ADAUGĂ FIRMĂ ==================== -->
     <div id="modal-firma-nou" class="modal-sheet">
       <div class="sheet-content">
         <div class="w-12 h-1 bg-slate-100 rounded-full mx-auto mb-6"></div>
         <h3 class="text-xl font-extrabold mb-4 uppercase italic text-blue-900">
-          AdaugÄƒ FirmÄƒ
+          Adaugă Firmă
         </h3>
 
-        <!-- Segmented control: tip firmÄƒ -->
+        <!-- Segmented control: tip firmă -->
         <div class="flex gap-1 bg-slate-100 p-1 rounded-xl mb-5">
           <button
             class="fn-tip-btn flex-1 py-2 text-[11px] font-extrabold rounded-lg transition-all bg-blue-900 text-white shadow"
@@ -1959,13 +1959,13 @@
           <input
             type="text"
             id="fn-adresa"
-            placeholder="AdresÄƒ"
+            placeholder="Adresă"
             class="w-full p-5 bg-slate-50 rounded-xl font-bold text-sm outline-none"
           />
           <input
             type="text"
             id="fn-contact"
-            placeholder="PersoanÄƒ de contact"
+            placeholder="Persoană de contact"
             class="w-full p-5 bg-slate-50 rounded-xl font-bold text-sm outline-none"
           />
           <div class="grid grid-cols-2 gap-2">
@@ -1991,7 +1991,7 @@
           <input
             type="text"
             id="fn-oras"
-            placeholder="OraÈ™"
+            placeholder="Oraș"
             class="w-full p-5 bg-slate-50 rounded-xl font-bold text-sm outline-none"
           />
           <textarea
@@ -2005,47 +2005,47 @@
               data-action="salveazaFirmaNou"
               class="w-full bg-blue-900 text-white btn-action shadow-xl shadow-blue-900/20"
             >
-              SalveazÄƒ Firma
+              Salvează Firma
             </button>
             <button
               data-action="inchideModal" data-arg="modal-firma-nou"
               class="w-full text-[10px] font-extrabold text-slate-400 uppercase py-3 border border-slate-100 rounded-xl"
             >
-              RenunÈ›Äƒ
+              Renunță
             </button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- ==================== MODAL ADAUGÄ‚ FACTURÄ‚ ==================== -->
+    <!-- ==================== MODAL ADAUGĂ FACTURĂ ==================== -->
     <div id="modal-factura-nou" class="modal-sheet">
       <div class="sheet-content">
         <div class="w-12 h-1 bg-slate-100 rounded-full mx-auto mb-6"></div>
         <h3 class="text-xl font-extrabold mb-4 uppercase italic text-slate-800">
-          AdaugÄƒ FacturÄƒ
+          Adaugă Factură
         </h3>
 
-        <!-- Toggle tip facturÄƒ -->
+        <!-- Toggle tip factură -->
         <div class="flex gap-1 bg-slate-100 p-1 rounded-xl mb-5">
           <button
             class="fn-fac-tip-btn flex-1 py-2 text-[11px] font-extrabold rounded-lg transition-all bg-blue-900 text-white shadow"
             data-tip="incasat"
             data-action="comutaTipFacturaNou" data-arg="incasat"
           >
-            De ÃŽncasat
+            De Încasat
           </button>
           <button
             class="fn-fac-tip-btn flex-1 py-2 text-[11px] font-extrabold rounded-lg transition-all text-slate-500"
             data-tip="platit"
             data-action="comutaTipFacturaNou" data-arg="platit"
           >
-            De PlÄƒtit
+            De Plătit
           </button>
         </div>
 
         <div class="space-y-4">
-          <!-- Select client (De ÃŽncasat) -->
+          <!-- Select client (De Încasat) -->
           <div id="fn-fac-client-wrap">
             <label
               class="text-[8px] font-bold text-slate-400 uppercase ml-1 mb-1 block"
@@ -2056,7 +2056,7 @@
               class="w-full p-4 bg-slate-50 rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-blue-100"
             ></select>
           </div>
-          <!-- Select furnizor (De PlÄƒtit) -->
+          <!-- Select furnizor (De Plătit) -->
           <div id="fn-fac-furnizor-wrap" class="hidden">
             <label
               class="text-[8px] font-bold text-slate-400 uppercase ml-1 mb-1 block"
@@ -2071,7 +2071,7 @@
           <div class="grid grid-cols-2 gap-2">
             <div class="space-y-1">
               <label class="text-[8px] font-bold text-slate-400 uppercase ml-1"
-                >Nr. FacturÄƒ</label
+                >Nr. Factură</label
               >
               <input
                 type="text"
@@ -2164,7 +2164,7 @@
               <div class="flex flex-col relative z-0">
                 <span
                   class="text-[8px] font-bold text-slate-400 uppercase tracking-tight leading-none mb-1"
-                  >ScadenÈ›Äƒ</span
+                  >Scadență</span
                 >
                 <div class="flex justify-between items-center">
                   <span
@@ -2195,7 +2195,7 @@
             <textarea
               id="fn-fac-note"
               rows="2"
-              placeholder="Note despre aceastÄƒ facturÄƒ..."
+              placeholder="Note despre această factură..."
               class="w-full p-3 bg-slate-50 rounded-xl text-sm font-medium border-none outline-none resize-none"
             ></textarea>
           </div>
@@ -2205,13 +2205,13 @@
               data-action="salveazaFacturaNou"
               class="w-full bg-blue-900 text-white btn-action shadow-xl shadow-blue-900/20"
             >
-              SalveazÄƒ Factura
+              Salvează Factura
             </button>
             <button
               data-action="inchideModal" data-arg="modal-factura-nou"
               class="w-full text-[10px] font-extrabold text-slate-400 uppercase py-3 hover:text-red-500 transition-colors"
             >
-              AnuleazÄƒ
+              Anulează
             </button>
           </div>
         </div>
@@ -2234,7 +2234,7 @@
         >
           <p class="text-[10px] font-bold text-amber-700 flex items-start gap-1.5">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:1px"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-            Aceasta este o aplicaÈ›ie de suport. Datele pot diferi de
+            Aceasta este o aplicație de suport. Datele pot diferi de
             programul de contabilitate.
           </p>
         </div>
@@ -2255,7 +2255,7 @@
             </button>
             <button
               data-action="verificaEFacturaCUI"
-              title="VerificÄƒ statut e-Factura ANAF"
+              title="Verifică statut e-Factura ANAF"
               class="px-3 bg-emerald-700 text-white rounded-xl text-[9px] font-black uppercase"
             >
               e-Fact
@@ -2264,7 +2264,7 @@
           <input
             type="text"
             id="in-nume"
-            placeholder="Denumire firmÄƒ *"
+            placeholder="Denumire firmă *"
             class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
           />
           <input
@@ -2276,13 +2276,13 @@
           <input
             type="text"
             id="in-oras"
-            placeholder="OraÈ™"
+            placeholder="Oraș"
             class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
           />
           <input
             type="text"
             id="in-contact"
-            placeholder="PersoanÄƒ contact"
+            placeholder="Persoană contact"
             class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
           />
           <input
@@ -2309,19 +2309,19 @@
             data-action="inchideModal" data-arg="modal-client"
             class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase"
           >
-            AnuleazÄƒ
+            Anulează
           </button>
           <button
             data-action="salveazaClient"
             class="flex-1 py-3 bg-blue-900 text-white rounded-xl text-[10px] font-black uppercase shadow-lg"
           >
-            SalveazÄƒ
+            Salvează
           </button>
         </div>
       </div>
     </div>
 
-    <!-- ==================== MODAL FACTURÄ‚ ==================== -->
+    <!-- ==================== MODAL FACTURĂ ==================== -->
     <div id="modal-factura" class="modal-sheet">
       <div class="sheet-content">
         <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4"></div>
@@ -2329,7 +2329,7 @@
           id="modal-factura-title"
           class="text-lg font-black text-blue-900 uppercase tracking-tight text-center mb-4"
         >
-          FacturÄƒ NouÄƒ
+          Factură Nouă
         </h2>
         <div
           id="anaf-info-box"
@@ -2338,7 +2338,7 @@
           <span
             id="anaf-status-badge"
             class="text-[9px] font-extrabold uppercase p-1 rounded bg-slate-100 text-slate-400 px-2"
-            >ÃŽN AÈ˜TEPTARE</span
+            >ÎN AÈ˜TEPTARE</span
           >
           <span id="anaf-id-display" class="text-[9px] text-slate-400"></span>
         </div>
@@ -2353,7 +2353,7 @@
           <input
             type="text"
             id="in-fac-nr"
-            placeholder="Serie / Nr. facturÄƒ *"
+            placeholder="Serie / Nr. factură *"
             class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
           />
           <input
@@ -2367,7 +2367,7 @@
             id="uit-display"
             class="text-[9px] font-bold text-slate-400 px-1 hidden"
           >
-            TVA 19%: <span id="uit-value">0</span> lei | FÄƒrÄƒ TVA:
+            TVA 19%: <span id="uit-value">0</span> lei | Fără TVA:
             <span id="fara-tva-value">0</span> lei
           </div>
           <div class="grid grid-cols-2 gap-3">
@@ -2393,7 +2393,7 @@
             <div>
               <label
                 class="text-[9px] font-bold text-slate-400 uppercase block mb-1"
-                >Data ScadenÈ›Äƒ</label
+                >Data Scadență</label
               >
               <div class="relative cursor-pointer" data-action="showPickerFor" data-target="in-fac-scad">
                 <input
@@ -2413,13 +2413,13 @@
           <input
             type="text"
             id="in-auto"
-            placeholder="Nr. auto (opÈ›ional)"
+            placeholder="Nr. auto (opțional)"
             class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
           />
           <input
             type="text"
             id="in-uit"
-            placeholder="Cod UIT e-Transport (opÈ›ional)"
+            placeholder="Cod UIT e-Transport (opțional)"
             class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
           />
           <textarea
@@ -2454,7 +2454,7 @@
                   d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m6.75 12l-3-3m0 0l-3 3m3-3v6m-1.5-15H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
                 />
               </svg>
-              <p class="text-[10px] font-bold text-slate-400">AtaÈ™eazÄƒ PDF</p>
+              <p class="text-[10px] font-bold text-slate-400">Atașează PDF</p>
             </label>
           </div>
           <div id="pending-pdf-list" class="space-y-2"></div>
@@ -2464,19 +2464,19 @@
             data-action="inchideModal" data-arg="modal-factura"
             class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase"
           >
-            AnuleazÄƒ
+            Anulează
           </button>
           <button
             data-action="salveazaFacturaOrchestrator"
             class="flex-1 py-3 bg-blue-900 text-white rounded-xl text-[10px] font-black uppercase shadow-lg"
           >
-            SalveazÄƒ
+            Salvează
           </button>
         </div>
       </div>
     </div>
 
-    <!-- ==================== MODAL FACTURÄ‚ PLÄ‚TIT ==================== -->
+    <!-- ==================== MODAL FACTURĂ PLĂTIT ==================== -->
     <div id="modal-factura-platit" class="modal-sheet">
       <div class="sheet-content">
         <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4"></div>
@@ -2484,7 +2484,7 @@
           id="modal-fp-title"
           class="text-lg font-black text-blue-900 uppercase tracking-tight text-center mb-4"
         >
-          FacturÄƒ de PlÄƒtit
+          Factură de Plătit
         </h2>
         <input type="hidden" id="in-fp-id" />
         <input type="hidden" id="in-fp-furnizor-id" />
@@ -2498,7 +2498,7 @@
           <input
             type="text"
             id="in-fp-nr"
-            placeholder="Nr. facturÄƒ *"
+            placeholder="Nr. factură *"
             class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
           />
           <input
@@ -2530,7 +2530,7 @@
             <div>
               <label
                 class="text-[9px] font-bold text-slate-400 uppercase block mb-1"
-                >Data ScadenÈ›Äƒ</label
+                >Data Scadență</label
               >
               <div class="relative cursor-pointer" data-action="showPickerFor" data-target="in-fp-scad">
                 <input
@@ -2559,7 +2559,7 @@
             data-action="inchideModal" data-arg="modal-factura-platit"
             class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase"
           >
-            AnuleazÄƒ
+            Anulează
           </button>
           <button
             id="btn-sterge-fp"
@@ -2572,7 +2572,7 @@
             data-action="salveazaFacturaPlatit"
             class="flex-1 py-3 bg-blue-900 text-white rounded-xl text-[10px] font-black uppercase shadow-lg"
           >
-            SalveazÄƒ
+            Salvează
           </button>
         </div>
       </div>
@@ -2605,7 +2605,7 @@
             </button>
             <button
               data-action="verificaEFacturaFurnizor"
-              title="VerificÄƒ statut e-Factura ANAF"
+              title="Verifică statut e-Factura ANAF"
               class="px-3 bg-emerald-700 text-white rounded-xl text-[9px] font-black uppercase"
             >
               e-Fact
@@ -2614,7 +2614,7 @@
           <input
             type="text"
             id="in-furn-nume"
-            placeholder="Denumire firmÄƒ *"
+            placeholder="Denumire firmă *"
             class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
           />
           <input
@@ -2626,13 +2626,13 @@
           <input
             type="text"
             id="in-furn-oras"
-            placeholder="OraÈ™"
+            placeholder="Oraș"
             class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
           />
           <input
             type="text"
             id="in-furn-contact"
-            placeholder="PersoanÄƒ contact"
+            placeholder="Persoană contact"
             class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
           />
           <input
@@ -2656,7 +2656,7 @@
           <input
             type="text"
             id="in-furn-note"
-            placeholder="ObservaÈ›ii"
+            placeholder="Observații"
             class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
           />
         </div>
@@ -2665,13 +2665,13 @@
             data-action="inchideModal" data-arg="modal-furnizor"
             class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase"
           >
-            AnuleazÄƒ
+            Anulează
           </button>
           <button
             data-action="salveazaFurnizor"
             class="flex-1 py-3 bg-blue-900 text-white rounded-xl text-[10px] font-black uppercase shadow-lg"
           >
-            SalveazÄƒ
+            Salvează
           </button>
         </div>
       </div>
@@ -2698,7 +2698,7 @@
           </svg>
         </div>
         <p id="confirm-message" class="text-sm font-bold text-slate-700 mb-6">
-          EÈ™ti sigur?
+          Ești sigur?
         </p>
         <div class="flex gap-3">
           <button
@@ -2711,7 +2711,7 @@
             id="btn-confirm-action"
             class="flex-1 py-3 bg-red-600 text-white rounded-xl text-[10px] font-black uppercase shadow-lg"
           >
-            Da, confirmÄƒ
+            Da, confirmă
           </button>
         </div>
       </div>
@@ -2721,26 +2721,26 @@
     <div id="modal-receptie" class="modal-sheet">
       <div class="sheet-content">
         <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4"></div>
-        <h2 class="text-lg font-black text-emerald-800 uppercase tracking-tight text-center mb-4 flex items-center justify-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 13.5l3 3m0 0l3-3m-3 3v-6m1.06-4.19l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z"/></svg>RecepÈ›ie NouÄƒ</h2>
+        <h2 class="text-lg font-black text-emerald-800 uppercase tracking-tight text-center mb-4 flex items-center justify-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 13.5l3 3m0 0l3-3m-3 3v-6m1.06-4.19l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z"/></svg>Recepție Nouă</h2>
         <div class="space-y-3">
           <select id="rec-furnizor-select" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-emerald-200">
-            <option value="">-- Furnizor (opÈ›ional) --</option>
+            <option value="">-- Furnizor (opțional) --</option>
           </select>
           <input type="date" id="rec-data" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-emerald-200"/>
           <!-- Items list -->
           <div class="bg-slate-50 rounded-2xl p-3">
             <div class="flex justify-between items-center mb-2">
               <p class="text-xs font-black text-slate-500 uppercase">Produse primite</p>
-              <button data-action="adaugaItemReceptie" class="text-xs font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-lg uppercase transition-all flex items-center gap-1"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>AdÄƒugaÈ›i</button>
+              <button data-action="adaugaItemReceptie" class="text-xs font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-lg uppercase transition-all flex items-center gap-1"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>Adăugați</button>
             </div>
             <div id="rec-items-list"></div>
             <p id="rec-total-display" class="text-xs font-black text-right text-slate-700 mt-2">Total: 0 lei</p>
           </div>
-          <textarea id="rec-obs" rows="2" placeholder="ObservaÈ›ii..." class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-emerald-200 resize-none"></textarea>
+          <textarea id="rec-obs" rows="2" placeholder="Observații..." class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-emerald-200 resize-none"></textarea>
         </div>
         <div class="flex gap-3 mt-4">
           <button data-action="inchideModalReceptie" class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase">Anulare</button>
-          <button data-action="salveazaReceptie" class="flex-1 py-3 bg-emerald-700 text-white rounded-xl text-[10px] font-black uppercase shadow-lg flex items-center justify-center gap-1.5"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>SalveazÄƒ RecepÈ›ie</button>
+          <button data-action="salveazaReceptie" class="flex-1 py-3 bg-emerald-700 text-white rounded-xl text-[10px] font-black uppercase shadow-lg flex items-center justify-center gap-1.5"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>Salvează Recepție</button>
         </div>
       </div>
     </div>
@@ -2749,31 +2749,31 @@
     <div id="modal-livrare" class="modal-sheet">
       <div class="sheet-content">
         <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4"></div>
-        <h2 class="text-lg font-black text-blue-800 uppercase tracking-tight text-center mb-4 flex items-center justify-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m8.25 3v6.75m0 0l-3-3m3 3l3-3M3.75 7.5h16.5M13.5 3.75h-3a1.5 1.5 0 00-1.5 1.5v2.25h6V5.25a1.5 1.5 0 00-1.5-1.5z"/></svg>Livrare NouÄƒ</h2>
+        <h2 class="text-lg font-black text-blue-800 uppercase tracking-tight text-center mb-4 flex items-center justify-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m8.25 3v6.75m0 0l-3-3m3 3l3-3M3.75 7.5h16.5M13.5 3.75h-3a1.5 1.5 0 00-1.5 1.5v2.25h6V5.25a1.5 1.5 0 00-1.5-1.5z"/></svg>Livrare Nouă</h2>
         <div class="space-y-3">
           <select id="liv-client-select" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200">
-            <option value="">-- Client (opÈ›ional) --</option>
+            <option value="">-- Client (opțional) --</option>
           </select>
           <input type="date" id="liv-data" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
           <!-- Items list -->
           <div class="bg-slate-50 rounded-2xl p-3">
             <div class="flex justify-between items-center mb-2">
               <p class="text-xs font-black text-slate-500 uppercase">Produse livrate</p>
-              <button data-action="adaugaItemLivrare" class="text-xs font-black text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg uppercase transition-all flex items-center gap-1"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>AdÄƒugaÈ›i</button>
+              <button data-action="adaugaItemLivrare" class="text-xs font-black text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg uppercase transition-all flex items-center gap-1"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>Adăugați</button>
             </div>
             <div id="liv-items-list"></div>
             <p id="liv-total-display" class="text-xs font-black text-right text-slate-700 mt-2">Total: 0 lei</p>
           </div>
-          <textarea id="liv-obs" rows="2" placeholder="ObservaÈ›ii..." class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200 resize-none"></textarea>
+          <textarea id="liv-obs" rows="2" placeholder="Observații..." class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200 resize-none"></textarea>
         </div>
         <div class="flex gap-3 mt-4">
           <button data-action="inchideModalLivrare" class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase">Anulare</button>
-          <button data-action="salveazaLivrare" class="flex-1 py-3 bg-blue-700 text-white rounded-xl text-[10px] font-black uppercase shadow-lg flex items-center justify-center gap-1.5"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>SalveazÄƒ Livrare</button>
+          <button data-action="salveazaLivrare" class="flex-1 py-3 bg-blue-700 text-white rounded-xl text-[10px] font-black uppercase shadow-lg flex items-center justify-center gap-1.5"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>Salvează Livrare</button>
         </div>
       </div>
     </div>
 
-    <!-- ==================== MODAL PROFIL FIRMÄ‚ ==================== -->
+    <!-- ==================== MODAL PROFIL FIRMĂ ==================== -->
     <div id="modal-profil-firma" class="modal-sheet">
       <div class="sheet-content">
         <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4"></div>
@@ -2790,7 +2790,7 @@
           <input
             type="text"
             id="pf-nome"
-            placeholder="Denumire firmÄƒ *"
+            placeholder="Denumire firmă *"
             class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
           />
           <input
@@ -2814,13 +2814,13 @@
           <input
             type="text"
             id="pf-oras"
-            placeholder="OraÈ™"
+            placeholder="Oraș"
             class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
           />
           <input
             type="text"
             id="pf-judet"
-            placeholder="JudeÈ›"
+            placeholder="Județ"
             class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
           />
           <input
@@ -2832,7 +2832,7 @@
           <input
             type="text"
             id="pf-banca"
-            placeholder="BancÄƒ"
+            placeholder="Bancă"
             class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
           />
           <input
@@ -2853,20 +2853,20 @@
             data-action="inchideProfilFirma"
             class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase"
           >
-            ÃŽnchide
+            Închide
           </button>
           <button
             data-action="salveazaProfilFirma"
             class="flex-1 py-3 bg-blue-900 text-white rounded-xl text-[10px] font-black uppercase shadow-lg"
           >
-            SalveazÄƒ
+            Salvează
           </button>
         </div>
-        <!-- Firmele Mele (secÈ›iune integratÄƒ Ã®n profilul firmei) -->
+        <!-- Firmele Mele (secțiune integrată în profilul firmei) -->
         <div class="border-t border-slate-100 pt-3 mt-3">
-          <!-- PreferinÈ›Äƒ: Data implicitÄƒ = Azi -->
+          <!-- Preferință: Data implicită = Azi -->
           <label class="flex items-center justify-between gap-3 py-2 cursor-pointer">
-            <span class="text-[10px] font-black text-slate-600 uppercase">DatÄƒ implicitÄƒ = Azi</span>
+            <span class="text-[10px] font-black text-slate-600 uppercase">Dată implicită = Azi</span>
             <div class="relative">
               <input type="checkbox" id="pref-data-azi" onchange="salveazaPrefDataAzi(this.checked)" class="sr-only peer"/>
               <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
@@ -2881,21 +2881,21 @@
           </button>
           <div id="pf-firme-content" class="hidden pt-2"></div>
         </div>
-        <!-- AcÈ›iuni suplimentare (Task 7 + Task 3) -->
+        <!-- Acțiuni suplimentare (Task 7 + Task 3) -->
         <div class="mt-4 space-y-2 border-t border-slate-100 pt-4">
           <div id="admin-delete-section" class="hidden space-y-2">
     <!-- SECÈšIUNEA 1: SISTEM (admin only) -->
     <div data-admin-only>
       <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">
-        âš™ï¸ Sistem
+        ⚙️ Sistem
       </p>
       <div class="space-y-2">
 
-        <!-- Mod mentenanÈ›Äƒ -->
+        <!-- Mod mentenanță -->
         <div class="bg-amber-50 border border-amber-200 rounded-xl p-3">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-[10px] font-black text-amber-800 uppercase">Mod MentenanÈ›Äƒ</p>
+              <p class="text-[10px] font-black text-amber-800 uppercase">Mod Mentenanță</p>
               <p id="maintenance-status-text" class="text-[9px] text-amber-600 mt-0.5">Status: Inactiv</p>
             </div>
             <button id="btn-maintenance-toggle" data-action="toggleMaintenanceMode"
@@ -2924,7 +2924,7 @@
             <div class="flex items-center gap-2">
               <input type="number" id="admin-token-zile" value="365" min="7" max="1095"
                 class="w-24 p-2.5 bg-white rounded-lg text-xs font-bold border border-blue-200 outline-none text-center"
-                title="Zile valabilitate abonament (se actualizeazÄƒ automat)" />
+                title="Zile valabilitate abonament (se actualizează automat)" />
               <span class="text-[9px] text-slate-400 font-bold">zile abonament</span>
             </div>
             <input type="text" id="admin-token-nota"
@@ -2932,7 +2932,7 @@
               class="w-full p-2.5 bg-white rounded-lg text-xs font-bold border border-blue-200 outline-none focus:border-blue-400" />
             <button data-action="genereazaTokenAdmin"
               class="w-full py-2.5 bg-blue-700 hover:bg-blue-800 text-white rounded-lg text-xs font-black uppercase transition-all">
-              GenereazÄƒ Token
+              Generează Token
             </button>
             <!-- Rezultat token -->
             <div id="admin-token-result" class="hidden bg-white rounded-lg border border-blue-300 p-2.5">
@@ -2943,7 +2943,7 @@
                 <button
                   data-action="copieTokenAdmin"
                   class="shrink-0 text-[9px] font-black bg-blue-100 hover:bg-blue-200 text-blue-700 px-2 py-1 rounded-md transition-all">
-                  COPIAZÄ‚
+                  COPIAZĂ
                 </button>
               </div>
             </div>
@@ -2960,7 +2960,7 @@
       </p>
       <button data-admin-only data-action="deschideAdminUserPanel"
         class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-black uppercase transition-all">
-        GestioneazÄƒ Utilizatori
+        Gestionează Utilizatori
       </button>
       <!-- [R9-FIX 1] Dashboard complet utilizatori -->
       <button data-admin-only data-action="deschideDashboardAdmin"
@@ -2969,7 +2969,7 @@
       </button>
     </div>
 
-    <!-- SECÈšIUNEA 3: CONT (toÈ›i userii autentificaÈ›i) -->
+    <!-- SECÈšIUNEA 3: CONT (toți userii autentificați) -->
     <div class="border-t border-slate-100 pt-2">
       <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">
         ðŸ”’ Contul meu
@@ -2978,10 +2978,10 @@
 
         <button data-account-only data-action="deschideModalSchimbaParola"
           class="w-full py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-black uppercase transition-all">
-          SchimbÄƒ Email / ParolÄƒ
+          Schimbă Email / Parolă
         </button>
 
-        <!-- Golire cache â€” toÈ›i userii -->
+        <!-- Golire cache â€” toți userii -->
         <div data-account-only>
           <button data-action="clearIDBCache"
             class="w-full py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all">
@@ -2989,20 +2989,20 @@
               <path stroke-linecap="round" stroke-linejoin="round"
                 d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/>
             </svg>
-            GoleÈ™te cache local
+            Golește cache local
           </button>
           <p class="text-[9px] text-slate-400 text-center mt-1">
-            Datele se re-descarcÄƒ din cloud la refresh
+            Datele se re-descarcă din cloud la refresh
           </p>
         </div>
       </div>
     </div>
 
-    <!-- SECÈšIUNEA PERICULOASÄ‚ â€” colapsatÄƒ implicit -->
+    <!-- SECÈšIUNEA PERICULOASĂ â€” colapsată implicit -->
     <div class="border-t border-red-100 pt-2">
       <button data-action="expandNext"
         class="w-full text-[8px] font-black text-red-300 uppercase tracking-widest py-1 text-center hover:text-red-400 transition-all">
-        â–¼ Zona periculoasÄƒ
+        â–¼ Zona periculoasă
       </button>
       <div class="hidden space-y-2 mt-2">
         <button data-admin-only data-action="exportareCompleta"
@@ -3011,11 +3011,11 @@
         </button>
         <button data-admin-only data-action="resetDateUnificat"
           class="w-full py-2.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-xl text-xs font-black uppercase transition-all">
-          âš ï¸ Resetare CompletÄƒ Date
+          ⚠️ Resetare Completă Date
         </button>
         <button data-supabase-only data-action="resetDateUnificat"
           class="w-full py-2.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-xl text-xs font-black uppercase transition-all">
-          âš ï¸ Resetare Date Cont
+          ⚠️ Resetare Date Cont
         </button>
       </div>
     </div>
@@ -3031,7 +3031,7 @@
         <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-6"></div>
         <div class="flex items-center justify-between mb-5">
           <div>
-            <h1 class="text-xl font-black text-slate-800">GestioneazÄƒ Utilizatori</h1>
+            <h1 class="text-xl font-black text-slate-800">Gestionează Utilizatori</h1>
             <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Admin Panel</p>
           </div>
           <button data-action="inchideAdminUsers"
@@ -3040,7 +3040,7 @@
           </button>
         </div>
 
-        <!-- CÄƒutare utilizator -->
+        <!-- Căutare utilizator -->
         <div class="space-y-2 mb-4">
           <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Email utilizator</label>
           <div class="flex gap-2">
@@ -3049,12 +3049,12 @@
               class="flex-1 p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200 transition-all" />
             <button data-action="adminCautaUtilizator"
               class="px-4 py-3 bg-blue-900 text-white rounded-xl text-xs font-black uppercase hover:bg-blue-800 transition-all shrink-0">
-              CautÄƒ
+              Caută
             </button>
           </div>
         </div>
 
-        <!-- Rezultat cÄƒutare + acÈ›iuni -->
+        <!-- Rezultat căutare + acțiuni -->
         <div id="admin-user-result" class="hidden space-y-3">
           <!-- Info utilizator -->
           <div id="admin-user-info"
@@ -3065,7 +3065,7 @@
           <div class="bg-blue-50 rounded-xl p-3 border border-blue-200 space-y-2">
             <p class="text-[9px] font-black text-blue-700 uppercase">ðŸ“¢ Trimite notificare</p>
             <textarea id="admin-notif-text" rows="2"
-              placeholder="Mesajul notificÄƒrii..."
+              placeholder="Mesajul notificării..."
               class="w-full p-2.5 bg-white rounded-lg text-xs font-bold border border-blue-200 outline-none resize-none focus:border-blue-400"></textarea>
             <button data-action="adminTrimiteNotificare"
               class="w-full py-2 bg-blue-700 text-white rounded-lg text-xs font-black uppercase hover:bg-blue-800 transition-all">
@@ -3073,9 +3073,9 @@
             </button>
           </div>
 
-          <!-- È˜tergere date â€” zona periculoasÄƒ -->
+          <!-- È˜tergere date â€” zona periculoasă -->
           <div class="bg-red-50 rounded-xl p-3 border border-red-200 space-y-2">
-            <p class="text-[9px] font-black text-red-700 uppercase">âš ï¸ È˜tergere permanentÄƒ date</p>
+            <p class="text-[9px] font-black text-red-700 uppercase">⚠️ È˜tergere permanentă date</p>
             <p class="text-[9px] text-red-500">
               Pentru confirmare, scrie exact: <strong id="admin-delete-hint">STERGE email@exemplu.ro</strong>
             </p>
@@ -3091,7 +3091,7 @@
 
         <button data-action="inchideAdminUsers"
           class="w-full mt-4 py-3 bg-slate-100 text-slate-500 rounded-xl text-xs font-black uppercase">
-          ÃŽnchide
+          Închide
         </button>
       </div>
     </div>
@@ -3120,10 +3120,10 @@
 
         <!-- Lista utilizatori -->
         <div id="admin-users-list" class="space-y-2 mb-4">
-          <p class="text-xs text-slate-400 text-center py-4">Se Ã®ncarcÄƒ...</p>
+          <p class="text-xs text-slate-400 text-center py-4">Se încarcă...</p>
         </div>
 
-        <!-- Panel extindere abonament (ascuns iniÈ›ial) -->
+        <!-- Panel extindere abonament (ascuns inițial) -->
         <div id="admin-extend-panel" class="hidden bg-blue-50 rounded-2xl border border-blue-200 p-3 mb-3 space-y-2">
           <p class="text-[9px] font-black text-blue-700 uppercase">ðŸ”„ Extinde abonament</p>
           <input type="email" id="admin-extend-email" readonly
@@ -3138,7 +3138,7 @@
             </select>
             <input type="number" id="admin-extend-zile" value="365" min="7" max="1095"
               class="w-20 p-2.5 bg-white rounded-lg text-xs font-bold border border-blue-200 outline-none text-center"
-              title="Zile de adÄƒugat" />
+              title="Zile de adăugat" />
           </div>
           <div class="flex gap-2">
             <button data-action="adminExtindeAbonament"
@@ -3152,13 +3152,13 @@
           </div>
         </div>
 
-        <!-- Panel notificare rapidÄƒ (ascuns iniÈ›ial) -->
+        <!-- Panel notificare rapidă (ascuns inițial) -->
         <div id="admin-notif-panel" class="hidden bg-slate-50 rounded-2xl border border-slate-200 p-3 mb-3 space-y-2">
-          <p class="text-[9px] font-black text-slate-600 uppercase">ðŸ“¢ Notificare rapidÄƒ</p>
+          <p class="text-[9px] font-black text-slate-600 uppercase">ðŸ“¢ Notificare rapidă</p>
           <input type="email" id="admin-notif-email-quick" readonly
             class="w-full p-2.5 bg-white rounded-lg text-xs font-bold border border-slate-200 outline-none" />
           <textarea id="admin-notif-text-quick" rows="2"
-            placeholder="Mesajul notificÄƒrii..."
+            placeholder="Mesajul notificării..."
             class="w-full p-2.5 bg-white rounded-lg text-xs font-bold border border-slate-200 outline-none resize-none"></textarea>
           <div class="flex gap-2">
             <button data-action="adminTrimiteNotificareQuick"
@@ -3174,7 +3174,7 @@
 
         <button data-action="inchideDashboardAdmin"
           class="w-full py-3 bg-slate-100 text-slate-500 rounded-xl text-xs font-black uppercase">
-          ÃŽnchide
+          Închide
         </button>
       </div>
     </div>
@@ -3201,20 +3201,20 @@
             placeholder="Email sau utilizator"
             class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm border-2 border-transparent outline-none focus:border-blue-200 transition-all"
           />
-          <label for="auth-password" class="sr-only">ParolÄƒ</label>
+          <label for="auth-password" class="sr-only">Parolă</label>
           <input
             type="password"
             id="auth-password"
             name="password"
             autocomplete="current-password"
             aria-required="true"
-            placeholder="ParolÄƒ"
+            placeholder="Parolă"
             class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm border-2 border-transparent outline-none focus:border-blue-200 transition-all"
           />
-          <!-- ReÈ›ine autentificarea -->
+          <!-- Reține autentificarea -->
           <label for="auth-remember" class="flex items-center gap-2 px-1 cursor-pointer select-none">
             <input type="checkbox" id="auth-remember" class="w-4 h-4 rounded accent-blue-700">
-            <span class="text-xs font-bold text-slate-500">ReÈ›ine autentificarea 30 de zile</span>
+            <span class="text-xs font-bold text-slate-500">Reține autentificarea 30 de zile</span>
           </label>
           <button
             data-action="verificaAuth"
@@ -3235,13 +3235,13 @@
       </div>
     </div>
 
-    <!-- ==================== MODAL ÃŽNREGISTRARE ==================== -->
+    <!-- ==================== MODAL ÎNREGISTRARE ==================== -->
     <div id="modal-register" class="modal-sheet">
       <div class="sheet-content">
         <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-6"></div>
         <div class="text-center mb-6">
           <h1 class="text-2xl font-black text-blue-900 tracking-tight">Cont Nou</h1>
-          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">ÃŽnregistrare Z-FLOW</p>
+          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Înregistrare Z-FLOW</p>
         </div>
         <div id="register-error-msg" class="hidden bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-xs font-bold mb-4 flex items-center gap-2">
           <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -3251,7 +3251,7 @@
           <input
             type="text"
             id="reg-nume"
-            placeholder="Nume complet (opÈ›ional)"
+            placeholder="Nume complet (opțional)"
             class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm border-2 border-transparent outline-none focus:border-blue-200 transition-all"
           />
           <input
@@ -3263,13 +3263,13 @@
           <input
             type="password"
             id="reg-password"
-            placeholder="ParolÄƒ (minim 6 caractere) *"
+            placeholder="Parolă (minim 6 caractere) *"
             class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm border-2 border-transparent outline-none focus:border-blue-200 transition-all"
           />
           <input
             type="password"
             id="reg-password-confirm"
-            placeholder="ConfirmÄƒ parola *"
+            placeholder="Confirmă parola *"
             class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm border-2 border-transparent outline-none focus:border-blue-200 transition-all"
           />
           <input
@@ -3280,88 +3280,88 @@
           />
           <p class="text-[10px] text-amber-600 font-bold px-1 flex items-start gap-1.5">
             <svg class="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
-            NecesitÄƒ cod de abonament activ. ContactaÈ›i echipa Z-FLOW pentru achiziÈ›ie.
+            Necesită cod de abonament activ. Contactați echipa Z-FLOW pentru achiziție.
           </p>
           <p class="text-[10px] text-slate-400 font-bold px-1">
-            Fiecare cont are spaÈ›iu propriu de date Ã®n Supabase. Datele tale rÄƒmÃ¢n private È™i izolate complet de alÈ›i utilizatori.
+            Fiecare cont are spațiu propriu de date în Supabase. Datele tale rămân private și izolate complet de alți utilizatori.
           </p>
           <button
             data-action="inregistrareUtilizator"
             class="w-full bg-blue-900 text-white btn-action shadow-xl shadow-blue-900/30 mt-2"
           >
-            CreeazÄƒ cont
+            Creează cont
           </button>
           <button data-action="inchideModalRegister" class="w-full py-3 bg-slate-100 text-slate-500 rounded-xl text-xs font-black uppercase">
-            â† ÃŽnapoi la Login
+            ← Înapoi la Login
           </button>
         </div>
       </div>
     </div>
 
-    <!-- ==================== MODAL SCHIMBÄ‚ DATE CONT ==================== -->
+    <!-- ==================== MODAL SCHIMBĂ DATE CONT ==================== -->
     <div id="modal-schimba-cont" class="modal-sheet">
       <div class="sheet-content">
         <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-6"></div>
         <div class="text-center mb-6">
           <h1 class="text-2xl font-black text-blue-900 tracking-tight">Date Cont</h1>
-          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">ModificÄƒ Email / ParolÄƒ</p>
+          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Modifică Email / Parolă</p>
         </div>
         <div id="schimba-cont-error" class="hidden bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-xs font-bold mb-4 flex items-center gap-2">
           <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           <span id="schimba-cont-error-text"></span>
         </div>
         <div class="space-y-3">
-          <p class="text-xs text-slate-500 font-bold px-1">LasÄƒ gol cÃ¢mpurile pe care nu vrei sÄƒ le modifici.</p>
+          <p class="text-xs text-slate-500 font-bold px-1">Lasă gol câmpurile pe care nu vrei să le modifici.</p>
           <div id="cont-email-wrap">
           <input
             type="email"
             id="cont-nou-email"
-            placeholder="Email nou (opÈ›ional)"
+            placeholder="Email nou (opțional)"
             class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm border-2 border-transparent outline-none focus:border-blue-200 transition-all"
           />
           </div>
           <p id="cont-admin-note" class="hidden text-[10px] text-amber-700 font-bold bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
-            Admin local â€” schimbare email nedisponibilÄƒ. PoÈ›i modifica doar parola de acces.
+            Admin local â€” schimbare email nedisponibilă. Poți modifica doar parola de acces.
           </p>
           <input
             type="password"
             id="cont-nou-parola"
-            placeholder="ParolÄƒ nouÄƒ (minim 6 caractere)"
+            placeholder="Parolă nouă (minim 6 caractere)"
             class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm border-2 border-transparent outline-none focus:border-blue-200 transition-all"
           />
           <input
             type="password"
             id="cont-nou-parola-confirm"
-            placeholder="ConfirmÄƒ parola nouÄƒ"
+            placeholder="Confirmă parola nouă"
             class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm border-2 border-transparent outline-none focus:border-blue-200 transition-all"
           />
           <p class="text-[10px] text-slate-400 font-bold px-1">
-            DacÄƒ schimbi emailul, vei primi un link de confirmare pe noua adresÄƒ.
+            Dacă schimbi emailul, vei primi un link de confirmare pe noua adresă.
           </p>
           <button
             data-action="schimbaDateCont"
             class="w-full bg-blue-900 text-white btn-action shadow-xl shadow-blue-900/30 mt-2"
           >
-            <svg class="w-4 h-4 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>SalveazÄƒ modificÄƒrile
+            <svg class="w-4 h-4 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>Salvează modificările
           </button>
           <button data-action="inchideModalSchimbaCont" class="w-full py-3 bg-slate-100 text-slate-500 rounded-xl text-xs font-black uppercase">
-            âœ• ÃŽnchide
+            âœ• Închide
           </button>
         </div>
       </div>
     </div>
 
-    <!-- ==================== MODAL RESET PAROLÄ‚ ==================== -->
+    <!-- ==================== MODAL RESET PAROLĂ ==================== -->
     <div id="modal-reset-password" class="modal-sheet">
       <div class="sheet-content">
         <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-6"></div>
         <div class="text-center mb-6">
-          <h1 class="text-2xl font-black text-blue-900 tracking-tight">Recuperare ParolÄƒ</h1>
+          <h1 class="text-2xl font-black text-blue-900 tracking-tight">Recuperare Parolă</h1>
           <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Trimitem un link pe email</p>
         </div>
         <div class="space-y-3">
           <p class="text-xs text-slate-500 font-bold px-1 mb-2">
-            Introdu adresa de email asociatÄƒ contului tÄƒu. Vei primi un link pentru resetarea parolei.
+            Introdu adresa de email asociată contului tău. Vei primi un link pentru resetarea parolei.
           </p>
           <input
             type="email"
@@ -3376,7 +3376,7 @@
             <svg class="w-4 h-4 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/></svg>Trimite link resetare
           </button>
           <button data-action="inchideModalResetPassword" class="w-full py-3 bg-slate-100 text-slate-500 rounded-xl text-xs font-black uppercase">
-            â† ÃŽnapoi la Login
+            ← Înapoi la Login
           </button>
         </div>
       </div>
@@ -3400,60 +3400,60 @@
           </div>
           <input type="text" id="produs-cat" placeholder="Categorie" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
           <div class="grid grid-cols-2 gap-3">
-            <input type="number" id="produs-pret-ach" placeholder="PreÈ› achiziÈ›ie (lei)" class="p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
-            <input type="number" id="produs-pret-vanz" placeholder="PreÈ› vÃ¢nzare (lei)" class="p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
+            <input type="number" id="produs-pret-ach" placeholder="Preț achiziție (lei)" class="p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
+            <input type="number" id="produs-pret-vanz" placeholder="Preț vânzare (lei)" class="p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
           </div>
-          <input type="number" id="produs-stoc-min" placeholder="Stoc minim alertÄƒ" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
+          <input type="number" id="produs-stoc-min" placeholder="Stoc minim alertă" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
           <div id="produs-stoc-initial-section">
-            <input type="number" id="produs-stoc-initial" placeholder="Stoc iniÈ›ial (opÈ›ional)" class="w-full p-3 bg-emerald-50 rounded-xl text-sm font-bold border-2 border-emerald-100 outline-none focus:border-emerald-300"/>
+            <input type="number" id="produs-stoc-initial" placeholder="Stoc inițial (opțional)" class="w-full p-3 bg-emerald-50 rounded-xl text-sm font-bold border-2 border-emerald-100 outline-none focus:border-emerald-300"/>
           </div>
-          <input type="text" id="produs-obs" placeholder="ObservaÈ›ii" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
+          <input type="text" id="produs-obs" placeholder="Observații" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
         </div>
         <div class="flex gap-3 mt-4">
-          <button data-action="inchideModalProdus" class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase">ÃŽnchide</button>
-          <button data-action="salveazaProdus" class="flex-1 py-3 bg-blue-900 text-white rounded-xl text-[10px] font-black uppercase shadow-lg">SalveazÄƒ</button>
+          <button data-action="inchideModalProdus" class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase">Închide</button>
+          <button data-action="salveazaProdus" class="flex-1 py-3 bg-blue-900 text-white rounded-xl text-[10px] font-black uppercase shadow-lg">Salvează</button>
         </div>
       </div>
     </div>
 
-    <!-- Modal: MiÈ™care Stoc -->
+    <!-- Modal: Mișcare Stoc -->
     <div id="modal-miscare-stoc" class="modal-sheet">
       <div class="sheet-content">
         <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4"></div>
-        <h2 class="text-lg font-black text-blue-900 uppercase tracking-tight text-center mb-4">MiÈ™care Stoc</h2>
+        <h2 class="text-lg font-black text-blue-900 uppercase tracking-tight text-center mb-4">Mișcare Stoc</h2>
         <div class="space-y-3">
           <select id="miscare-produs-select" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200">
-            <option value="">â€” SelecteazÄƒ produs â€”</option>
+            <option value="">â€” Selectează produs â€”</option>
           </select>
           <div class="grid grid-cols-2 gap-3">
             <select id="miscare-tip" class="p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200">
               <option value="Intrare">â–² Intrare (+)</option>
-              <option value="Iesire">â–¼ IeÈ™ire (âˆ’)</option>
+              <option value="Iesire">â–¼ Ieșire (âˆ’)</option>
             </select>
             <input type="number" id="miscare-cantitate" placeholder="Cantitate *" min="0.01" step="0.01" class="p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
           </div>
           <input type="date" id="miscare-data" data-action="showSelfPicker" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200 cursor-pointer"/>
-          <input type="text" id="miscare-obs" placeholder="ObservaÈ›ii / motiv" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
+          <input type="text" id="miscare-obs" placeholder="Observații / motiv" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
         </div>
         <div class="flex gap-3 mt-4">
-          <button data-action="inchideModalMiscare" class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase">ÃŽnchide</button>
-          <button data-action="salveazaMiscare" class="flex-1 py-3 bg-blue-900 text-white rounded-xl text-[10px] font-black uppercase shadow-lg">ÃŽnregistreazÄƒ</button>
+          <button data-action="inchideModalMiscare" class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase">Închide</button>
+          <button data-action="salveazaMiscare" class="flex-1 py-3 bg-blue-900 text-white rounded-xl text-[10px] font-black uppercase shadow-lg">Înregistrează</button>
         </div>
       </div>
     </div>
 
     <!-- ==================== MODALS â€” LOGISTIC ==================== -->
 
-    <!-- Modal: ComandÄƒ Transport -->
+    <!-- Modal: Comandă Transport -->
     <div id="modal-comanda-transport" class="modal-sheet">
       <div class="sheet-content">
         <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4"></div>
-        <h2 id="ct-modal-title" class="text-lg font-black text-blue-900 uppercase tracking-tight text-center mb-4">ComandÄƒ NouÄƒ</h2>
+        <h2 id="ct-modal-title" class="text-lg font-black text-blue-900 uppercase tracking-tight text-center mb-4">Comandă Nouă</h2>
         <input type="hidden" id="ct-id-hidden"/>
         <div class="space-y-3">
           <div class="grid grid-cols-2 gap-3">
             <input type="text" id="ct-ruta-de" placeholder="Plecare *" class="p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
-            <input type="text" id="ct-ruta-la" placeholder="DestinaÈ›ie *" class="p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
+            <input type="text" id="ct-ruta-la" placeholder="Destinație *" class="p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
           </div>
           <select id="ct-client-select" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200">
             <option value="">â€” Client â€”</option>
@@ -3472,18 +3472,18 @@
           </div>
           <select id="ct-status" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200">
             <option value="Planificat">Planificat</option>
-            <option value="In curs">ÃŽn curs</option>
+            <option value="In curs">În curs</option>
             <option value="Livrat">Livrat</option>
             <option value="Anulat">Anulat</option>
           </select>
-          <input type="text" id="ct-tracking" placeholder="Cod tracking (opÈ›ional)" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
+          <input type="text" id="ct-tracking" placeholder="Cod tracking (opțional)" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
           <input type="number" id="ct-valoare" placeholder="Valoare transport (lei)" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
-          <input type="number" id="ct-km" placeholder="Km rutÄƒ (opÈ›ional)" min="0" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
-          <input type="text" id="ct-obs" placeholder="ObservaÈ›ii" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
+          <input type="number" id="ct-km" placeholder="Km rută (opțional)" min="0" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
+          <input type="text" id="ct-obs" placeholder="Observații" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
         </div>
         <div class="flex gap-3 mt-4">
-          <button data-action="inchideModalComandaTransport" class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase">ÃŽnchide</button>
-          <button data-action="salveazaComandaTransport" class="flex-1 py-3 bg-blue-900 text-white rounded-xl text-[10px] font-black uppercase shadow-lg">SalveazÄƒ</button>
+          <button data-action="inchideModalComandaTransport" class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase">Închide</button>
+          <button data-action="salveazaComandaTransport" class="flex-1 py-3 bg-blue-900 text-white rounded-xl text-[10px] font-black uppercase shadow-lg">Salvează</button>
         </div>
       </div>
     </div>
@@ -3498,11 +3498,11 @@
           <input type="text" id="sofer-name" placeholder="Nume complet *" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
           <input type="tel" id="sofer-tel" placeholder="Telefon" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
           <input type="text" id="sofer-permis" placeholder="Nr. permis conducere" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
-          <input type="text" id="sofer-cnp" placeholder="CNP (opÈ›ional)" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
+          <input type="text" id="sofer-cnp" placeholder="CNP (opțional)" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
         </div>
         <div class="flex gap-3 mt-4">
-          <button data-action="inchideModalSofer" class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase">ÃŽnchide</button>
-          <button data-action="salveazaSofer" class="flex-1 py-3 bg-purple-700 text-white rounded-xl text-[10px] font-black uppercase shadow-lg">SalveazÄƒ</button>
+          <button data-action="inchideModalSofer" class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase">Închide</button>
+          <button data-action="salveazaSofer" class="flex-1 py-3 bg-purple-700 text-white rounded-xl text-[10px] font-black uppercase shadow-lg">Salvează</button>
         </div>
       </div>
     </div>
@@ -3514,32 +3514,32 @@
         <h2 id="vehicul-modal-title" class="text-lg font-black text-blue-900 uppercase tracking-tight text-center mb-4">Vehicul Nou</h2>
         <input type="hidden" id="vehicul-id-hidden"/>
         <div class="space-y-3">
-          <input type="text" id="vehicul-nr" placeholder="Nr. Ã®nmatriculare *" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200 uppercase"/>
+          <input type="text" id="vehicul-nr" placeholder="Nr. înmatriculare *" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200 uppercase"/>
           <div class="grid grid-cols-2 gap-3">
-            <input type="text" id="vehicul-marca" placeholder="MarcÄƒ" class="p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
+            <input type="text" id="vehicul-marca" placeholder="Marcă" class="p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
             <input type="text" id="vehicul-model" placeholder="Model" class="p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
           </div>
           <select id="vehicul-tip" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200">
             <option value="Camion">Camion</option>
             <option value="Furgoneta">Furgoneta</option>
             <option value="Autoturism">Autoturism</option>
-            <option value="Remorca">RemorcÄƒ</option>
+            <option value="Remorca">Remorcă</option>
             <option value="Utilaj">Utilaj</option>
           </select>
           <div class="grid grid-cols-2 gap-3">
             <input type="number" id="vehicul-gps-lat" placeholder="GPS Lat (ex: 47.1985)" step="0.0001" class="p-3 bg-green-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-green-300"/>
             <input type="number" id="vehicul-gps-lng" placeholder="GPS Lng (ex: 23.0592)" step="0.0001" class="p-3 bg-green-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-green-300"/>
           </div>
-          <p class="text-[9px] text-slate-400 text-center -mt-1"><svg class="w-3 h-3 inline-block mr-0.5 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>Coordonate GPS opÈ›ionale â€” lasÄƒ gol pentru simulare automatÄƒ</p>
+          <p class="text-[9px] text-slate-400 text-center -mt-1"><svg class="w-3 h-3 inline-block mr-0.5 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>Coordonate GPS opționale â€” lasă gol pentru simulare automată</p>
         </div>
         <div class="flex gap-3 mt-4">
-          <button data-action="inchideModalVehicul" class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase">ÃŽnchide</button>
-          <button data-action="salveazaVehicul" class="flex-1 py-3 bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase shadow-lg">SalveazÄƒ</button>
+          <button data-action="inchideModalVehicul" class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase">Închide</button>
+          <button data-action="salveazaVehicul" class="flex-1 py-3 bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase shadow-lg">Salvează</button>
         </div>
       </div>
     </div>
 
-    <!-- ==================== MODAL MULTI-FIRMÄ‚ ==================== -->
+    <!-- ==================== MODAL MULTI-FIRMĂ ==================== -->
     <div id="modal-multifirma" class="modal-sheet">
       <div class="sheet-content">
         <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4"></div>
@@ -3550,14 +3550,14 @@
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
           </button>
         </div>
-        <p class="text-[9px] text-slate-400 mb-3">Gestionezi mai multe firme? AdaugÄƒ-le È™i comutÄƒ rapid Ã®ntre ele.</p>
+        <p class="text-[9px] text-slate-400 mb-3">Gestionezi mai multe firme? Adaugă-le și comută rapid între ele.</p>
         <div id="multifirma-panel-content">
-          <p class="text-[9px] text-slate-400 italic text-center py-4">Se iniÈ›ializeazÄƒ...</p>
+          <p class="text-[9px] text-slate-400 italic text-center py-4">Se inițializează...</p>
         </div>
       </div>
     </div>
 
-    <!-- ==================== JAVASCRIPT - ORDINE CORECTÄ‚ ==================== -->
+    <!-- ==================== JAVASCRIPT - ORDINE CORECTĂ ==================== -->
     <!-- 1. Services (no dependencies) -->
     <script src="js/services/idb.js" defer></script>
     <script src="js/services/supabase.js" defer></script>
@@ -3569,6 +3569,8 @@
     <script src="js/modules/import.js" defer></script>
 
     <!-- 4. Main App (contains all functionality) -->
+        <script src="js/modules/logger.js" defer></script>
+    <script src="js/modules/maintenance.js" defer></script>
     <script src="js/app.js" defer></script>
 
     <!-- 4b. Split modules â€” financiar & crud (after app.js, use debounce/globals) -->
@@ -3579,7 +3581,7 @@
     <script src="js/modules/depozit.js" defer></script>
     <script src="js/modules/logistic.js" defer></script>
 
-    <!-- 5. Features v8.0 â€” noile funcÈ›ionalitÄƒÈ›i (ANAF e-FacturÄƒ, Bridge XML, SafeFleet, Scanner QR, Cashflow Forecast, Multi-firmÄƒ, km Report, Import XML ANAF) -->
+    <!-- 5. Features v8.0 â€” noile funcționalități (ANAF e-Factură, Bridge XML, SafeFleet, Scanner QR, Cashflow Forecast, Multi-firmă, km Report, Import XML ANAF) -->
     <script src="js/modules/features.js" defer></script>
 
     <!-- 6. UI Event Delegation -- inlocuieste onclick= inline cu data-action= delegat -->
@@ -3608,17 +3610,17 @@
       }
     </script>
 
-    <!-- ==================== MODAL MENTENANÈšÄ‚ ==================== -->
-    <!-- AfiÈ™at utilizatorilor non-admin cÃ¢nd modul de mentenanÈ›Äƒ este activ -->
+    <!-- ==================== MODAL MENTENANÈšĂ ==================== -->
+    <!-- Afișat utilizatorilor non-admin când modul de mentenanță este activ -->
     <div id="maintenance-overlay" class="hidden fixed inset-0 z-[9999] bg-blue-950 flex flex-col items-center justify-center p-8 text-center">
       <svg class="w-16 h-16 text-amber-400 mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l5.653-4.655m5.581-5.58c.317-.14.641-.268.975-.384a2.652 2.652 0 013.587 3.587c-.116.334-.244.658-.384.975M11.42 15.17l-5.581 5.58"/>
       </svg>
-      <h1 class="text-2xl font-black text-white mb-2 tracking-tight">AplicaÈ›ie Ã®n mentenanÈ›Äƒ</h1>
+      <h1 class="text-2xl font-black text-white mb-2 tracking-tight">Aplicație în mentenanță</h1>
       <p class="text-blue-300 text-sm font-medium max-w-xs" id="maintenance-message-display">
-        Se efectueazÄƒ actualizÄƒri. VÄƒ rugÄƒm sÄƒ reveniÈ›i Ã®n cÃ¢teva minute.
+        Se efectuează actualizări. Vă rugăm să reveniți în câteva minute.
       </p>
-      <p class="text-blue-500 text-[10px] mt-6 font-bold uppercase tracking-widest">Z-FLOW Â· VÄƒ mulÈ›umim pentru rÄƒbdare</p>
+      <p class="text-blue-500 text-[10px] mt-6 font-bold uppercase tracking-widest">Z-FLOW Â· Vă mulțumim pentru răbdare</p>
     </div>
   </body>
 </html>
