@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Z-FLOW Enterprise v7.14
  * Module: Notifications - Notificări și Alerte
  * 
@@ -101,7 +101,7 @@ const ZFlowNotifications = {
             let totalRestant = 0;
             restante.forEach(f => totalRestant += parseFloat(f.suma) || 0);
             
-            await this.send('🔴 Facturi restante!', {
+            await this.send('Facturi Restante — Z-FLOW', {
                 body: `${restante.length} facturi depășite (${this.formatSuma(totalRestant)})`,
                 tag: 'restante',
                 requireInteraction: true
@@ -111,7 +111,7 @@ const ZFlowNotifications = {
         if (inCurand.length > 0) {
             const maine = inCurand.filter(f => f.zilePanaLaScadenta <= 1);
             if (maine.length > 0) {
-                await this.send('⏰ Scadență mâine!', {
+                await this.send('Scadenta Maine — Z-FLOW', {
                     body: `${maine.length} factur${maine.length > 1 ? 'i scad' : 'ă scade'} mâine`,
                     tag: 'scadenta-maine'
                 });

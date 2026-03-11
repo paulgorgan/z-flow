@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Z-FLOW Enterprise v8.0
  * Modul: Features — Funcționalități Noi
  *

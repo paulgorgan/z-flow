@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Z-FLOW Enterprise v7.14
  * Module: Attachments - Gestiune atașamente PDF
  * 

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Z-FLOW Enterprise — IndexedDB Offline Cache
  * #7 — Cache transparent pentru funcționare offline
  *

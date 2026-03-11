@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Z-FLOW Enterprise v7.14
  * Modul Depozit — Gestionare Stoc, Produse, Recepții, Livrări
  */
@@ -27,7 +27,7 @@ function navigaLaAlerteStoc() {
     const searchBox = document.getElementById('depozit-search-produse');
     if (searchBox) {
         searchBox.value = '';
-        searchBox.placeholder = '🔴 Filtrare: produse cu stoc sub limită...';
+        searchBox.placeholder = 'Filtrare: produse cu stoc sub limita minima...';
         setTimeout(() => { searchBox.placeholder = 'Caută produs...'; }, 3000);
     }
 }

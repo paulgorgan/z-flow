@@ -24,8 +24,8 @@
         dintr-o singură aplicație. Simplu, rapid, sigur.
       </p>
       <div class="flex flex-col sm:flex-row gap-3 justify-center">
-        <a href="index.html"
-          class="px-8 py-4 bg-white text-blue-900 rounded-2xl font-black text-sm hover:bg-blue-50 transition-all shadow-xl shadow-blue-900/30">
+        <a href="index.html#auth" class="px-8 py-4 bg-white text-blue-900 rounded-2xl font-black text-sm hover:bg-blue-50 transition-all shadow-xl shadow-blue-900/30"
+          onclick="localStorage.setItem('zflow_open_auth','1')">
           Începe gratuit — Trial 30 zile
         </a>
         <a href="#pricing"
@@ -41,32 +41,56 @@
     <h2 class="text-2xl font-black text-center text-slate-800 mb-10">Tot ce ai nevoie, într-o singură aplicație</h2>
     <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
       <div class="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
-        <div class="text-2xl mb-2">📄</div>
+        <div class="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center mb-3">
+          <svg class="w-5 h-5 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/>
+          </svg>
+        </div>
         <p class="font-black text-sm text-slate-800">Facturi & Plăți</p>
         <p class="text-xs text-slate-500 mt-1">Emite, urmărește și arhivează facturi de încasat și de plătit</p>
       </div>
       <div class="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
-        <div class="text-2xl mb-2">👥</div>
+        <div class="w-10 h-10 bg-violet-100 rounded-xl flex items-center justify-center mb-3">
+          <svg class="w-5 h-5 text-violet-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/>
+          </svg>
+        </div>
         <p class="font-black text-sm text-slate-800">Clienți & Furnizori</p>
         <p class="text-xs text-slate-500 mt-1">Bază de date completă cu validare CUI ANAF automată</p>
       </div>
       <div class="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
-        <div class="text-2xl mb-2">🚛</div>
+        <div class="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center mb-3">
+          <svg class="w-5 h-5 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12"/>
+          </svg>
+        </div>
         <p class="font-black text-sm text-slate-800">Logistică & GPS</p>
         <p class="text-xs text-slate-500 mt-1">Urmărire vehicule, comenzi transport, șoferi și rute pe hartă</p>
       </div>
       <div class="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
-        <div class="text-2xl mb-2">📦</div>
+        <div class="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center mb-3">
+          <svg class="w-5 h-5 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/>
+          </svg>
+        </div>
         <p class="font-black text-sm text-slate-800">Depozit & Stoc</p>
         <p class="text-xs text-slate-500 mt-1">Gestiune produse, recepții, livrări și alerte stoc minim</p>
       </div>
       <div class="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
-        <div class="text-2xl mb-2">📊</div>
+        <div class="w-10 h-10 bg-sky-100 rounded-xl flex items-center justify-center mb-3">
+          <svg class="w-5 h-5 text-sky-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/>
+          </svg>
+        </div>
         <p class="font-black text-sm text-slate-800">Analiză & Rapoarte</p>
         <p class="text-xs text-slate-500 mt-1">Cashflow, BI, export XLSX/PDF și backup complet</p>
       </div>
       <div class="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
-        <div class="text-2xl mb-2">🔒</div>
+        <div class="w-10 h-10 bg-rose-100 rounded-xl flex items-center justify-center mb-3">
+          <svg class="w-5 h-5 text-rose-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/>
+          </svg>
+        </div>
         <p class="font-black text-sm text-slate-800">Date izolate 100%</p>
         <p class="text-xs text-slate-500 mt-1">Fiecare cont are spațiu propriu — nimeni nu îți vede datele</p>
       </div>

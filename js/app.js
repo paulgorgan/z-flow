@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Z-FLOW Enterprise V2 (v8.0)
  * App Principal - Vue 3 CDN + Arhitectură Modulară
  * 
@@ -352,17 +352,19 @@ async function init(goHome = true) {
     }
 
     try {
-        // [PERF-FIX] FIX 1 — fetch toate 4 surse de date în paralel cu Promise.all
+        // [PERF-FIX] FIX 1 — fetch toate 5 surse de date în paralel cu Promise.all (inclusiv profil)
         // Reduce timpul de inițializare față de await-uri secvențiale
         let cl, fc, fr, fp;
 
         try {
-            const [clRes, fcResult, frRes, fpRes] = await Promise.all([
+            const [profResult, clRes, fcResult, frRes, fpRes] = await Promise.all([
+                ZFlowStore.userProfile ? Promise.resolve(ZFlowStore.userProfile) : ZFlowDB.fetchProfile().catch(() => null),
                 ZFlowDB.fetchClienti(),
                 ZFlowDB.fetchFacturiPaginated(500, 0),
                 ZFlowDB.fetchFurnizori(),
                 ZFlowDB.fetchFacturiPlatit()
             ]);
+            if (profResult && !ZFlowStore.userProfile) ZFlowStore.userProfile = profResult;
             cl = clRes;
             fc = fcResult.data || [];
             fr = frRes;
@@ -473,12 +475,8 @@ async function init(goHome = true) {
             ZFlowStore._demoFacturiPlatit = [];
         }
 
-        // Încarcă profilul firmei la fiecare init() — indiferent de tipul de user
-        if (!ZFlowStore.userProfile) {
-            try { const p = await ZFlowDB.fetchProfile(); if (p) ZFlowStore.userProfile = p; } catch(e) {
-                ZFlowLogger.warn('app', '[init] fetchProfile error:', e.message);
-            }
-        }
+        // Încarcă profilul firmei la fiecare init() — acoperit acum de Promise.all de mai sus
+        // (fetchProfile este inclus în paralel cu celelalte fetch-uri)
 
         // [PERF-FIX] FIX 1 — render o singură dată după procesarea completă a tuturor datelor
         renderMain();
@@ -486,20 +484,22 @@ async function init(goHome = true) {
         renderFurnizori();
         updateFurnizoriKPI();
 
-        // === Depozit & Logistic (non-fatal) ===
+        // === Depozit & Logistic (non-fatal, paralel) ===
         try {
-            if (typeof initDepozit  === 'function') await initDepozit();
-            if (typeof initLogistic === 'function') await initLogistic();
+            await Promise.all([
+                typeof initDepozit  === 'function' ? initDepozit()  : Promise.resolve(),
+                typeof initLogistic === 'function' ? initLogistic() : Promise.resolve(),
+            ]).catch(e => ZFlowLogger.warn('app', '[Depozit/Logistic] init paralel (non-fatal):', e.message));
             if (typeof calculeazaKPIDepozit  === 'function') calculeazaKPIDepozit();
             if (typeof calculeazaKPILogistic === 'function') calculeazaKPILogistic();
         } catch (depErr) {
-            ZFlowLogger.warn('app', '⚠️ Depozit/Logistic init (non-fatal):', depErr.message);
+            ZFlowLogger.warn('app', '[Depozit/Logistic] init (non-fatal):', depErr.message);
         }
 
         populeazaBridgeUI();
         if (document.getElementById("map")) renderTransportTab();
         setBIRange('luna'); // Setare implicită interval BI: luna curentă
-        saveZFlowData();
+        setTimeout(() => saveZFlowData(), 0); // Eliberează main thread
         verificaScadenteNotificari(); // #12 - verifică scadențe și actualizează bell
 
         // Task 9 — Supabase Realtime (multi-device sync, skip pentru local/demo)
@@ -1292,7 +1292,12 @@ async function adminCautaUtilizator() {
         }
         if (infoDiv) {
             infoDiv.innerHTML = `
-                <p class="text-xs font-bold text-slate-700">📧 ${escapeHtml(userData.email || email)}</p>
+                <p class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+  <svg class="w-3.5 h-3.5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/>
+  </svg>
+  ${escapeHtml(userData.email || email)}
+</p>
                 <p class="text-[10px] text-slate-400 font-mono mt-0.5">ID: ${escapeHtml(userData.id || 'necunoscut')}</p>`;
         }
         // Salvează datele pentru acțiunile ulterioare
@@ -2542,7 +2547,10 @@ function arataDetalii(id) {
             </div>
         </div>
         <div class="flex items-center justify-between px-1 mb-2 mt-1">
-            <span class="text-[10px] font-extrabold text-blue-900 uppercase tracking-wider">➤ Facturi de Încasat</span>
+            <span class="text-[10px] font-extrabold text-blue-900 uppercase tracking-wider flex items-center gap-1">
+  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/>
+  </svg>Facturi de Încasat</span>
             <div class="flex items-center gap-2">
                 <span class="text-[9px] font-bold text-slate-400 uppercase">Afișare</span>
                 <select onchange="facturiSetPerPage(this.value)"
@@ -5228,7 +5236,7 @@ function initMap() {
     setTimeout(() => {
         ZFlowStore.map.invalidateSize();
         actualizaMarkerePeHarta();
-    }, 400);
+    }, 600);
 }
 
 /**
@@ -5993,6 +6001,11 @@ function swipeStergeFactura(facturaId) {
 
 // Inițializăm SwipeHandler după DOM ready
 document.addEventListener('DOMContentLoaded', () => {
+    // Detectează flag de la landing.html — modal-auth se deschide automat dacă user nu e autentificat
+    if (localStorage.getItem('zflow_open_auth') === '1') {
+        localStorage.removeItem('zflow_open_auth');
+        // Modal-ul se deschide automat la !isAuthenticated — flag-ul este doar pentru a declanșa fluxul
+    }
     // ── Z-FLOW Changelog ────────────────────────────────────────
     console.groupCollapsed('%c Z-FLOW v2.1 — Changelog', 'color:#3b82f6;font-weight:bold;font-size:13px');
     ZFlowLogger.debug('app', '%c[UI] Eliminat grupul butoane (Client/Furnizor nou, Doc nou, Import) din listele de clienți și furnizori', 'color:#64748b');
@@ -6502,9 +6515,18 @@ function renderAdminUsersList(users) {
             </div>
 
             <div class="flex items-center gap-3 text-[9px] text-slate-500 font-bold">
-                <span>📄 ${u.nr_facturi} facturi</span>
-                <span>👥 ${u.nr_clienti} clienți</span>
-                <span>🚛 ${u.nr_comenzi} comenzi</span>
+                <span class="flex items-center gap-1">
+  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/>
+  </svg>${u.nr_facturi} facturi</span>
+                <span class="flex items-center gap-1">
+  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/>
+  </svg>${u.nr_clienti} clienți</span>
+                <span class="flex items-center gap-1">
+  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12"/>
+  </svg>${u.nr_comenzi} comenzi</span>
             </div>
 
             <div class="flex items-center justify-between">

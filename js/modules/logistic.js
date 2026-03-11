@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Z-FLOW Enterprise v7.14
  * Modul Logistic — Comenzi Transport, Șoferi, Vehicule, Tracking
  */
@@ -627,31 +627,35 @@ window.syncSafefleetVehicule          = syncSafefleetVehicule;
  * @param {string} vehiculId
  */
 function trackeazaVehicul(vehiculId) {
+    // Guard: Leaflet trebuie disponibil
     if (typeof L === 'undefined') {
-        ZFlowLogger.warn('GPS', 'Leaflet nedisponibil la trackeazaVehicul — abort');
-        if (typeof showNotification === 'function') showNotification('Harta nu este disponibilă. Reîncarcă pagina.', 'warning');
+        ZFlowLogger.warn('GPS', 'Leaflet nedisponibil — reîncarcă pagina');
+        if (typeof showNotification === 'function') {
+            showNotification('Harta se încarcă... Încearcă din nou în 2 secunde.', 'info');
+        }
+        // Retry o singură dată după 2s (Leaflet poate fi în curs de încărcare)
+        setTimeout(() => {
+            if (typeof L !== 'undefined') trackeazaVehicul(vehiculId);
+            else if (typeof showNotification === 'function')
+                showNotification('Harta nu este disponibilă. Reîncarcă pagina.', 'warning');
+        }, 2000);
         return;
     }
-    // Comutăm pe view Vehicule (care conține harta). schimbaViewLogistic va inițializa
-    // harta după 50ms reflow, deci markere vor fi gata la ~500ms.
+    // Restul funcției rămâne NESCHIMBAT
     schimbaViewLogistic('vehicule', true);
-
-    // Scrollăm la hartă după ce view-ul și harta s-au inițializat
     setTimeout(() => {
         const mapEl = document.getElementById('map');
         if (mapEl) mapEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-        // Centrăm pe vehicul după ce markere sunt plasate (actualizaMarkerePeHarta rulează la ~50ms)
         setTimeout(() => {
             const marcatori = ZFlowStore._gpsMarcatori || [];
             const vehicule  = ZFlowStore.dateVehicule   || [];
             const idx = vehicule.findIndex(v => String(v.id) === String(vehiculId));
             if (idx >= 0 && marcatori[idx]) {
+                ZFlowStore.map?.setView(marcatori[idx].getLatLng(), 15);
                 marcatori[idx].openPopup();
-                if (ZFlowStore.map) ZFlowStore.map.panTo(marcatori[idx].getLatLng());
             }
-        }, 450);
-    }, 150);
+        }, 600);
+    }, 100);
 }
 window.trackeazaVehicul = trackeazaVehicul;
 
