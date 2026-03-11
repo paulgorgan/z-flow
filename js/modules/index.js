@@ -1,73 +1,264 @@
 /**
- * Z-FLOW Enterprise v7.14
- * Module Index - Încarcă toate modulele într-o ordine corectă
- * 
- * ⚠️ ATENȚIE: Acest fișier este OPȚIONAL.
- * Aplicația funcționează perfect și fără aceste module.
- * Modulele sunt suplimentare și pot fi folosite gradual.
- * 
- * Pentru a folosi modulele, include acest script în index.html
- * DUPĂ app.js:
- * 
- * <script src="js/modules/index.js" type="module"></script>
- * 
- * SAU include fiecare modul individual:
- * <script src="js/modules/utils.js"></script>
- * <script src="js/modules/ui.js"></script>
- * etc.
+ * Z-FLOW Enterprise v8.0
+ * Module Index — Handler delegat pentru acțiunile UI din index.html
+ *
+ * Înlocuiește cele 159 atribute onclick= inline cu un singur listener delegat
+ * pe `document`. Fiecare element interactiv primește:
+ *   data-action="numeActiune"          — numele funcției sau acțiunii
+ *   data-arg="valoare"                 — argument unic (opțional)
+ *   data-arg0="val0" data-arg1="val1"  — două argumente (opțional)
+ *   data-target="idElement"            — id DOM țintă (pentru picker etc.)
+ *
+ * Funcțiile globale (window.*) sunt apelate direct cu argumentele extrase.
+ * Acțiunile complexe (cu referințe DOM, efecte compuse) sunt definite în
+ * obiectul `SPECIALS` de mai jos.
+ *
+ * Backdropul #fab-menu (click în afara sheet-content închide FAB):
+ *   Gestionat printr-un listener dedicat adăugat la DOMContentLoaded.
  */
+(function () {
+  'use strict';
 
-// Verifică dacă modulele sunt deja încărcate (evită dubluri)
-if (typeof window.ZFlowModulesLoaded === 'undefined') {
-    window.ZFlowModulesLoaded = true;
-    
-    console.log('🧩 Se încarcă modulele Z-FLOW...');
-    
-    // Lista modulelor în ordinea de încărcare
-    const modules = [
-        'utils',
-        'auth',
-        'ui',
-        'clients',
-        'suppliers',
-        'invoices',
-        'analytics',
-        'export',
-        'import',
-        'notifications',
-        'attachments',
-        'mobile',
-        'bulk',
-        'anaf'
-    ];
-    
-    // Funcție pentru încărcare dinamică
-    async function loadModules() {
-        const basePath = 'js/modules/';
-        let loaded = 0;
-        
-        for (const mod of modules) {
-            try {
-                const script = document.createElement('script');
-                script.src = `${basePath}${mod}.js`;
-                script.async = false;
-                document.head.appendChild(script);
-                loaded++;
-            } catch (e) {
-                console.warn(`⚠️ Nu s-a putut încărca modulul ${mod}:`, e);
-            }
-        }
-        
-        console.log(`✅ ${loaded}/${modules.length} module Z-FLOW încărcate`);
+  // -------------------------------------------------------------------------
+  // Ajutor: parsează valoarea unui atribut data-* în tipul nativ corespunzător
+  // -------------------------------------------------------------------------
+
+  /**
+   * Convertește un șir provenit dintr-un atribut data-* în boolean sau string.
+   * @param {string|undefined} v - valoarea brută a atributului
+   * @returns {boolean|string|undefined}
+   */
+  function parseArg(v) {
+    if (v === undefined || v === null) return undefined;
+    if (v === 'true')  return true;
+    if (v === 'false') return false;
+    return v;
+  }
+
+  // -------------------------------------------------------------------------
+  // Acțiuni speciale — logică complexă sau cu referințe DOM directe
+  // -------------------------------------------------------------------------
+
+  /** @type {Object.<string, function(Element): void>} */
+  var SPECIALS = {
+    /** Navighează la tab-ul Home și marchează butonul nav corespunzător. */
+    navHome: function () {
+      if (typeof schimbaTab === 'function')
+        schimbaTab('home', document.getElementById('nav-btn-home'));
+    },
+
+    /** Navighează la tab-ul Financiar. */
+    navFinanciar: function () {
+      if (typeof schimbaTab === 'function')
+        schimbaTab('financiar', document.getElementById('nav-btn-fin'));
+    },
+
+    /** Navighează la tab-ul Logistic și randează lista comenzilor. */
+    navLogistic: function (btn) {
+      if (typeof schimbaTab === 'function') schimbaTab('logistic', btn);
+      if (typeof renderLogistic === 'function') renderLogistic();
+    },
+
+    /** Navighează la tab-ul Depozit și randează produsele. */
+    navDepozit: function (btn) {
+      if (typeof schimbaTab === 'function') schimbaTab('depozit', btn);
+      if (typeof renderDepozit === 'function') renderDepozit();
+    },
+
+    /** Deschide modalul de editare pentru clientul curent selectat. */
+    deschideModalClientSelectat: function () {
+      if (typeof deschideModal === 'function')
+        deschideModal('modal-client', window.ZFlowStore && window.ZFlowStore.selectedClientId);
+    },
+
+    /** Deschide modalul de editare pentru furnizorul curent selectat. */
+    deschideModalFurnizorSelectat: function () {
+      if (typeof deschideModalFurnizor === 'function')
+        deschideModalFurnizor(window.ZFlowStore && window.ZFlowStore.selectedFurnizorId);
+    },
+
+    /** Importă facturi clienți SAGA și închide meniul FAB. */
+    importaClientiSaga: function () {
+      if (typeof importaDateSaga === 'function') importaDateSaga('clienti');
+      if (typeof toggleFAB === 'function') toggleFAB();
+    },
+
+    /** Importă facturi furnizori SAGA și închide meniul FAB. */
+    importaFurnizoriSaga: function () {
+      if (typeof importaDateSaga === 'function') importaDateSaga('furnizori');
+      if (typeof toggleFAB === 'function') toggleFAB();
+    },
+
+    /** Deschide formularul de firmă nouă și închide meniul FAB. */
+    deschideFirmaNouSaga: function () {
+      if (typeof deschideFirmaNou === 'function') deschideFirmaNou();
+      if (typeof toggleFAB === 'function') toggleFAB();
+    },
+
+    /** Deschide formularul de factură nouă și închide meniul FAB. */
+    deschideFacturaNouSaga: function () {
+      if (typeof deschideFacturaNou === 'function') deschideFacturaNou();
+      if (typeof toggleFAB === 'function') toggleFAB();
+    },
+
+    /** Verifică statutul e-Factura ANAF pentru CUI-ul din câmpul #in-cui. */
+    verificaEFacturaCUI: function () {
+      var el = document.getElementById('in-cui');
+      if (el && typeof verificaEFactura === 'function') verificaEFactura(el.value);
+    },
+
+    /** Șterge factura de plătit curent editată (id citit din input #in-fp-id). */
+    stergeFacturaPlatitActiva: function () {
+      var el = document.getElementById('in-fp-id');
+      if (el && typeof stergeFacturaPlatit === 'function') stergeFacturaPlatit(el.value);
+    },
+
+    /** Verifică statutul e-Factura ANAF pentru CUI-ul din câmpul #in-furn-cui. */
+    verificaEFacturaFurnizor: function () {
+      var el = document.getElementById('in-furn-cui');
+      if (el && typeof verificaEFactura === 'function') verificaEFactura(el.value);
+    },
+
+    /**
+     * Extinde/colapsează lista multi-firmă din panoul profilului firmei.
+     * @param {Element} btn - butonul apăsat (conține elementul .pf-arrow)
+     */
+    toggleFirmeMulti: function (btn) {
+      var c = document.getElementById('pf-firme-content');
+      if (!c) return;
+      c.classList.toggle('hidden');
+      var arrow = btn.querySelector('.pf-arrow');
+      if (arrow) arrow.innerText = c.classList.contains('hidden') ? '▼' : '▲';
+      if (!c.classList.contains('hidden') && window.ZFlowMultiFirma)
+        ZFlowMultiFirma.renderPanel('pf-firme-content');
+    },
+
+    /** Copiază token-ul admin afișat în clipboard. */
+    copieTokenAdmin: function () {
+      var el = document.getElementById('admin-token-output');
+      var text = el ? el.textContent : '';
+      navigator.clipboard.writeText(text).then(function () {
+        if (typeof showNotification === 'function') showNotification('Copiat!', 'success');
+      });
+    },
+
+    /**
+     * Expandează / colapsează elementul imediat următor din DOM.
+     * @param {Element} btn - butonul apăsat
+     */
+    expandNext: function (btn) {
+      if (btn.nextElementSibling) btn.nextElementSibling.classList.toggle('hidden');
+    },
+
+    /** Ascunde panoul de extindere abonament din dashboard-ul admin. */
+    ascundeAdminExtend: function () {
+      var el = document.getElementById('admin-extend-panel');
+      if (el) el.classList.add('hidden');
+    },
+
+    /** Ascunde panoul de notificare rapidă din dashboard-ul admin. */
+    ascundeAdminNotif: function () {
+      var el = document.getElementById('admin-notif-panel');
+      if (el) el.classList.add('hidden');
+    },
+
+    /** Închide modalul de schimbare cont utilizator. */
+    inchideModalSchimbaCont: function () {
+      var el = document.getElementById('modal-schimba-cont');
+      if (el) el.classList.remove('active');
+    },
+
+    /** Închide modalul Multi-Firmă. */
+    inchideModalMultifirma: function () {
+      var el = document.getElementById('modal-multifirma');
+      if (el) el.classList.remove('active');
+    },
+
+    /**
+     * Deschide picker-ul nativ al input-ului copil al elementului curent.
+     * @param {Element} btn - containerul care conține un <input type="date">
+     */
+    showNestedPicker: function (btn) {
+      var input = btn.querySelector('input');
+      if (input && typeof input.showPicker === 'function') input.showPicker();
+    },
+
+    /**
+     * Deschide picker-ul nativ al elementului referit prin data-target.
+     * @param {Element} btn - elementul cu atributul data-target="idElement"
+     */
+    showPickerFor: function (btn) {
+      var targetId = btn.dataset.target;
+      if (!targetId) return;
+      var el = document.getElementById(targetId);
+      if (el && typeof el.showPicker === 'function') el.showPicker();
+    },
+
+    /**
+     * Elementul însuși (de obicei un <input type="date">) deschide picker-ul.
+     * @param {Element} btn - input-ul cu data-action="showSelfPicker"
+     */
+    showSelfPicker: function (btn) {
+      if (typeof btn.showPicker === 'function') btn.showPicker();
+    },
+
+    /** Randează panoul de configurare SafeFleet / Nexus GPS. */
+    safefleetRenderPanel: function () {
+      if (window.ZFlowSafeFleet && typeof ZFlowSafeFleet.renderPanel === 'function')
+        ZFlowSafeFleet.renderPanel();
+    },
+
+    /**
+     * Aplică filtrul de status BI — pasează butonul apăsat ca al doilea argument
+     * pentru ca funcția să poată actualiza starea vizuală a butoanelor.
+     * @param {Element} btn - butonul de filtru apăsat
+     */
+    setFiltruStatusBI: function (btn) {
+      var arg0 = parseArg(btn.dataset.arg !== undefined ? btn.dataset.arg : btn.dataset.arg0);
+      if (typeof window.setFiltruStatusBI === 'function')
+        window.setFiltruStatusBI(arg0, btn);
+    },
+  };
+
+  // -------------------------------------------------------------------------
+  // Listener delegat principal (faza de bubbling)
+  // -------------------------------------------------------------------------
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-action]');
+    if (!btn) return;
+
+    var action = btn.dataset.action;
+
+    // Acțiuni speciale cu logică proprie
+    if (Object.prototype.hasOwnProperty.call(SPECIALS, action)) {
+      SPECIALS[action](btn);
+      return;
     }
-    
-    // Încarcă la DOMContentLoaded
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', loadModules);
-    } else {
-        loadModules();
-    }
-}
+
+    // Acțiuni simple: argumente opționale extrase din data-arg / data-arg0 / data-arg1
+    var raw0 = btn.dataset.arg !== undefined ? btn.dataset.arg : btn.dataset.arg0;
+    var raw1 = btn.dataset.arg1;
+    var args = [];
+    if (raw0 !== undefined) args.push(parseArg(raw0));
+    if (raw1 !== undefined) args.push(parseArg(raw1));
+
+    var fn = window[action];
+    if (typeof fn === 'function') fn.apply(null, args);
+  });
+
+  // -------------------------------------------------------------------------
+  // Backdrop #fab-menu: click în afara .sheet-content închide meniul FAB
+  // -------------------------------------------------------------------------
+  document.addEventListener('DOMContentLoaded', function () {
+    var fabMenu = document.getElementById('fab-menu');
+    if (!fabMenu) return;
+    fabMenu.addEventListener('click', function (e) {
+      if (!e.target.closest('.sheet-content') && typeof toggleFAB === 'function')
+        toggleFAB();
+    });
+  });
+
+}());
 
 /**
  * DOCUMENTAȚIE UTILIZARE MODULE

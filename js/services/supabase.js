@@ -1041,7 +1041,7 @@ function initRealtimeSubscriptions() {
                     ...(window.ZFlowStore.dateLocal || [])
                 ];
             }
-            if (typeof renderMain === 'function') renderMain();
+            if (window.ZFlowFinanciar) ZFlowFinanciar.renderMain(); else if (typeof renderMain === 'function') renderMain();
         })
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'clienti' }, (payload) => {
             // [PERF-FIX] Actualizare incrementală — păstrează câmpurile computate (facturi, sold)
@@ -1049,14 +1049,14 @@ function initRealtimeSubscriptions() {
                 const i = window.ZFlowStore.dateLocal.findIndex(c => String(c.id) === String(payload.new.id));
                 if (i !== -1) window.ZFlowStore.dateLocal[i] = { ...window.ZFlowStore.dateLocal[i], ...payload.new };
             }
-            if (typeof renderMain === 'function') renderMain();
+            if (window.ZFlowFinanciar) ZFlowFinanciar.renderMain(); else if (typeof renderMain === 'function') renderMain();
         })
         .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'clienti' }, (payload) => {
             // [PERF-FIX] Ștergere incrementală din store
             if (window.ZFlowStore?.dateLocal) {
                 window.ZFlowStore.dateLocal = window.ZFlowStore.dateLocal.filter(c => String(c.id) !== String(payload.old.id));
             }
-            if (typeof renderMain === 'function') renderMain();
+            if (window.ZFlowFinanciar) ZFlowFinanciar.renderMain(); else if (typeof renderMain === 'function') renderMain();
         })
         // ── facturi ──
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'facturi' }, (payload) => {
@@ -1065,7 +1065,7 @@ function initRealtimeSubscriptions() {
                 const newFact = _normalizeFacturi([payload.new])[0];
                 window.ZFlowStore.dateFacturiBI = [newFact, ...(window.ZFlowStore.dateFacturiBI || [])];
             }
-            if (typeof renderMain === 'function') renderMain();
+            if (window.ZFlowFinanciar) ZFlowFinanciar.renderMain(); else if (typeof renderMain === 'function') renderMain();
             if (typeof verificaScadenteNotificari === 'function') verificaScadenteNotificari();
         })
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'facturi' }, (payload) => {
@@ -1075,7 +1075,7 @@ function initRealtimeSubscriptions() {
                 const i = window.ZFlowStore.dateFacturiBI.findIndex(f => String(f.id) === String(payload.new.id));
                 if (i !== -1) window.ZFlowStore.dateFacturiBI[i] = normalized;
             }
-            if (typeof renderMain === 'function') renderMain();
+            if (window.ZFlowFinanciar) ZFlowFinanciar.renderMain(); else if (typeof renderMain === 'function') renderMain();
             if (typeof verificaScadenteNotificari === 'function') verificaScadenteNotificari();
         })
         .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'facturi' }, (payload) => {
@@ -1083,7 +1083,7 @@ function initRealtimeSubscriptions() {
             if (window.ZFlowStore?.dateFacturiBI) {
                 window.ZFlowStore.dateFacturiBI = window.ZFlowStore.dateFacturiBI.filter(f => String(f.id) !== String(payload.old.id));
             }
-            if (typeof renderMain === 'function') renderMain();
+            if (window.ZFlowFinanciar) ZFlowFinanciar.renderMain(); else if (typeof renderMain === 'function') renderMain();
             if (typeof verificaScadenteNotificari === 'function') verificaScadenteNotificari(); // [RISK-FIX 1]
         })
         // ── furnizori ──
@@ -1095,7 +1095,7 @@ function initRealtimeSubscriptions() {
                     ...(window.ZFlowStore.dateFurnizori || [])
                 ];
             }
-            if (typeof renderFurnizori === 'function') renderFurnizori();
+            if (window.ZFlowFinanciar) ZFlowFinanciar.renderFurnizori(); else if (typeof renderFurnizori === 'function') renderFurnizori();
         })
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'furnizori' }, (payload) => {
             // [PERF-FIX] Actualizare incrementală furnizor — păstrează câmpurile computate
@@ -1103,14 +1103,14 @@ function initRealtimeSubscriptions() {
                 const i = window.ZFlowStore.dateFurnizori.findIndex(f => String(f.id) === String(payload.new.id));
                 if (i !== -1) window.ZFlowStore.dateFurnizori[i] = { ...window.ZFlowStore.dateFurnizori[i], ...payload.new };
             }
-            if (typeof renderFurnizori === 'function') renderFurnizori();
+            if (window.ZFlowFinanciar) ZFlowFinanciar.renderFurnizori(); else if (typeof renderFurnizori === 'function') renderFurnizori();
         })
         .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'furnizori' }, (payload) => {
             // [PERF-FIX] Ștergere incrementală furnizor din store
             if (window.ZFlowStore?.dateFurnizori) {
                 window.ZFlowStore.dateFurnizori = window.ZFlowStore.dateFurnizori.filter(f => String(f.id) !== String(payload.old.id));
             }
-            if (typeof renderFurnizori === 'function') renderFurnizori();
+            if (window.ZFlowFinanciar) ZFlowFinanciar.renderFurnizori(); else if (typeof renderFurnizori === 'function') renderFurnizori();
         })
         // ── facturi_platit ──
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'facturi_platit' }, (payload) => {
@@ -1119,7 +1119,7 @@ function initRealtimeSubscriptions() {
                 const newFP = _normalizeFacturi([payload.new])[0];
                 window.ZFlowStore.dateFacturiPlatit = [newFP, ...(window.ZFlowStore.dateFacturiPlatit || [])];
             }
-            if (typeof renderFurnizori === 'function') renderFurnizori();
+            if (window.ZFlowFinanciar) ZFlowFinanciar.renderFurnizori(); else if (typeof renderFurnizori === 'function') renderFurnizori();
         })
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'facturi_platit' }, (payload) => {
             // [PERF-FIX] Actualizare incrementală factură de plătit
@@ -1128,14 +1128,14 @@ function initRealtimeSubscriptions() {
                 const i = window.ZFlowStore.dateFacturiPlatit.findIndex(f => String(f.id) === String(payload.new.id));
                 if (i !== -1) window.ZFlowStore.dateFacturiPlatit[i] = normalized;
             }
-            if (typeof renderFurnizori === 'function') renderFurnizori();
+            if (window.ZFlowFinanciar) ZFlowFinanciar.renderFurnizori(); else if (typeof renderFurnizori === 'function') renderFurnizori();
         })
         .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'facturi_platit' }, (payload) => {
             // [PERF-FIX] Ștergere incrementală factură de plătit din store
             if (window.ZFlowStore?.dateFacturiPlatit) {
                 window.ZFlowStore.dateFacturiPlatit = window.ZFlowStore.dateFacturiPlatit.filter(f => String(f.id) !== String(payload.old.id));
             }
-            if (typeof renderFurnizori === 'function') renderFurnizori();
+            if (window.ZFlowFinanciar) ZFlowFinanciar.renderFurnizori(); else if (typeof renderFurnizori === 'function') renderFurnizori();
         })
         .subscribe((status, err) => {
             if (status === 'SUBSCRIBED') {

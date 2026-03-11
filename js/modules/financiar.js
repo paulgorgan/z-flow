@@ -898,3 +898,61 @@ window.arataDetalii = arataDetalii;
 window.renderFurnizori = renderFurnizori;
 window.filtreazaListaFurnizori = filtreazaListaFurnizori;
 window.arataDetaliiFurnizor = arataDetaliiFurnizor;
+
+// ==========================================
+// NAMESPACE ZFlowFinanciar
+// ==========================================
+
+/**
+ * @namespace ZFlowFinanciar
+ * @description API public pentru modulul financiar Z-FLOW.
+ * Expune funcțiile de render și utilitarele pentru clienți și furnizori.
+ *
+ * Funcțiile existente pe `window.*` sunt păstrate pentru compatibilitate
+ * cu codul legacy din app.js și supabase.js.
+ *
+ * @example
+ * // Randare listă clienți
+ * ZFlowFinanciar.renderMain();
+ *
+ * // Randare listă furnizori cu filtru
+ * ZFlowFinanciar.renderFurnizori(ZFlowStore._furnizoriFiltrati);
+ */
+window.ZFlowFinanciar = {
+    /**
+     * Randează lista principală de clienți în DOM.
+     * Aplică paginare și sortare după restanțe.
+     *
+     * @param {Array|null} [lista=null] - Lista filtrată de clienți sau null pentru toate
+     * @returns {void}
+     */
+    renderMain,
+
+    /**
+     * Randează lista de furnizori în DOM.
+     * Aplică paginare și sortare după restanțe.
+     *
+     * @param {Array|null} [lista] - Lista filtrată de furnizori sau undefined pentru toate
+     * @returns {void}
+     */
+    renderFurnizori,
+
+    /**
+     * Versiune throttled a renderMain — evită render-uri redundante în același frame.
+     * @returns {void}
+     */
+    renderMainThrottled,
+
+    /**
+     * Versiune throttled a renderFurnizori — evită render-uri redundante în același frame.
+     * @returns {void}
+     */
+    renderFurnizoriThrottled,
+
+    /**
+     * Recompilează dateFurnizori din store-ul curent fără fetch din DB.
+     * Folosit după operații optimiste CRUD pe furnizori și facturi_platit.
+     * @returns {void}
+     */
+    recomputeFurnizoriData: _recomputeFurnizoriData
+};
