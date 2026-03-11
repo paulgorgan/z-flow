@@ -1520,7 +1520,11 @@ function schimbaTab(id, btn) {
     document.querySelectorAll(".nav-item").forEach((l) => l.classList.remove("active"));
     if (btn) btn.classList.add("active");
 
-    if (id === "logistic") initMap();
+    if (id === "logistic") {
+        // Nu inițializa harta aici — #map e în logistic-view-vehicule care e hidden implicit.
+        // L.map() inițializat pe un container display:none are dimensiune 0×0 și nu încarcă tile-uri.
+        // initMap() rulează din schimbaViewLogistic('vehicule') când div-ul e deja vizibil.
+    }
     // initScanner() este apelat doar când utilizatorul navighează explicit la view-ul Scanner din depozit
 
     const btnActions = document.getElementById("nav-btn-actions");
@@ -1585,7 +1589,15 @@ function comutaVedereFin(v, pushState = true) {
         if (btnActiv) btnActiv.classList.add("active");
     }
 
-    if (v === "analiza") genereazaBI();
+    if (v === "analiza") {
+        // Auto-setează luna curentă dacă nu există deja un interval ales
+        const hasStart = document.getElementById("data-start")?.value || ZFlowStore.biStartVal;
+        if (!hasStart) {
+            setBIRange('luna');  // setează de la 1 ale lunii până azi și cheamă genereazaBI()
+        } else {
+            genereazaBI();
+        }
+    }
     else if (v === "firme") renderMain();
     else if (v === "furnizori") renderFurnizori();
 

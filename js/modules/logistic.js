@@ -53,11 +53,20 @@ function schimbaViewLogistic(view, updateStore = true) {
     else if (view === 'soferi')    renderSoferi();
     else if (view === 'vehicule') {
         renderVehicule();
-        // [FIX 3] Harta e în subview-ul Vehicule care e hidden implicit.
-        // Leaflet inițializat din schimbaTab rulează pe un container ascuns (width/height=0).
-        // Re-apelăm initMap() acum că div-ul este vizibil → invalidateSize() + markere corecte.
-        if (typeof window.initMap === 'function') window.initMap();
-        if (typeof window.renderHartaVehicule === 'function') window.renderHartaVehicule();
+        // Harta Leaflet trebuie inițializată DUPĂ ce div-ul devine vizibil (display:block).
+        // Un setTimeout scurt permite browser-ului să facă reflow înainte ca Leaflet
+        // să măsoare dimensiunile containerului (#map are height: 320px în CSS).
+        setTimeout(function () {
+            if (typeof window.initMap === 'function') {
+                if (!ZFlowStore.map) {
+                    window.initMap();            // prima inițializare — în container vizibil
+                } else {
+                    ZFlowStore.map.invalidateSize(); // harta există deja — recalculează dimensiunile
+                    if (typeof actualizaMarkerePeHarta === 'function') actualizaMarkerePeHarta();
+                }
+            }
+            if (typeof window.renderHartaVehicule === 'function') window.renderHartaVehicule();
+        }, 50);
     }
 }
 
@@ -620,33 +629,31 @@ window.syncSafefleetVehicule          = syncSafefleetVehicule;
  * @param {string} vehiculId
  */
 function trackeazaVehicul(vehiculId) {
-    // [R6-FIX 6] Leaflet may not be loaded yet — retry until available
     if (typeof L === 'undefined') {
         console.warn('[GPS] Leaflet nedisponibil, reîncercare în 500ms...');
         setTimeout(() => trackeazaVehicul(vehiculId), 500);
         return;
     }
-    // Comutăm pe view Vehicule (în care este afișată harta)
+    // Comutăm pe view Vehicule (care conține harta). schimbaViewLogistic va inițializa
+    // harta după 50ms reflow, deci markere vor fi gata la ~500ms.
     schimbaViewLogistic('vehicule', true);
-    // Inițializăm / actualizăm harta
-    const mapFuseInitializat = !ZFlowStore.map;
-    if (typeof window.initMap === 'function') window.initMap();
-    // Scrolăm la hartă
+
+    // Scrollăm la hartă după ce view-ul și harta s-au inițializat
     setTimeout(() => {
         const mapEl = document.getElementById('map');
         if (mapEl) mapEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        // Centrăm pe vehicul după ce markerele sunt plasate
-        // [R6-FIX 6] dacă harta tocmai a fost inițializată, așteptăm mai mult
+
+        // Centrăm pe vehicul după ce markere sunt plasate (actualizaMarkerePeHarta rulează la ~50ms)
         setTimeout(() => {
             const marcatori = ZFlowStore._gpsMarcatori || [];
             const vehicule  = ZFlowStore.dateVehicule   || [];
             const idx = vehicule.findIndex(v => String(v.id) === String(vehiculId));
             if (idx >= 0 && marcatori[idx]) {
                 marcatori[idx].openPopup();
-                ZFlowStore.map?.panTo(marcatori[idx].getLatLng());
+                if (ZFlowStore.map) ZFlowStore.map.panTo(marcatori[idx].getLatLng());
             }
-        }, mapFuseInitializat ? 1000 : 400);
-    }, 350);
+        }, 450);
+    }, 150);
 }
 window.trackeazaVehicul = trackeazaVehicul;
 

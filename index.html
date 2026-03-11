@@ -24,30 +24,30 @@
     <link rel="manifest" href="manifest.json" />
     <link rel="apple-touch-icon" href="icons/icon.svg" />
     <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
-    <!-- LCP: preconnect CDN hosts â€” elimina latenta DNS+TLS pe prima vizita -->
+    <!-- LCP: preconnect CDN hosts — elimina latenta DNS+TLS pe prima vizita -->
     <link rel="preconnect" href="https://cdn.tailwindcss.com" crossorigin />
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
     <link rel="preconnect" href="https://unpkg.com" crossorigin />
     <link rel="dns-prefetch" href="https://exrypxknksgrtrwnbtrl.supabase.co" />
-    <!-- LCP: preload icona cu prioritate ridicata â€” primul element vizual -->
+    <!-- LCP: preload icona cu prioritate ridicata — primul element vizual -->
     <link rel="preload" href="icons/icon.svg" as="image" type="image/svg+xml" fetchpriority="high" />
 
     <!-- Tailwind CSS (JIT via CDN) -->
     <script src="https://cdn.tailwindcss.com" defer></script>
 
-    <!-- Runtime dependencies â€” heavy libs (jsPDF, xlsx, Chart.js) are loaded on-demand by JS modules -->
+    <!-- Runtime dependencies — heavy libs (jsPDF, xlsx, Chart.js) are loaded on-demand by JS modules -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" defer></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.4/html5-qrcode.min.js" defer></script>
 
-    <!-- Vue.js 3 â€” production build (minified, no dev warnings) -->
+    <!-- Vue.js 3 — production build (minified, no dev warnings) -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js" defer></script>
 
-    <!-- Z-FLOW Custom Styles â€” fetchpriority=high: singura foaie de stiluri locala, esentiala pentru LCP -->
+    <!-- Z-FLOW Custom Styles — fetchpriority=high: singura foaie de stiluri locala, esentiala pentru LCP -->
     <link rel="stylesheet" href="css/styles.css" fetchpriority="high" />
 
-    <!-- Critical CSS â€” eliminates Cumulative Layout Shift (CLS ~1.0 â†’ <0.1) before Tailwind CDN loads -->
+    <!-- Critical CSS — eliminates Cumulative Layout Shift (CLS ~1.0 â†’ <0.1) before Tailwind CDN loads -->
     <style>
       *,::before,::after{box-sizing:border-box}
       html,body{margin:0;background:#f8fafc;font-family:ui-sans-serif,system-ui,-apple-system,sans-serif}
@@ -65,7 +65,7 @@
       /* Prevent canvas collapsing before Chart.js attaches */
       canvas{display:block;max-width:100%}
       /* [R4-FIX 7] #home-chart-cashflow removed */
-      /* List containers â€” avoid height-0 flash during data fetch */
+      /* List containers — avoid height-0 flash during data fetch */
       #lista-firme-global,#lista-furnizori-global,
       #logistic-comenzi-list,#depozit-lista-produse{min-height:60px}
       /* Card skeleton */
@@ -96,7 +96,7 @@
           d="M18.364 5.636a9 9 0 010 12.728M15.536 8.464a5 5 0 010 7.072M3 3l18 18M10.584 10.587a2 2 0 002.828 2.83"
         />
       </svg>
-      Fără conexiune la internet â€” datele afișate pot fi neactualizate
+      Fără conexiune la internet — datele afișate pot fi neactualizate
     </div>
     <div
       id="loader-global"
@@ -205,7 +205,7 @@
       </div>
     </header>
 
-    <!-- Banner Offline (main â€” la body start) -->
+    <!-- Banner Offline (main — la body start) -->
 
     <main
       class="p-4 max-w-md md:max-w-screen-xl mx-auto transition-all duration-300"
@@ -234,7 +234,7 @@
                 id="home-firma-nume"
                 class="text-base font-black leading-tight truncate"
               >
-                â€”
+                —
               </p>
               <!-- [R7-FIX 7] Badge plan abonament utilizator -->
               <div id="home-plan-badge" class="hidden mt-0.5"></div>
@@ -242,13 +242,13 @@
                 id="home-firma-cui"
                 class="text-[9px] font-bold opacity-60 uppercase mt-0.5"
               >
-                CUI: â€”
+                CUI: —
               </p>
               <p
                 id="home-firma-oras"
                 class="text-[9px] font-bold opacity-50 uppercase"
               >
-                â€”
+                —
               </p>
             </div>
             <button
@@ -265,7 +265,7 @@
               id="home-data-azi"
               class="text-[9px] font-bold opacity-50 capitalize"
             >
-              â€”
+              —
             </p>
             <div class="flex items-center gap-1.5">
               <span
@@ -308,7 +308,7 @@
               id="home-kpi-facturat"
               class="text-lg font-black text-blue-900 tabular-nums truncate"
             >
-              â€” lei
+              — lei
             </p>
             <div class="flex items-center gap-1.5 mt-0.5">
               <p class="text-[7px] font-bold text-slate-400 uppercase tracking-wide">Luna crt.</p>
@@ -345,7 +345,7 @@
               id="home-kpi-neincasat"
               class="text-lg font-black text-orange-600 tabular-nums truncate"
             >
-              â€” lei
+              — lei
             </p>
             <div class="flex items-center gap-1.5 mt-0.5">
               <p class="text-[7px] font-bold text-slate-400 uppercase tracking-wide">Restant total</p>
@@ -382,7 +382,7 @@
               id="home-kpi-neplatit"
               class="text-lg font-black text-red-700 tabular-nums truncate"
             >
-              â€” lei
+              — lei
             </p>
             <div class="flex items-center gap-1.5 mt-0.5">
               <p class="text-[7px] font-bold text-slate-400 uppercase tracking-wide">Total datorii</p>
@@ -419,7 +419,7 @@
               id="home-kpi-net"
               class="text-lg font-black tabular-nums truncate text-slate-500"
             >
-              â€” lei
+              — lei
             </p>
             <div class="flex items-center gap-1.5 mt-0.5">
               <p class="text-[7px] font-bold text-slate-400 uppercase tracking-wide">Net total</p>
@@ -555,7 +555,7 @@
                 class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"
               ></span>
               <span class="text-[7px] font-bold text-blue-100 italic"
-                >Z-FLOW V2 Modular</span
+                >Z-FLOW - Business Support</span
               >
             </div>
           </div>
@@ -695,7 +695,7 @@
           <!-- CARD UNIFICAT: Interval + Status + Totale + Firme collapsible -->
           <div class="bi-left-panel space-y-3">
           <div class="card-flow">
-            <!-- Filtrare dupa data â€” direct din input, fara interval rapid -->
+            <!-- Filtrare dupa data — direct din input, fara interval rapid -->
             <div class="grid grid-cols-2 gap-2 mb-3">
               <div
                 class="relative p-3 bg-slate-50 rounded-xl cursor-pointer border border-transparent hover:border-slate-200 transition-all"
@@ -763,7 +763,7 @@
               </div>
             </div>
 
-            <!-- Status facturi â€” grid 2x2 pentru lizibilitate -->
+            <!-- Status facturi — grid 2x2 pentru lizibilitate -->
             <div class="grid grid-cols-2 gap-1.5 bg-slate-100 p-1.5 rounded-xl mb-3">
               <button
                 data-action="setFiltruStatusBI" data-arg="toate"
@@ -916,7 +916,7 @@
             </div>
           </div>
 
-          <!-- Export â€” imediat după cardul de filtre, acționează pe selecția curentă -->
+          <!-- Export — imediat după cardul de filtre, acționează pe selecția curentă -->
           <div class="export-group flex gap-2">
             <button
               id="btn-export-pdf"
@@ -980,8 +980,6 @@
             </button>
           </div>
 
-          </div><!-- /bi-left-panel -->
-
           <!-- Cashflow Proiectie Zilnica -->
           <div id="cashflow-proiectie-section" class="bg-white rounded-2xl border border-slate-100 p-4 mt-4">
             <div class="flex items-center justify-between mb-3">
@@ -997,6 +995,8 @@
             </div>
             <div id="cashflow-proiectie-graf"></div>
           </div>
+
+          </div><!-- /bi-left-panel -->
 
           <div class="bi-right-panel flex flex-col gap-3">
           <!-- Bulk inline bar (înlocuiește rândul de căutare când modul bulk e activ) -->
@@ -1375,7 +1375,7 @@
         <!-- VIEW: Comenzi -->
         <div id="logistic-view-comenzi" class="space-y-3">
           <div class="flex gap-2">
-            <input id="logistic-search" type="text" placeholder="Caută rută sau trackingâ€¦" oninput="renderComenziTransportDebounced()"
+            <input id="logistic-search" type="text" placeholder="Caută rută sau tracking…" oninput="renderComenziTransportDebounced()"
               class="flex-1 min-w-0 px-4 py-2.5 bg-slate-50 rounded-2xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200 transition-all"/>
             <button data-action="importaComenziTransport" title="Import CSV comenzi transport" class="flex-shrink-0 px-3 py-2.5 bg-slate-100 text-slate-600 rounded-2xl text-xs font-black uppercase shadow-sm border border-slate-200 hover:bg-slate-200 transition-all" data-permission="edit">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
@@ -1397,12 +1397,12 @@
         <!-- VIEW: È˜oferi -->
         <div id="logistic-view-soferi" class="hidden space-y-3">
           <div class="flex justify-between items-center">
-            <p class="text-xs font-black text-slate-500 uppercase">È˜oferi înregistrați</p>
+            <p class="text-xs font-black text-slate-500 uppercase">Șoferi înregistrați</p>
             <div class="flex gap-2">
-              <button data-action="importaSoferiCSV" title="Import CSV Å›oferi" class="p-2 bg-slate-100 text-slate-600 rounded-xl border border-slate-200 hover:bg-slate-200 transition-all" data-permission="edit">
+              <button data-action="importaSoferiCSV" title="Import CSV Șoferi" class="p-2 bg-slate-100 text-slate-600 rounded-xl border border-slate-200 hover:bg-slate-200 transition-all" data-permission="edit">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
               </button>
-              <button data-action="exportSoferiCSV" title="Export CSV Å›oferi" class="p-2 bg-slate-100 text-slate-600 rounded-xl border border-slate-200 hover:bg-slate-200 transition-all">
+              <button data-action="exportSoferiCSV" title="Export CSV Șoferi" class="p-2 bg-slate-100 text-slate-600 rounded-xl border border-slate-200 hover:bg-slate-200 transition-all">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
               </button>
               <button data-action="deschideModalSofer" data-arg="" class="px-4 py-2 bg-purple-700 text-white rounded-2xl text-xs font-black uppercase shadow-md" data-permission="edit">
@@ -1445,7 +1445,7 @@
             <div class="flex justify-between items-center mb-2">
               <div>
                 <p class="text-xs font-black text-slate-700 uppercase tracking-wide">Hartă GPS Vehicule</p>
-                <p class="text-[9px] text-slate-400 font-bold">Simulat Â· Live GPS Â· Click pe vehicul pentru detalii</p>
+                <p class="text-[9px] text-slate-400 font-bold">Simulat · Live GPS · Click pe vehicul pentru detalii</p>
               </div>
               <button data-action="actualizaMarkerePeHarta" class="text-[9px] font-black text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg uppercase transition-all">
                 Actualizează
@@ -1473,7 +1473,7 @@
             <div class="flex items-center justify-between mb-3">
               <div>
                 <p class="text-xs font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5"><svg class="w-4 h-4 text-slate-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/></svg>Raport km vs. Livrări</p>
-                <p class="text-[9px] text-slate-400">km parcurși Â· valoare transport Â· facturi livrate</p>
+                <p class="text-[9px] text-slate-400">km parcurși · valoare transport · facturi livrate</p>
               </div>
               <button data-action="renderRaportKm" class="text-[8px] font-black text-blue-600 hover:underline uppercase">Actualizează</button>
             </div>
@@ -1524,7 +1524,7 @@
         <!-- VIEW: Produse -->
         <div id="depozit-view-produse" class="space-y-3">
           <div class="flex gap-2">
-            <input id="depozit-search-produse" type="text" placeholder="Caută produs sau SKUâ€¦" oninput="renderProduseDebounced()"
+            <input id="depozit-search-produse" type="text" placeholder="Caută produs sau SKU…" oninput="renderProduseDebounced()"
               class="flex-1 min-w-0 px-4 py-2.5 bg-slate-50 rounded-2xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200 transition-all"/>
             <button data-action="importaProduse" title="Import CSV produse" class="flex-shrink-0 px-3 py-2.5 bg-slate-100 text-slate-600 rounded-2xl text-xs font-black uppercase shadow-sm border border-slate-200 hover:bg-slate-200 transition-all" data-permission="edit">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
@@ -1600,7 +1600,7 @@
         <div id="depozit-view-scanner" class="hidden space-y-4 text-center">
           <div class="bg-slate-900 p-8 rounded-[40px] text-white shadow-2xl relative overflow-hidden">
             <h2 class="text-xl font-extrabold mb-4 uppercase italic">Scanner SKU / QR</h2>
-            <p class="text-[9px] text-slate-400 mb-4">Scanează produs Â· recepție Â· livrare Â· comandă transport</p>
+            <p class="text-[9px] text-slate-400 mb-4">Scanează produs · recepție · livrare · comandă transport</p>
             <div id="reader"></div>
           </div>
           <div class="card-flow border-2 border-dashed border-slate-200">
@@ -1711,7 +1711,7 @@
             d="M12 4.5v15m7.5-7.5h-15"
           />
         </svg>
-        <span class="text-[9px]">ACÈšIUNI</span>
+        <span class="text-[9px]">ACȚIUNI</span>
       </button>
     </nav>
 
@@ -1806,7 +1806,7 @@
             <div class="flex-1 text-left min-w-0">
               <span class="font-bold text-sm">Adaugă Firmă</span>
               <p class="text-[10px] text-blue-200 truncate">
-                Client Â· Furnizor Â· Ambele
+                Client · Furnizor · Ambele
               </p>
             </div>
             <svg
@@ -1850,7 +1850,7 @@
                 >Adaugă Factură</span
               >
               <p class="text-[10px] text-slate-400 truncate">
-                De încasat Â· De plătit
+                De încasat · De plătit
               </p>
             </div>
             <svg
@@ -1868,7 +1868,7 @@
             </svg>
           </button>
 
-          <!-- Export CSV facturi (export complet) â€” butoane eliminate: acoperite de PDF/Excel din Analiză -->
+          <!-- Export CSV facturi (export complet) — butoane eliminate: acoperite de PDF/Excel din Analiză -->
 
           <div
             class="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3"
@@ -2354,7 +2354,7 @@
           <span
             id="anaf-status-badge"
             class="text-[9px] font-extrabold uppercase p-1 rounded bg-slate-100 text-slate-400 px-2"
-            >ÎN AÈ˜TEPTARE</span
+            >ÎN AȘTEPTARE</span
           >
           <span id="anaf-id-display" class="text-[9px] text-slate-400"></span>
         </div>
@@ -2364,7 +2364,7 @@
             id="in-fac-client"
             class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
           >
-            <option value="">â€” Alege clientul â€”</option>
+            <option value="">— Alege clientul —</option>
           </select>
           <input
             type="text"
@@ -2509,7 +2509,7 @@
             id="in-fp-furnizor"
             class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
           >
-            <option value="">â€” Alege furnizorul â€”</option>
+            <option value="">— Alege furnizorul —</option>
           </select>
           <input
             type="text"
@@ -2801,7 +2801,7 @@
         <div class="space-y-3">
           <!-- Email display (read-only) -->
           <p class="text-[10px] font-semibold text-slate-400 text-center">
-            Cont: <span id="profil-email-display" class="text-blue-700 font-bold">â€”</span>
+            Cont: <span id="profil-email-display" class="text-blue-700 font-bold">—</span>
           </p>
           <input
             type="text"
@@ -2893,7 +2893,7 @@
           <button data-action="toggleFirmeMulti"
             class="w-full flex items-center justify-between py-1.5 text-[9px] font-black text-slate-500 uppercase hover:text-blue-700 transition-all">
             <span class="flex items-center gap-1.5"><svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21"/></svg>Firmele Mele</span>
-            <span class="pf-arrow text-[10px]">â–¼</span>
+            <span class="pf-arrow text-[10px]">-</span>
           </button>
           <div id="pf-firme-content" class="hidden pt-2"></div>
         </div>
@@ -2926,17 +2926,17 @@
 
         <!-- Generator Token Abonament -->
         <div class="bg-blue-50 border border-blue-200 rounded-xl p-3">
-          <p class="text-[10px] font-black text-blue-800 uppercase mb-2">ðŸ”‘ Generator Token</p>
+          <p class="text-[10px] font-black text-blue-800 uppercase mb-2">Generator Token</p>
           <div class="space-y-2">
             <select id="admin-token-plan"
               onchange="sincronizeazaZilePlan(this.value)"
               class="w-full p-2.5 bg-white rounded-lg text-xs font-bold border border-blue-200 outline-none focus:border-blue-400">
-              <option value="trial">Trial â€” 30 zile</option>
-              <option value="standard" selected>Standard â€” 365 zile</option>
-              <option value="pro">Pro â€” 365 zile</option>
-              <option value="enterprise">Enterprise â€” 365 zile</option>
+              <option value="trial">Trial — 30 zile</option>
+              <option value="standard" selected>Standard — 365 zile</option>
+              <option value="pro">Pro — 365 zile</option>
+              <option value="enterprise">Enterprise — 365 zile</option>
             </select>
-            <!-- Zile â€” sincronizat automat cu planul de mai sus -->
+            <!-- Zile — sincronizat automat cu planul de mai sus -->
             <div class="flex items-center gap-2">
               <input type="number" id="admin-token-zile" value="365" min="7" max="1095"
                 class="w-24 p-2.5 bg-white rounded-lg text-xs font-bold border border-blue-200 outline-none text-center"
@@ -2972,7 +2972,7 @@
     <!-- SEPARATOP -->
     <div data-admin-only class="border-t border-slate-100 pt-2">
       <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">
-        ðŸ‘¥ Utilizatori
+        Utilizatori
       </p>
       <button data-admin-only data-action="deschideAdminUserPanel"
         class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-black uppercase transition-all">
@@ -2981,14 +2981,14 @@
       <!-- [R9-FIX 1] Dashboard complet utilizatori -->
       <button data-admin-only data-action="deschideDashboardAdmin"
         class="w-full py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-black uppercase transition-all">
-        ðŸ“Š Dashboard Utilizatori
+        Dashboard Utilizatori
       </button>
     </div>
 
     <!-- SECÈšIUNEA 3: CONT (toți userii autentificați) -->
     <div class="border-t border-slate-100 pt-2">
       <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">
-        ðŸ”’ Contul meu
+        Contul meu
       </p>
       <div class="space-y-2">
 
@@ -2997,7 +2997,7 @@
           Schimbă Email / Parolă
         </button>
 
-        <!-- Golire cache â€” toți userii -->
+        <!-- Golire cache — toți userii -->
         <div data-account-only>
           <button data-action="clearIDBCache"
             class="w-full py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all">
@@ -3014,12 +3014,10 @@
       </div>
     </div>
 
-    <!-- SECÈšIUNEA PERICULOASĂ â€” colapsată implicit -->
+    <!-- SECÈšIUNEA PERICULOASĂ — colapsată implicit -->
     <div class="border-t border-red-100 pt-2">
-      <button data-action="expandNext"
-        class="w-full text-[8px] font-black text-red-300 uppercase tracking-widest py-1 text-center hover:text-red-400 transition-all">
-        â–¼ Zona periculoasă
-      </button>
+      <button data-action="expandNext" class="w-full text-[8px] font-black text-red-300 uppercase tracking-widest py-1 text-center hover:text-red-400 transition-all">
+        Zona periculoasă</button>
       <div class="hidden space-y-2 mt-2">
         <button data-admin-only data-action="exportareCompleta"
           class="w-full py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-black uppercase transition-all">
@@ -3052,7 +3050,7 @@
           </div>
           <button data-action="inchideAdminUsers"
             class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 transition-all text-sm font-black">
-            âœ•
+            &times;
           </button>
         </div>
 
@@ -3079,7 +3077,7 @@
 
           <!-- Trimite notificare -->
           <div class="bg-blue-50 rounded-xl p-3 border border-blue-200 space-y-2">
-            <p class="text-[9px] font-black text-blue-700 uppercase">ðŸ“¢ Trimite notificare</p>
+            <p class="text-[9px] font-black text-blue-700 uppercase">Trimite notificare</p>
             <textarea id="admin-notif-text" rows="2"
               placeholder="Mesajul notificării..."
               class="w-full p-2.5 bg-white rounded-lg text-xs font-bold border border-blue-200 outline-none resize-none focus:border-blue-400"></textarea>
@@ -3089,9 +3087,9 @@
             </button>
           </div>
 
-          <!-- È˜tergere date â€” zona periculoasă -->
+          <!-- È˜tergere date — zona periculoasă -->
           <div class="bg-red-50 rounded-xl p-3 border border-red-200 space-y-2">
-            <p class="text-[9px] font-black text-red-700 uppercase">⚠️ È˜tergere permanentă date</p>
+            <p class="text-[9px] font-black text-red-700 uppercase">⚠️ Ștergere permanentă date</p>
             <p class="text-[9px] text-red-500">
               Pentru confirmare, scrie exact: <strong id="admin-delete-hint">STERGE email@exemplu.ro</strong>
             </p>
@@ -3129,7 +3127,7 @@
             </button>
             <button data-action="inchideDashboardAdmin"
               class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 transition-all text-sm font-black">
-              âœ•
+              &times;
             </button>
           </div>
         </div>
@@ -3141,7 +3139,7 @@
 
         <!-- Panel extindere abonament (ascuns inițial) -->
         <div id="admin-extend-panel" class="hidden bg-blue-50 rounded-2xl border border-blue-200 p-3 mb-3 space-y-2">
-          <p class="text-[9px] font-black text-blue-700 uppercase">ðŸ”„ Extinde abonament</p>
+          <p class="text-[9px] font-black text-blue-700 uppercase">Extinde abonament</p>
           <input type="email" id="admin-extend-email" readonly
             class="w-full p-2.5 bg-white rounded-lg text-xs font-bold border border-blue-200 outline-none text-slate-600" />
           <div class="flex gap-2">
@@ -3163,14 +3161,13 @@
             </button>
             <button data-action="ascundeAdminExtend"
               class="px-3 py-2 bg-slate-100 text-slate-500 rounded-lg text-xs font-black">
-              âœ•
             </button>
           </div>
         </div>
 
         <!-- Panel notificare rapidă (ascuns inițial) -->
         <div id="admin-notif-panel" class="hidden bg-slate-50 rounded-2xl border border-slate-200 p-3 mb-3 space-y-2">
-          <p class="text-[9px] font-black text-slate-600 uppercase">ðŸ“¢ Notificare rapidă</p>
+          <p class="text-[9px] font-black text-slate-600 uppercase">Notificare rapidă</p>
           <input type="email" id="admin-notif-email-quick" readonly
             class="w-full p-2.5 bg-white rounded-lg text-xs font-bold border border-slate-200 outline-none" />
           <textarea id="admin-notif-text-quick" rows="2"
@@ -3183,7 +3180,7 @@
             </button>
             <button data-action="ascundeAdminNotif"
               class="px-3 py-2 bg-slate-100 text-slate-500 rounded-lg text-xs font-black">
-              âœ•
+              &times;
             </button>
           </div>
         </div>
@@ -3244,7 +3241,7 @@
               Ai uitat parola?
             </button>
             <button data-action="deschideModalInregistrare" class="text-xs font-black text-blue-900 hover:text-blue-600 transition-colors">
-              Cont nou â†’
+              Cont nou
             </button>
           </div>
         </div>
@@ -3337,7 +3334,7 @@
           />
           </div>
           <p id="cont-admin-note" class="hidden text-[10px] text-amber-700 font-bold bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
-            Admin local â€” schimbare email nedisponibilă. Poți modifica doar parola de acces.
+            Admin local — schimbare email nedisponibilă. Poți modifica doar parola de acces.
           </p>
           <input
             type="password"
@@ -3361,7 +3358,7 @@
             <svg class="w-4 h-4 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>Salvează modificările
           </button>
           <button data-action="inchideModalSchimbaCont" class="w-full py-3 bg-slate-100 text-slate-500 rounded-xl text-xs font-black uppercase">
-            âœ• Închide
+            Închide
           </button>
         </div>
       </div>
@@ -3398,7 +3395,7 @@
       </div>
     </div>
 
-    <!-- ==================== MODALS â€” DEPOZIT ==================== -->
+    <!-- ==================== MODALS — DEPOZIT ==================== -->
 
     <!-- Modal: Produs Nou / Editare -->
     <div id="modal-produs" class="modal-sheet">
@@ -3439,12 +3436,12 @@
         <h2 class="text-lg font-black text-blue-900 uppercase tracking-tight text-center mb-4">Mișcare Stoc</h2>
         <div class="space-y-3">
           <select id="miscare-produs-select" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200">
-            <option value="">â€” Selectează produs â€”</option>
+            <option value="">— Selectează produs —</option>
           </select>
           <div class="grid grid-cols-2 gap-3">
             <select id="miscare-tip" class="p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200">
-              <option value="Intrare">â–² Intrare (+)</option>
-              <option value="Iesire">â–¼ Ieșire (âˆ’)</option>
+              <option value="Intrare">Intrare (+)</option>
+              <option value="Iesire">Ieșire (-)</option>
             </select>
             <input type="number" id="miscare-cantitate" placeholder="Cantitate *" min="0.01" step="0.01" class="p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
           </div>
@@ -3458,7 +3455,7 @@
       </div>
     </div>
 
-    <!-- ==================== MODALS â€” LOGISTIC ==================== -->
+    <!-- ==================== MODALS — LOGISTIC ==================== -->
 
     <!-- Modal: Comandă Transport -->
     <div id="modal-comanda-transport" class="modal-sheet">
@@ -3472,14 +3469,14 @@
             <input type="text" id="ct-ruta-la" placeholder="Destinație *" class="p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
           </div>
           <select id="ct-client-select" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200">
-            <option value="">â€” Client â€”</option>
+            <option value="">— Client —</option>
           </select>
           <div class="grid grid-cols-2 gap-3">
             <select id="ct-sofer-select" class="p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200">
-              <option value="">â€” È˜ofer â€”</option>
+              <option value="">— Șofer —</option>
             </select>
             <select id="ct-vehicul-select" class="p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200">
-              <option value="">â€” Vehicul â€”</option>
+              <option value="">— Vehicul —</option>
             </select>
           </div>
           <div class="grid grid-cols-2 gap-3">
@@ -3504,7 +3501,7 @@
       </div>
     </div>
 
-    <!-- Modal: È˜ofer -->
+    <!-- Modal: Șofer -->
     <div id="modal-sofer" class="modal-sheet">
       <div class="sheet-content">
         <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4"></div>
@@ -3546,7 +3543,7 @@
             <input type="number" id="vehicul-gps-lat" placeholder="GPS Lat (ex: 47.1985)" step="0.0001" class="p-3 bg-green-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-green-300"/>
             <input type="number" id="vehicul-gps-lng" placeholder="GPS Lng (ex: 23.0592)" step="0.0001" class="p-3 bg-green-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-green-300"/>
           </div>
-          <p class="text-[9px] text-slate-400 text-center -mt-1"><svg class="w-3 h-3 inline-block mr-0.5 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>Coordonate GPS opționale â€” lasă gol pentru simulare automată</p>
+          <p class="text-[9px] text-slate-400 text-center -mt-1"><svg class="w-3 h-3 inline-block mr-0.5 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>Coordonate GPS opționale — lasă gol pentru simulare automată</p>
         </div>
         <div class="flex gap-3 mt-4">
           <button data-action="inchideModalVehicul" class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase">Închide</button>
@@ -3585,32 +3582,19 @@
     <script src="js/modules/import.js" defer></script>
 
     <!-- 4. Main App (contains all functionality) -->
-    <script src="js/modules/utils.js" defer></script>
-    <script src="js/modules/ui.js" defer></script>
-    <script src="js/modules/mobile.js" defer></script>
-    <script src="js/modules/notifications.js" defer></script>
-    <script src="js/modules/logger.js" defer></script>
+        <script src="js/modules/logger.js" defer></script>
     <script src="js/modules/maintenance.js" defer></script>
     <script src="js/app.js" defer></script>
 
-    <!-- 4b. Split modules â€” financiar & crud (after app.js, use debounce/globals) -->
+    <!-- 4b. Split modules — financiar & crud (after app.js, use debounce/globals) -->
     <script src="js/modules/financiar.js" defer></script>
     <script src="js/modules/crud.js" defer></script>
 
     <!-- 4. Module Depozit & Logistic (after app.js, use global functions) -->
-    <script src="js/modules/auth.js" defer></script>
-    <script src="js/modules/clients.js" defer></script>
-    <script src="js/modules/invoices.js" defer></script>
-    <script src="js/modules/suppliers.js" defer></script>
-    <script src="js/modules/bulk.js" defer></script>
-    <script src="js/modules/export.js" defer></script>
-    <script src="js/modules/analytics.js" defer></script>
-    <script src="js/modules/anaf.js" defer></script>
-    <script src="js/modules/attachments.js" defer></script>
     <script src="js/modules/depozit.js" defer></script>
     <script src="js/modules/logistic.js" defer></script>
 
-    <!-- 5. Features v8.0 â€” noile funcționalități (ANAF e-Factură, Bridge XML, SafeFleet, Scanner QR, Cashflow Forecast, Multi-firmă, km Report, Import XML ANAF) -->
+    <!-- 5. Features v8.0 — noile funcționalități (ANAF e-Factură, Bridge XML, SafeFleet, Scanner QR, Cashflow Forecast, Multi-firmă, km Report, Import XML ANAF) -->
     <script src="js/modules/features.js" defer></script>
 
     <!-- 5b. e-Factura UBL 2.1 + Bridge Import SAGA XML -->
@@ -3653,7 +3637,7 @@
       <p class="text-blue-300 text-sm font-medium max-w-xs" id="maintenance-message-display">
         Se efectuează actualizări. Vă rugăm să reveniți în câteva minute.
       </p>
-      <p class="text-blue-500 text-[10px] mt-6 font-bold uppercase tracking-widest">Z-FLOW Â· Vă mulțumim pentru răbdare</p>
+      <p class="text-blue-500 text-[10px] mt-6 font-bold uppercase tracking-widest">Z-FLOW · Vă mulțumim pentru răbdare</p>
     </div>
   </body>
 </html>
