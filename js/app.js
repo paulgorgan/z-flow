@@ -1632,8 +1632,16 @@ function setBIRange(range) {
     const lblStart = document.getElementById('label-start');
     const lblEnd   = document.getElementById('label-end');
 
-    if (inStart) { inStart.value = start || ''; ZFlowStore.biStartVal = start; }
-    if (inEnd)   { inEnd.value   = end   || ''; ZFlowStore.biEndVal   = end; }
+    if (inStart) {
+        inStart.value = start || '';
+        inStart.setAttribute('value', start || ''); // cross-browser: unele browsere ignora .value la refresh
+        ZFlowStore.biStartVal = start;
+    }
+    if (inEnd) {
+        inEnd.value   = end   || '';
+        inEnd.setAttribute('value', end || '');
+        ZFlowStore.biEndVal   = end;
+    }
 
     const fmtLbl = (v) => v ? new Date(v + 'T12:00:00').toLocaleDateString('ro-RO', { day: '2-digit', month: 'short', year: 'numeric' }) : '--';
     if (lblStart) lblStart.innerText = 'De la: ' + fmtLbl(start);
@@ -5195,13 +5203,21 @@ function renderTransportTab() {
         .join("");
 }
 
+let _initMapRetries = 0;
 function initMap() {
     // [R6-FIX 1] Guard: Leaflet se încarcă cu defer — poate să nu fie gata imediat
     if (typeof L === 'undefined') {
-        ZFlowLogger.warn('app', '[Map] Leaflet nu e încărcat încă — retry în 500ms');
+        _initMapRetries++;
+        if (_initMapRetries > 10) {
+            ZFlowLogger.error('Map', 'Leaflet nu s-a încărcat după 10 reîncercări — verifică CDN');
+            _initMapRetries = 0;
+            return;
+        }
+        ZFlowLogger.warn('Map', 'Leaflet nu e încărcat încă — retry ' + _initMapRetries + '/10');
         setTimeout(initMap, 500);
         return;
     }
+    _initMapRetries = 0;
     if (!ZFlowStore.map) {
         ZFlowStore.map = L.map("map", { zoomControl: false }).setView([47.18, 23.05], 13);
         L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
@@ -5221,16 +5237,18 @@ function initMap() {
  * altfel se folosesc poziții simulate în zona Zalău pentru testare.
  */
 function actualizaMarkerePeHarta() {
-    if (!ZFlowStore.map) return;
+    if (!ZFlowStore.map) { ZFlowLogger.warn('Map', 'map null în actualizaMarkerePeHarta'); return; }
     // [R6-FIX 1] Guard Leaflet
-    if (typeof L === 'undefined') { ZFlowLogger.warn('app', '[Map] Leaflet nedisponibil'); return; }
+    if (typeof L === 'undefined') { ZFlowLogger.warn('Map', 'Leaflet nedisponibil în actualizaMarkerePeHarta'); return; }
+
+    const vehicule = ZFlowStore.dateVehicule || [];
+    ZFlowLogger.debug('Map', 'Plasez markere pentru ' + vehicule.length + ' vehicule');
     // Șterge markere vechi
     if (ZFlowStore._gpsMarcatori) {
         ZFlowStore._gpsMarcatori.forEach(m => { try { m.remove(); } catch(e) {} });
     }
     ZFlowStore._gpsMarcatori = [];
 
-    const vehicule = ZFlowStore.dateVehicule || [];
     const comenzi  = (ZFlowStore.dateComenziTransport || []).filter(c => c.status === 'In curs');
 
     // Zone simulate în județul Sălaj (Zalău + împrejurimi) pentru demo GPS

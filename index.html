@@ -980,22 +980,6 @@
             </button>
           </div>
 
-          <!-- Cashflow Proiectie Zilnica -->
-          <div id="cashflow-proiectie-section" class="bg-white rounded-2xl border border-slate-100 p-4 mt-4">
-            <div class="flex items-center justify-between mb-3">
-              <p class="text-[10px] font-black text-slate-700 uppercase tracking-widest">Proiectie Cashflow</p>
-              <div class="flex gap-1.5">
-                <button onclick="renderCashflowProiectieGraf('cashflow-proiectie-graf', 30)"
-                  class="text-[8px] font-black bg-slate-100 hover:bg-slate-200 text-slate-600 px-2 py-1 rounded-lg">30z</button>
-                <button onclick="renderCashflowProiectieGraf('cashflow-proiectie-graf', 60)"
-                  class="text-[8px] font-black bg-slate-100 hover:bg-slate-200 text-slate-600 px-2 py-1 rounded-lg">60z</button>
-                <button onclick="renderCashflowProiectieGraf('cashflow-proiectie-graf', 90)"
-                  class="text-[8px] font-black bg-blue-100 text-blue-700 px-2 py-1 rounded-lg">90z</button>
-              </div>
-            </div>
-            <div id="cashflow-proiectie-graf"></div>
-          </div>
-
           </div><!-- /bi-left-panel -->
 
           <div class="bi-right-panel flex flex-col gap-3">
@@ -3588,6 +3572,7 @@
     <script src="js/modules/auth.js" defer></script>
     <script src="js/modules/maintenance.js" defer></script>
     <script src="js/app.js" defer></script>
+    <script src="js/modules/analytics.js" defer></script>
 
     <!-- 4b. Split modules — financiar & crud (after app.js, use debounce/globals) -->
     <script src="js/modules/financiar.js" defer></script>

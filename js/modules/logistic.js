@@ -83,13 +83,14 @@ function schimbaViewLogistic(view, updateStore = true) {
 function renderComenziTransport() {
     const container = document.getElementById('logistic-comenzi-list');
     if (!container) return;
+    const ps = ZFlowStore.comenziPageSize ?? 10;
     const q = (document.getElementById('logistic-search')?.value || '').toLowerCase();
     const all = (ZFlowStore.dateComenziTransport || [])
         .slice()
         .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
         .filter(c => !q || (c.ruta_de||'').toLowerCase().includes(q) || (c.ruta_la||'').toLowerCase().includes(q) || (c.tracking_code||'').toLowerCase().includes(q));
     ZFlowStore._comenziFiltrate = all;
-    const pagC = pagineaza(all, ZFlowStore.comenziPageSize ?? 10, ZFlowStore.comenziCurrentPage || 1);
+    const pagC = pagineaza(all, ps, ZFlowStore.comenziCurrentPage || 1);
     ZFlowStore.comenziCurrentPage = pagC.currentPage;
     const list = pagC.items;
     const pgEl = document.getElementById('comenzi-pagination');
@@ -627,8 +628,8 @@ window.syncSafefleetVehicule          = syncSafefleetVehicule;
  */
 function trackeazaVehicul(vehiculId) {
     if (typeof L === 'undefined') {
-        ZFlowLogger.warn('logistic', '[GPS] Leaflet nedisponibil, reîncercare în 500ms...');
-        setTimeout(() => trackeazaVehicul(vehiculId), 500);
+        ZFlowLogger.warn('GPS', 'Leaflet nedisponibil la trackeazaVehicul — abort');
+        if (typeof showNotification === 'function') showNotification('Harta nu este disponibilă. Reîncarcă pagina.', 'warning');
         return;
     }
     // Comutăm pe view Vehicule (care conține harta). schimbaViewLogistic va inițializa
