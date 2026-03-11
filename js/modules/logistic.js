@@ -57,6 +57,7 @@ function schimbaViewLogistic(view, updateStore = true) {
         // Leaflet inițializat din schimbaTab rulează pe un container ascuns (width/height=0).
         // Re-apelăm initMap() acum că div-ul este vizibil → invalidateSize() + markere corecte.
         if (typeof window.initMap === 'function') window.initMap();
+        if (typeof window.renderHartaVehicule === 'function') window.renderHartaVehicule();
     }
 }
 
@@ -865,3 +866,164 @@ async function importaComenziCSV() {
     });
 }
 window.importaComenziCSV = importaComenziCSV;
+
+// =========================================================
+// GPS REALTIME — Harta vehicule live cu Supabase Realtime
+// =========================================================
+
+/** Channel Realtime activ pentru GPS */
+var _gpsRealtimeChannel = null;
+/** Markere Leaflet active { vehicul_id: L.marker } */
+var _gpsMarkere = {};
+/** Istorice rute { vehicul_id: L.polyline } */
+var _gpsPolylines = {};
+
+/**
+ * Initializeaza harta live cu subscriptie Realtime pe vehicule_pozitii.
+ * Afiseaza markere cu numarul de inmatriculare si popup cu sofer/viteza.
+ * Deseneaza polyline cu istoricul ultimelor 24h per vehicul.
+ *
+ * Apelata automat cand tab-ul Logistic devine activ si harta e initializata.
+ */
+async function renderHartaVehicule() {
+    // Leaflet trebuie sa fie disponibil
+    if (typeof L === 'undefined') {
+        setTimeout(renderHartaVehicule, 500);
+        return;
+    }
+    // Harta trebuie sa fie initializata
+    if (!ZFlowStore.map) {
+        if (typeof initMap === 'function') initMap();
+        if (!ZFlowStore.map) return;
+    }
+
+    var map = ZFlowStore.map;
+    var uid = ZFlowStore.userSession && ZFlowStore.userSession.user && ZFlowStore.userSession.user.id;
+    if (!uid) return;
+
+    // ── Incarca pozitiile curente (ultima pozitie per vehicul) ─────────
+    var acum24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    var result = await ZFlowDB._supabase()
+        .from('vehicule_pozitii')
+        .select('*, vehicule(nr_inmatriculare, soferi(nume))')
+        .eq('user_id', uid)
+        .gte('ts', acum24h)
+        .order('ts', { ascending: true });
+    var pozitii = result.data;
+
+    if (!pozitii || !pozitii.length) return;
+
+    // Grupeaza pe vehicul_id
+    var perVehicul = {};
+    pozitii.forEach(function(p) {
+        if (!perVehicul[p.vehicul_id]) perVehicul[p.vehicul_id] = [];
+        perVehicul[p.vehicul_id].push(p);
+    });
+
+    // ── Deseneaza markere si polylines ────────────────────────────────
+    Object.entries(perVehicul).forEach(function(entry) {
+        var vehiculId = entry[0];
+        var poz = entry[1];
+        var ultima = poz[poz.length - 1];
+        var nrInmatr = (ultima.vehicule && ultima.vehicule.nr_inmatriculare) ? ultima.vehicule.nr_inmatriculare : vehiculId.slice(0, 8);
+        var sofer = (ultima.vehicule && ultima.vehicule.soferi && ultima.vehicule.soferi.nume) ? ultima.vehicule.soferi.nume : 'Nealocat';
+
+        // Icon cu numarul de inmatriculare
+        var iconHtml = '<div style="background:' + (ultima.status === 'oprit' ? '#64748b' : '#1e3a8a') + ';color:#fff;font-size:9px;font-weight:900;padding:3px 6px;border-radius:6px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.3);border:2px solid #fff' + (ultima.status === 'oprit' ? ';opacity:0.6' : '') + '">' + nrInmatr + '</div>';
+        var icon = L.divIcon({
+            className: '',
+            html: iconHtml,
+            iconAnchor: [20, 10],
+        });
+
+        // Popup cu informatii
+        var popupContent = '<div style="font-family:system-ui;font-size:11px;min-width:140px">'
+            + '<p style="font-weight:900;color:#1e3a8a;margin:0 0 4px">' + nrInmatr + '</p>'
+            + '<p style="margin:2px 0">\uD83D\uDC64 ' + sofer + '</p>'
+            + '<p style="margin:2px 0">\uD83D\uDE80 ' + (ultima.viteza || 0) + ' km/h</p>'
+            + '<p style="margin:2px 0">\uD83D\uDCCD ' + (ultima.status || 'activ') + '</p>'
+            + '<p style="margin:2px 0;color:#94a3b8;font-size:9px">' + new Date(ultima.ts).toLocaleString('ro-RO') + '</p>'
+            + '</div>';
+
+        if (_gpsMarkere[vehiculId]) {
+            _gpsMarkere[vehiculId].setLatLng([ultima.lat, ultima.lng]);
+            _gpsMarkere[vehiculId].setIcon(icon);
+            var pop = _gpsMarkere[vehiculId].getPopup();
+            if (pop) pop.setContent(popupContent);
+        } else {
+            _gpsMarkere[vehiculId] = L.marker([ultima.lat, ultima.lng], { icon: icon })
+                .bindPopup(popupContent)
+                .addTo(map);
+        }
+
+        // Polyline ruta ultimele 24h
+        var coords = poz.map(function(p) { return [p.lat, p.lng]; });
+        if (coords.length > 1) {
+            if (_gpsPolylines[vehiculId]) {
+                _gpsPolylines[vehiculId].setLatLngs(coords);
+            } else {
+                _gpsPolylines[vehiculId] = L.polyline(coords, {
+                    color: ultima.status === 'oprit' ? '#94a3b8' : '#3b82f6',
+                    weight: 2,
+                    opacity: 0.6,
+                    dashArray: ultima.status === 'oprit' ? '4 4' : null,
+                }).addTo(map);
+            }
+        }
+    });
+
+    // Fit bounds la toate vehiculele
+    var allCoords = Object.values(_gpsMarkere).map(function(m) { return m.getLatLng(); });
+    if (allCoords.length > 0) {
+        map.fitBounds(L.latLngBounds(allCoords), { padding: [30, 30], maxZoom: 14 });
+    }
+
+    // ── Subscriptie Realtime ───────────────────────────────────────────
+    if (_gpsRealtimeChannel) return; // deja abonat
+
+    _gpsRealtimeChannel = ZFlowDB._supabase()
+        .channel('gps-live-' + uid)
+        .on('postgres_changes', {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'vehicule_pozitii',
+            filter: 'user_id=eq.' + uid
+        }, function(payload) {
+            var p = payload.new;
+            if (!p || !p.vehicul_id || !p.lat || !p.lng) return;
+
+            var existingMarker = _gpsMarkere[p.vehicul_id];
+            if (existingMarker) {
+                existingMarker.setLatLng([p.lat, p.lng]);
+                var pop2 = existingMarker.getPopup();
+                if (pop2) {
+                    var c = pop2.getContent() || '';
+                    pop2.setContent(c.replace(/\uD83D\uDE80 \d+ km\/h/, '\uD83D\uDE80 ' + (p.viteza || 0) + ' km/h'));
+                }
+                var poly = _gpsPolylines[p.vehicul_id];
+                if (poly) {
+                    var coords2 = poly.getLatLngs();
+                    coords2.push(L.latLng(p.lat, p.lng));
+                    poly.setLatLngs(coords2);
+                }
+            }
+            if (window.ZFlowLogger && typeof ZFlowLogger.debug === 'function') {
+                ZFlowLogger.debug('GPS', 'Pozitie noua: ' + p.vehicul_id + ' @ ' + p.lat + ',' + p.lng);
+            }
+        })
+        .subscribe();
+}
+window.renderHartaVehicule = renderHartaVehicule;
+
+/**
+ * Opreste subscriptia Realtime GPS (apelat la logout sau schimbare tab).
+ */
+function oprireRealtimeGPS() {
+    if (_gpsRealtimeChannel) {
+        ZFlowDB._supabase().removeChannel(_gpsRealtimeChannel);
+        _gpsRealtimeChannel = null;
+    }
+    Object.keys(_gpsMarkere).forEach(function(k) { delete _gpsMarkere[k]; });
+    Object.keys(_gpsPolylines).forEach(function(k) { delete _gpsPolylines[k]; });
+}
+window.oprireRealtimeGPS = oprireRealtimeGPS;

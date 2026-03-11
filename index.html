@@ -982,6 +982,22 @@
 
           </div><!-- /bi-left-panel -->
 
+          <!-- Cashflow Proiectie Zilnica -->
+          <div id="cashflow-proiectie-section" class="bg-white rounded-2xl border border-slate-100 p-4 mt-4">
+            <div class="flex items-center justify-between mb-3">
+              <p class="text-[10px] font-black text-slate-700 uppercase tracking-widest">Proiectie Cashflow</p>
+              <div class="flex gap-1.5">
+                <button onclick="renderCashflowProiectieGraf('cashflow-proiectie-graf', 30)"
+                  class="text-[8px] font-black bg-slate-100 hover:bg-slate-200 text-slate-600 px-2 py-1 rounded-lg">30z</button>
+                <button onclick="renderCashflowProiectieGraf('cashflow-proiectie-graf', 60)"
+                  class="text-[8px] font-black bg-slate-100 hover:bg-slate-200 text-slate-600 px-2 py-1 rounded-lg">60z</button>
+                <button onclick="renderCashflowProiectieGraf('cashflow-proiectie-graf', 90)"
+                  class="text-[8px] font-black bg-blue-100 text-blue-700 px-2 py-1 rounded-lg">90z</button>
+              </div>
+            </div>
+            <div id="cashflow-proiectie-graf"></div>
+          </div>
+
           <div class="bi-right-panel flex flex-col gap-3">
           <!-- Bulk inline bar (înlocuiește rândul de căutare când modul bulk e activ) -->
           <div id="bulk-inline-bar" class="hidden flex gap-2 items-center">
@@ -3583,6 +3599,10 @@
 
     <!-- 5. Features v8.0 â€” noile funcționalități (ANAF e-Factură, Bridge XML, SafeFleet, Scanner QR, Cashflow Forecast, Multi-firmă, km Report, Import XML ANAF) -->
     <script src="js/modules/features.js" defer></script>
+
+    <!-- 5b. e-Factura UBL 2.1 + Bridge Import SAGA XML -->
+    <script src="js/modules/efactura.js" defer></script>
+    <script src="js/modules/bridge.js" defer></script>
 
     <!-- 6. UI Event Delegation -- inlocuieste onclick= inline cu data-action= delegat -->
     <script src="js/modules/index.js" defer></script>

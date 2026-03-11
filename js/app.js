@@ -2387,7 +2387,7 @@ function genereazaCardFactura(fac, client, azi) {
                         class="w-full ${fac.is_imported ? 'bg-slate-100 text-slate-300 cursor-not-allowed' : isIncasat ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 'bg-blue-900 text-white hover:bg-blue-800'} h-11 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-2 transition-all">
                     ${fac.is_imported ? '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/></svg> SAGA' : isIncasat ? 'ACHITAT' : 'NEACHITAT'}
                 </button>
-                <div class="grid grid-cols-7 gap-1.5 w-full">
+                <div class="grid grid-cols-9 gap-1.5 w-full">
                 <button onclick="deschideModal('modal-factura', '${fac.id}')"
                         class="h-11 bg-slate-50 text-slate-600 rounded-xl flex items-center justify-center border border-slate-100 hover:bg-amber-50 hover:text-amber-600 hover:border-amber-200 transition-all">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
@@ -2440,6 +2440,19 @@ function genereazaCardFactura(fac, client, azi) {
                 <button onclick="stergeFactura('${fac.id}')"
                         class="h-11 bg-red-50 text-red-500 rounded-xl flex items-center justify-center border border-red-100 hover:bg-red-100 hover:text-red-600 hover:border-red-200 transition-all">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                </button>
+                <button onclick="event.stopPropagation(); window.ZFlowEFactura && window.ZFlowEFactura.trimiteLaANAF('${fac.id}')"
+                        data-supabase-only
+                        class="h-11 text-[8px] font-black bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl flex items-center justify-center border border-blue-200 transition-all"
+                        title="Trimite la ANAF e-Factura">
+                    e-Fact
+                </button>
+                <button onclick="event.stopPropagation(); window.ZFlowEFactura && window.ZFlowEFactura.verificaStatus('${fac.id}')"
+                        data-supabase-only
+                        class="h-11 text-[8px] font-black bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-xl flex items-center justify-center border border-slate-200 transition-all"
+                        title="Verifica status ANAF"
+                        ${fac.anaf_upload_index ? '' : 'style="display:none"'}>
+                    Status
                 </button>
                 </div>
             </div>

@@ -285,3 +285,199 @@ const ZFlowAnalytics = {
 
 // Export global
 window.ZFlowAnalytics = ZFlowAnalytics;
+
+// =========================================================
+// CASHFLOW PROIECTIE ZILNICA — [R10-FIX 4]
+// =========================================================
+
+/**
+ * Calculeaza proiectia cashflow zilnica pe N zile viitoare.
+ * Diferit fata de calculeazaCashflowForecast (din features.js) care returneaza
+ * totaluri agregate — aceasta returneaza sold zilnic cumulativ pentru graf.
+ *
+ * @param {number} zile - Numarul de zile de proiectat (implicit 90)
+ * @param {number} soldInitial - Soldul curent de pornire (implicit 0)
+ * @returns {Array<{ data: string, sold_estimat: number, intrari: number, iesiri: number }>}
+ */
+function calculeazaCashflowProiectie(zile, soldInitial) {
+    zile = parseInt(zile) || 90;
+    soldInitial = parseFloat(soldInitial) || 0;
+
+    var facturiInc  = (window.ZFlowStore && window.ZFlowStore.dateFacturiBI) ? window.ZFlowStore.dateFacturiBI : [];
+    var facturiPlat = (window.ZFlowStore && window.ZFlowStore.dateFacturiPlatit) ? window.ZFlowStore.dateFacturiPlatit : [];
+
+    // Construieste map: data ISO → { intrari, iesiri }
+    var zilMap = {};
+    var azi = new Date();
+    azi.setHours(0, 0, 0, 0);
+
+    // Pre-populaza toate zilele cu 0
+    for (var i = 0; i < zile; i++) {
+        var d = new Date(azi.getTime() + i * 86400000);
+        var key = d.toISOString().split('T')[0];
+        zilMap[key] = { intrari: 0, iesiri: 0 };
+    }
+
+    // Distribuie facturile neincasate pe ziua de scadenta
+    facturiInc.forEach(function(f) {
+        if (f.status_plata === 'Incasat') return;
+        var key2 = (f.data_scadenta || '').split('T')[0];
+        if (zilMap[key2]) {
+            zilMap[key2].intrari += parseFloat(f.valoare || 0);
+        }
+    });
+
+    facturiPlat.forEach(function(f) {
+        if (f.status_plata === 'Platit') return;
+        var key3 = (f.data_scadenta || '').split('T')[0];
+        if (zilMap[key3]) {
+            zilMap[key3].iesiri += parseFloat(f.valoare || 0);
+        }
+    });
+
+    // Calculeaza sold cumulativ
+    var soldCurent = soldInitial;
+    var rezultat = Object.entries(zilMap)
+        .sort(function(a, b) { return a[0].localeCompare(b[0]); })
+        .map(function(entry) {
+            var data = entry[0];
+            var intrari = entry[1].intrari;
+            var iesiri = entry[1].iesiri;
+            soldCurent += intrari - iesiri;
+            return { data: data, sold_estimat: Math.round(soldCurent * 100) / 100, intrari: intrari, iesiri: iesiri };
+        });
+
+    return rezultat;
+}
+window.calculeazaCashflowProiectie = calculeazaCashflowProiectie;
+
+/**
+ * Verifica daca soldul proiectat devine negativ in urmatoarele 30 de zile.
+ * Daca da, afiseaza o alerta automata.
+ *
+ * @param {number} soldInitial
+ */
+function verificaAlertaCashflow(soldInitial) {
+    var proiectie30 = calculeazaCashflowProiectie(30, soldInitial || 0);
+    var primaZiNegativa = proiectie30.find(function(z) { return z.sold_estimat < 0; });
+    if (primaZiNegativa) {
+        var formatData = new Date(primaZiNegativa.data).toLocaleDateString('ro-RO', {
+            day: '2-digit', month: 'short'
+        });
+        if (typeof showNotification === 'function') {
+            showNotification(
+                'Cashflow negativ estimat pe ' + formatData + ' (' + primaZiNegativa.sold_estimat.toLocaleString('ro-RO') + ' RON)',
+                'warning',
+                8000
+            );
+        }
+        if (window.ZFlowLogger && typeof ZFlowLogger.warn === 'function') {
+            ZFlowLogger.warn('Cashflow', 'Sold negativ proiectat', primaZiNegativa);
+        }
+    }
+}
+window.verificaAlertaCashflow = verificaAlertaCashflow;
+
+/**
+ * Randeaza graful de proiectie cashflow folosind Chart.js.
+ * Creeaza canvas daca nu exista; actualizeaza daca exista.
+ *
+ * Zona verde = sold pozitiv, zona rosie = sold negativ.
+ *
+ * @param {string} containerId - ID-ul div-ului container
+ * @param {number} zile - 30 | 60 | 90
+ * @param {number} soldInitial - Sold de pornire
+ */
+async function renderCashflowProiectieGraf(containerId, zile, soldInitial) {
+    zile = parseInt(zile) || 90;
+    var container = document.getElementById(containerId);
+    if (!container) return;
+
+    // Asigura Chart.js
+    if (!window.Chart) {
+        await new Promise(function(resolve, reject) {
+            var s = document.createElement('script');
+            s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js';
+            s.onload = resolve;
+            s.onerror = reject;
+            document.head.appendChild(s);
+        });
+    }
+
+    var proiectie = calculeazaCashflowProiectie(zile, soldInitial);
+    var labels = proiectie.map(function(p) {
+        return new Date(p.data).toLocaleDateString('ro-RO', { day: '2-digit', month: 'short' });
+    });
+    var values = proiectie.map(function(p) { return p.sold_estimat; });
+
+    var pointColors = values.map(function(v) { return v >= 0 ? 'rgba(16,185,129,0.8)' : 'rgba(239,68,68,0.8)'; });
+    var lineColor   = values.some(function(v) { return v < 0; }) ? 'rgba(239,68,68,0.9)' : 'rgba(16,185,129,0.9)';
+
+    var canvas = container.querySelector('canvas#cashflow-proiectie-canvas');
+    if (!canvas) {
+        container.innerHTML = '<canvas id="cashflow-proiectie-canvas" style="max-height:220px"></canvas>';
+        canvas = container.querySelector('canvas');
+    }
+
+    if (canvas._chartInstance) {
+        canvas._chartInstance.destroy();
+    }
+
+    canvas._chartInstance = new window.Chart(canvas, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Sold estimat (RON)',
+                data: values,
+                borderColor: lineColor,
+                backgroundColor: values.map(function(v) {
+                    return v >= 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)';
+                }),
+                pointBackgroundColor: pointColors,
+                pointRadius: 2,
+                pointHoverRadius: 5,
+                fill: true,
+                tension: 0.3,
+                borderWidth: 2,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(ctx) {
+                            var v = ctx.raw;
+                            var pz = proiectie[ctx.dataIndex];
+                            return [
+                                ' Sold: ' + v.toLocaleString('ro-RO') + ' RON',
+                                ' Intrari: +' + pz.intrari.toLocaleString('ro-RO'),
+                                ' Iesiri: -' + pz.iesiri.toLocaleString('ro-RO'),
+                            ];
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: { font: { size: 8 }, maxTicksLimit: 10 },
+                    grid: { display: false }
+                },
+                y: {
+                    ticks: {
+                        font: { size: 9 },
+                        callback: function(v) { return v.toLocaleString('ro-RO') + ' RON'; }
+                    },
+                    grid: { color: 'rgba(0,0,0,0.05)' }
+                }
+            }
+        }
+    });
+
+    // Alerta automata daca sold negativ in 30 zile
+    if (zile >= 30) verificaAlertaCashflow(soldInitial);
+}
+window.renderCashflowProiectieGraf = renderCashflowProiectieGraf;
