@@ -305,16 +305,16 @@ function arataDetaliiFurnizor(id) {
             <div class="flex justify-between items-start mb-4">
                 <div>
                     <h2 class="text-2xl font-extrabold leading-tight">${_esc(furnizor.nume_firma || furnizor.cui)}</h2>
-                    <p class="text-red-200 text-sm mt-1">CUI: ${_esc(furnizor.cui || "—")}</p>
+                    <div class="flex items-center gap-2 mt-1"><p class="text-red-200 text-sm">CUI: ${_esc(furnizor.cui || "—")}</p>${furnizor.cui ? `<button onclick="navigator.clipboard.writeText('${_esc(furnizor.cui)}').then(()=>showNotification('CUI copiat','success',1500))" class="text-red-300 hover:text-white transition-colors flex-shrink-0" title="Copiază CUI"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg></button>` : ''}</div>
                 </div>
                 <span class="text-3xl font-black text-white/80">${Math.round(furnizor.sold || 0).toLocaleString()} lei</span>
             </div>
             <div class="grid grid-cols-2 gap-3 text-sm">
                 ${furnizor.oras ? `<div><p class="text-red-300 text-[9px] uppercase font-bold">Oraș</p><p class="font-semibold">${_esc(furnizor.oras)}</p></div>` : ""}
-                ${furnizor.telefon ? `<div><p class="text-red-300 text-[9px] uppercase font-bold">Telefon</p><p class="font-semibold">${_esc(furnizor.telefon)}</p></div>` : ""}
+                ${furnizor.telefon ? `<div><p class="text-red-300 text-[9px] uppercase font-bold">Telefon</p><a href="tel:${_esc(furnizor.telefon)}" class="font-semibold hover:text-white transition-colors">${_esc(furnizor.telefon)}</a></div>` : ""}
                 ${furnizor.persoana_contact ? `<div><p class="text-red-300 text-[9px] uppercase font-bold">Contact</p><p class="font-semibold">${_esc(furnizor.persoana_contact)}</p></div>` : ""}
-                ${furnizor.contact_email ? `<div><p class="text-red-300 text-[9px] uppercase font-bold">Email</p><p class="font-semibold truncate">${_esc(furnizor.contact_email)}</p></div>` : ""}
-                ${furnizor.iban ? `<div class="col-span-2"><p class="text-red-300 text-[9px] uppercase font-bold">IBAN</p><p class="font-semibold font-mono text-xs">${_esc(furnizor.iban)}</p></div>` : ""}
+                ${furnizor.contact_email ? `<div><p class="text-red-300 text-[9px] uppercase font-bold">Email</p><a href="mailto:${_esc(furnizor.contact_email)}" class="font-semibold truncate hover:text-white transition-colors">${_esc(furnizor.contact_email)}</a></div>` : ""}
+                ${furnizor.iban ? `<div class="col-span-2"><p class="text-red-300 text-[9px] uppercase font-bold">IBAN</p><div class="flex items-center gap-2"><p class="font-semibold font-mono text-xs flex-1">${_esc(furnizor.iban)}</p><button onclick="navigator.clipboard.writeText('${_esc(furnizor.iban)}').then(()=>showNotification('IBAN copiat','success',1500))" class="text-red-300 hover:text-white transition-colors flex-shrink-0" title="Copiaz\u0103 IBAN"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg></button></div></div>` : ""}
             </div>
             ${sumaScadenta > 0 ? `
             <div class="mt-4 py-3 px-4 bg-red-500/20 rounded-2xl border border-red-400/50 flex justify-between items-center animate-pulse">

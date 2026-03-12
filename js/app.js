@@ -805,6 +805,7 @@ async function verificaAuth() {
                     if (_expDate < _acum) {
                         await ZFlowDB.signOut();
                         ZFlowStore.userSession = null;
+                        if (typeof _adminUsersCache !== 'undefined') _adminUsersCache = null;
                         document.querySelector('main').style.display        = 'none';
                         document.querySelector('header').style.display      = 'none';
                         document.querySelector('.bottom-nav').style.display = 'none';
@@ -883,6 +884,7 @@ async function logout() {
         }
         
         ZFlowStore.userSession = null;
+        if (typeof _adminUsersCache !== 'undefined') _adminUsersCache = null;
 
         // [FIX 4] Resetează cache-ul intern _demoOps._restoreCache pentru a permite
         // re-încărcarea datelor admin local la re-login (altfel _restore() returnează
@@ -1449,7 +1451,7 @@ async function adminStergeDate() {
 }
 window.adminStergeDate = adminStergeDate;
 
-function adminDeschideStergere(email) {
+function adminDeschideStergere(email, userId) {
     const panel     = document.getElementById('admin-delete-panel');
     const emailEl   = document.getElementById('admin-delete-email');
     const hintEl    = document.getElementById('admin-delete-hint');
@@ -1459,7 +1461,8 @@ function adminDeschideStergere(email) {
     if (hintEl)    hintEl.textContent = `STERGE ${email}`;
     if (confirmEl) { confirmEl.value = ''; confirmEl.placeholder = `STERGE ${email}`; }
     panel.dataset.email = email;
-    delete panel.dataset.userId;
+    if (userId) panel.dataset.userId = userId;
+    else delete panel.dataset.userId;
     // Ascunde celelalte pannouri pentru claritate
     document.getElementById('admin-extend-panel')?.classList.add('hidden');
     document.getElementById('admin-notif-panel')?.classList.add('hidden');
@@ -2140,7 +2143,9 @@ function incarcaDashboard() {
     const prevF  = _fp.reduce((s, f) => s + (Number(f.valoare)||0), 0);
     const prevNI = _fp.filter(f => f.status_plata !== 'Incasat').reduce((s, f) => s + (Number(f.valoare)||0), 0);
     const prevNP = _fpI.filter(f => f.status_plata !== 'Platit').reduce((s, f) => s + (Number(f.valoare)||0), 0);
-    const prevNet = prevF - _fpI.reduce((s, f) => s + (Number(f.valoare)||0), 0);
+    const prevIncasat30Ef = _fp.filter(f => f.status_plata === 'Incasat').reduce((s, f) => s + (Number(f.valoare)||0), 0);
+    const prevPlatit30Ef  = _fpI.filter(f => f.status_plata === 'Platit').reduce((s, f) => s + (Number(f.valoare)||0), 0);
+    const prevNet = prevIncasat30Ef - prevPlatit30Ef;
     const _setTrend = (id, curr, prev) => {
         const el = document.getElementById(id); if (!el) return;
         if (prev === 0) { el.innerText = ''; return; }
@@ -2550,14 +2555,22 @@ function arataDetalii(id) {
     azi.setHours(0, 0, 0, 0);
 
     document.getElementById("card-detaliu").innerHTML = `
-        <h2 class="text-2xl font-black uppercase tracking-tight leading-tight">${escapeHtml(f.nume_firma || f.cui)}</h2>
-        <p class="text-[11px] opacity-70 uppercase mt-1 font-bold tracking-widest text-blue-200">CUI: ${escapeHtml(f.cui)}</p>
-        <div class="mt-4">
-            <p class="text-[9px] font-bold opacity-50 uppercase tracking-widest">Sold de Încasat</p>
-            <p class="text-3xl font-black text-white tracking-tighter">${Math.round(f.sold).toLocaleString()} lei</p>
+        <div class="flex justify-between items-start mb-4">
+            <div>
+                <h2 class="text-2xl font-extrabold leading-tight">${escapeHtml(f.nume_firma || f.cui)}</h2>
+                <div class="flex items-center gap-2 mt-1">${f.cui ? `<p class="text-blue-200 text-sm">CUI: ${escapeHtml(f.cui)}</p><button onclick="navigator.clipboard.writeText('${escapeHtml(f.cui)}').then(()=>showNotification('CUI copiat','success',1500))" class="text-blue-300 hover:text-white transition-colors flex-shrink-0" title="Copiază CUI"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg></button>` : ''}</div>
+            </div>
+            <span class="text-3xl font-black text-white/80">${Math.round(f.sold).toLocaleString()} lei</span>
+        </div>
+        <div class="grid grid-cols-2 gap-3 text-sm">
+            ${f.oras ? `<div><p class="text-blue-300 text-[9px] uppercase font-bold">Oraș</p><p class="font-semibold">${escapeHtml(f.oras)}</p></div>` : ""}
+            ${f.telefon ? `<div><p class="text-blue-300 text-[9px] uppercase font-bold">Telefon</p><a href="tel:${escapeHtml(f.telefon)}" class="font-semibold hover:text-white transition-colors">${escapeHtml(f.telefon)}</a></div>` : ""}
+            ${f.persoana_contact ? `<div><p class="text-blue-300 text-[9px] uppercase font-bold">Contact</p><p class="font-semibold">${escapeHtml(f.persoana_contact)}</p></div>` : ""}
+            ${f.contact_email ? `<div><p class="text-blue-300 text-[9px] uppercase font-bold">Email</p><a href="mailto:${escapeHtml(f.contact_email)}" class="font-semibold truncate hover:text-white transition-colors">${escapeHtml(f.contact_email)}</a></div>` : ""}
+            ${f.iban ? `<div class="col-span-2"><p class="text-blue-300 text-[9px] uppercase font-bold">IBAN</p><div class="flex items-center gap-2"><p class="font-semibold font-mono text-xs flex-1">${escapeHtml(f.iban)}</p><button onclick="navigator.clipboard.writeText('${escapeHtml(f.iban)}').then(()=>showNotification('IBAN copiat','success',1500))" class="text-blue-300 hover:text-white transition-colors flex-shrink-0" title="Copiază IBAN"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg></button></div></div>` : ""}
         </div>
         ${areScadenta ? `
-        <div class="mt-6 py-3 px-4 bg-red-500/20 rounded-2xl border border-red-400/50 flex justify-between items-center animate-pulse">
+        <div class="mt-4 py-3 px-4 bg-red-500/20 rounded-2xl border border-red-400/50 flex justify-between items-center animate-pulse">
             <div class="flex items-center gap-2">
                 <svg class="w-4 h-4 text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
                 <p class="text-[8px] font-black text-red-300 uppercase tracking-widest">Facturi Depășite</p>
@@ -5295,6 +5308,7 @@ async function autoCautareCUI() {
     };
 
     setLoader(true);
+    try {
 
     // 1. Supabase Edge Function (cel mai fiabil — deploy din _detalii/_docs/supabase_edge_anaf_proxy.ts)
     const edgeFnUrl = `${URL_Z}/functions/v1/anaf-proxy`;
@@ -5307,7 +5321,7 @@ async function autoCautareCUI() {
         });
         if (r.ok) {
             const res = await r.json();
-            if (res.found?.[0]?.date_generale) { aplicaDate(res.found[0]); setLoader(false); return; }
+            if (res.found?.[0]?.date_generale) { aplicaDate(res.found[0]); return; }
         }
     } catch (_) { /* Edge function nedeploy-ată, trecem la proxy public */ }
 
@@ -5327,10 +5341,10 @@ async function autoCautareCUI() {
             if (!r.ok) continue;
             const res = await r.json();
             if (res.found?.[0]?.date_generale) {
-                aplicaDate(res.found[0]); setLoader(false); return;
+                aplicaDate(res.found[0]); return;
             } else {
                 showNotification(`CUI-ul ${cui} nu a fost găsit în baza ANAF.`, "warning");
-                setLoader(false); return;
+                return;
             }
         } catch (e) {
             ZFlowLogger.warn('app', "Proxy eșuat:", proxyUrl, e.message);
@@ -5338,8 +5352,10 @@ async function autoCautareCUI() {
     }
 
     // 3. Toate au eșuat — îi propunem alternativa Edge Function
-    setLoader(false);
     showNotification("Serviciul ANAF nu răspunde. Dacă eroarea persistă, contactează administratorul.", "error", 6000);
+    } finally {
+        setLoader(false);
+    }
 }
 
 /**
@@ -5366,13 +5382,14 @@ async function autoCautareCUIFurnizor() {
     };
 
     setLoader(true);
+    try {
 
     const edgeFnUrl = `${URL_Z}/functions/v1/anaf-proxy`;
     try {
         const r = await fetch(edgeFnUrl, { method: "POST", headers: { ...jsonHeaders, "Authorization": `Bearer ${KEY_Z}` }, body, signal: AbortSignal.timeout(8000) });
         if (r.ok) {
             const res = await r.json();
-            if (res.found?.[0]?.date_generale) { aplicaDate(res.found[0]); setLoader(false); return; }
+            if (res.found?.[0]?.date_generale) { aplicaDate(res.found[0]); return; }
         }
     } catch (_) {}
 
@@ -5385,13 +5402,15 @@ async function autoCautareCUIFurnizor() {
             const r = await fetch(proxyUrl, { method: "POST", headers: jsonHeaders, body, signal: AbortSignal.timeout(8000) });
             if (!r.ok) continue;
             const res = await r.json();
-            if (res.found?.[0]?.date_generale) { aplicaDate(res.found[0]); setLoader(false); return; }
-            else { showNotification(`CUI-ul ${cui} nu a fost găsit în baza ANAF.`, "warning"); setLoader(false); return; }
+            if (res.found?.[0]?.date_generale) { aplicaDate(res.found[0]); return; }
+            else { showNotification(`CUI-ul ${cui} nu a fost găsit în baza ANAF.`, "warning"); return; }
         } catch (e) { ZFlowLogger.warn('app', "Proxy eșuat:", proxyUrl, e.message); }
     }
 
-    setLoader(false);
     showNotification("Serviciul ANAF nu răspunde.", "error", 6000);
+    } finally {
+        setLoader(false);
+    }
 }
 
 // ==========================================
@@ -6767,7 +6786,7 @@ function renderAdminUsersList(users) {
                         Notifică
                     </button>
                     <button
-                        onclick="adminDeschideStergere('${escapeHtml(u.email)}')"
+                        onclick="adminDeschideStergere('${escapeHtml(u.email)}', '${escapeHtml(u.user_id || '')}')"
                         class="text-[8px] font-black bg-red-50 hover:bg-red-100 text-red-600 px-2 py-1 rounded-lg border border-red-200 transition-all"
                         title="Șterge date utilizator">
                         ⚠️

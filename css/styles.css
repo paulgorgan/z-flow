@@ -1519,7 +1519,8 @@ input, select, button {
     gap: 24px !important;
   }
 
-  #card-detaliu-furnizor {
+  #card-detaliu-furnizor,
+  #istoric-plati-furnizor {
     max-width: 900px !important;
     margin-left: auto !important;
     margin-right: auto !important;
