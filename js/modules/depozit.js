@@ -111,6 +111,15 @@ function schimbaViewDepozit(view, updateStore = true) {
         const el = document.getElementById('depozit-view-' + v);
         if (el) el.classList.toggle('hidden', v !== view);
     });
+    // Skeleton: loader rapid dacă datele nu sunt disponibile încă
+    if (view === 'produse' && typeof showSkeletonLoader === 'function') {
+        const ct = document.getElementById('depozit-lista-produse');
+        if (ct && (window.ZFlowStore?.dateProduse || []).length === 0) showSkeletonLoader(ct, 5, 'client');
+    }
+    if (view === 'miscari' && typeof showSkeletonLoader === 'function') {
+        const ct = document.getElementById('depozit-lista-miscari');
+        if (ct && (window.ZFlowStore?.dateMiscariStoc || []).length === 0) showSkeletonLoader(ct, 4, 'client');
+    }
     document.querySelectorAll('.depozit-pill').forEach(btn => {
         const gr = btn.dataset.view;
         const grupActiv = ['produse','miscari'].includes(view) ? 'stoc' : ['receptii','livrari'].includes(view) ? 'documente' : view;
@@ -233,7 +242,7 @@ function renderProduse() {
         }
     }).join('');
     if (pgEl && typeof window._paginareHTML === 'function') {
-        pgEl.innerHTML = all.length > 5 ? window._paginareHTML(all.length, ps, ZFlowStore.produseCurrentPage||1, 'produse') : '';
+        pgEl.innerHTML = all.length > 5 ? window._paginareHTML(all.length, ZFlowStore.produsePageSize ?? 10, ZFlowStore.produseCurrentPage||1, 'produse') : '';
     }
 }
 
@@ -283,7 +292,7 @@ function renderMiscariStoc() {
               </div>
               <div class="flex-1 min-w-0">
                 <p class="text-xs font-black text-slate-800 truncate">${p?.nume || 'Produs șters'} ${p?.sku ? `(${p.sku})` : ''}</p>
-                <p class="text-[10px] text-slate-400">${m.data ? new Date(m.data).toLocaleDateString('ro-RO') : '—'} &middot; ${m.observatii || m.tip}</p>
+                <p class="text-[10px] text-slate-400">${m.data ? (typeof formateazaDataZFlow === 'function' ? formateazaDataZFlow(m.data) : new Date(m.data).toLocaleDateString('ro-RO')) : '—'} &middot; ${m.observatii || m.tip}</p>
               </div>
               <b class="text-sm font-black tabular-nums ${isIn ? 'text-emerald-600' : 'text-red-600'}">${isIn ? '+' : '-'}${m.cantitate} ${p?.um || 'buc'}</b>
             </div>`;
@@ -293,7 +302,7 @@ function renderMiscariStoc() {
         }
     }).join('');
     if (pgEl && typeof window._paginareHTML === 'function') {
-        pgEl.innerHTML = all.length > 5 ? window._paginareHTML(all.length, ps, ZFlowStore.miscariCurrentPage||1, 'miscari') : '';
+        pgEl.innerHTML = all.length > 5 ? window._paginareHTML(all.length, ZFlowStore.miscariPageSize ?? 10, ZFlowStore.miscariCurrentPage||1, 'miscari') : '';
     }
 }
 
@@ -329,7 +338,7 @@ function renderReceptiiDepozit() {
               </div>
               <div class="flex-1 min-w-0">
                 <p class="text-sm font-black text-slate-800">Recepție #${(r.id||'').toString().slice(-4) || '—'}</p>
-                <p class="text-xs text-slate-400">${furn?.nume_firma || 'Furnizor'} &middot; ${r.data ? new Date(r.data).toLocaleDateString('ro-RO') : '—'} &middot; ${items} produse</p>
+                <p class="text-xs text-slate-400">${furn?.nume_firma || 'Furnizor'} &middot; ${r.data ? (typeof formateazaDataZFlow === 'function' ? formateazaDataZFlow(r.data) : new Date(r.data).toLocaleDateString('ro-RO')) : '—'} &middot; ${items} produse</p>
               </div>
               <b class="text-sm font-black text-slate-700 tabular-nums">${val > 0 ? Math.round(val).toLocaleString() + ' lei' : '—'}</b>
             </div>`;
@@ -373,7 +382,7 @@ function renderLivrariDepozit() {
               </div>
               <div class="flex-1 min-w-0">
                 <p class="text-sm font-black text-slate-800">BL #${l.nr_bon || (l.id||'').toString().slice(-4) || '—'}</p>
-                <p class="text-xs text-slate-400">${cl?.nume_firma || 'Client'} &middot; ${l.data ? new Date(l.data).toLocaleDateString('ro-RO') : '—'} &middot; ${items} produse</p>
+                <p class="text-xs text-slate-400">${cl?.nume_firma || 'Client'} &middot; ${l.data ? (typeof formateazaDataZFlow === 'function' ? formateazaDataZFlow(l.data) : new Date(l.data).toLocaleDateString('ro-RO')) : '—'} &middot; ${items} produse</p>
               </div>
               <span class="text-[9px] font-black uppercase px-2.5 py-1 rounded-full ${stCls}">${l.status || 'Draft'}</span>
             </div>`;

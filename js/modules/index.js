@@ -168,6 +168,12 @@
       if (el) el.classList.add('hidden');
     },
 
+    /** Ascunde panoul de ștergere permanentă din dashboard-ul admin. */
+    ascundeAdminDelete: function () {
+      const el = document.getElementById('admin-delete-panel');
+      if (el) el.classList.add('hidden');
+    },
+
     /** Închide modalul de schimbare cont utilizator. */
     inchideModalSchimbaCont: function () {
       const el = document.getElementById('modal-schimba-cont');

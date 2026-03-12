@@ -46,6 +46,15 @@ function schimbaViewLogistic(view, updateStore = true) {
         const el = document.getElementById('logistic-view-' + v);
         if (el) el.classList.toggle('hidden', v !== view);
     });
+    // Skeleton: loader rapid dacă datele nu sunt disponibile încă
+    if (view === 'comenzi' && typeof showSkeletonLoader === 'function') {
+        const ct = document.getElementById('logistic-comenzi-list');
+        if (ct && (window.ZFlowStore?.dateComenziTransport || []).length === 0) showSkeletonLoader(ct, 4, 'client');
+    }
+    if (view === 'soferi' && typeof showSkeletonLoader === 'function') {
+        const ct = document.getElementById('logistic-soferi-list');
+        if (ct && (window.ZFlowStore?.dateSoferi || []).length === 0) showSkeletonLoader(ct, 4, 'client');
+    }
     document.querySelectorAll('.logistic-pill').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.view === view);
     });
@@ -127,7 +136,7 @@ function renderComenziTransport() {
               </div>
               <div class="flex flex-col items-end gap-1.5 flex-shrink-0">
                 <span class="text-[9px] font-black uppercase px-2.5 py-1 rounded-full ${stCls}">${c.status || 'Draft'}</span>
-                <span class="text-[10px] text-slate-400">${c.data_plecare ? new Date(c.data_plecare).toLocaleDateString('ro-RO') : '—'}</span>
+                <span class="text-[10px] text-slate-400">${c.data_plecare ? (typeof formateazaDataZFlow === 'function' ? formateazaDataZFlow(c.data_plecare) : new Date(c.data_plecare).toLocaleDateString('ro-RO')) : '—'}</span>
                 <div class="flex gap-1 mt-1">
                   <button onclick="event.stopPropagation(); deschideModalComandaTransport('${c.id}')" title="Editează comandă"
                       class="w-7 h-7 flex items-center justify-center rounded-xl bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-500 transition-all border border-blue-100 hover:border-blue-600" data-permission="edit">

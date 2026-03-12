@@ -77,6 +77,7 @@ const ZFlowExport = {
             head: [['Nr. Factură', 'Client/Furnizor', 'Emitere', 'Scadență', 'Sumă', 'Status']],
             body: tableData,
             theme: 'striped',
+            margin: { left: 10, right: 10 },
             headStyles: {
                 fillColor: [30, 58, 138],
                 textColor: 255,
@@ -84,11 +85,16 @@ const ZFlowExport = {
             },
             styles: {
                 fontSize: 8,
-                cellPadding: 2
+                cellPadding: 2,
+                overflow: 'linebreak'
             },
             columnStyles: {
-                4: { halign: 'right' },
-                5: { halign: 'center' }
+                0: { cellWidth: 22 },
+                1: { cellWidth: 58 },
+                2: { cellWidth: 22 },
+                3: { cellWidth: 22 },
+                4: { cellWidth: 30, halign: 'right' },
+                5: { cellWidth: 26, halign: 'center' }
             }
         });
         

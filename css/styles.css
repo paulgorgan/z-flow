@@ -2549,3 +2549,67 @@ input {
     text-overflow: ellipsis !important;
   }
 }
+
+/* ============================================================
+   DARK MODE — View-uri principale (R13 fix)
+   ============================================================ */
+
+/* Dashboard home */
+.dark #home {
+  background-color: #0f172a !important;
+}
+.dark #home .bg-white {
+  background-color: #1e293b !important;
+}
+
+/* View Clienți (firme) */
+.dark #view-firme {
+  background-color: #0f172a !important;
+}
+
+/* View Furnizori */
+.dark #view-furnizori {
+  background-color: #0f172a !important;
+}
+
+/* View Analiză BI */
+.dark #view-analiza {
+  background-color: #0f172a !important;
+}
+.dark #view-analiza .bg-white {
+  background-color: #1e293b !important;
+}
+
+/* KPI totale pe dashboard */
+.dark #total-general,
+.dark #total-general-platit {
+  color: #93c5fd !important;
+}
+
+/* Tab-uri depozit/logistic/financiar în dark */
+.dark #tab-depozit,
+.dark #tab-logistic,
+.dark #tab-financiar {
+  background-color: #0f172a !important;
+}
+
+/* Fundal general pentru toate tab-urile principale */
+.dark [id^="tab-"] {
+  background-color: #0f172a !important;
+}
+
+/* ============================================================
+   DARK MODE — Swipe Actions (R13 mobile fix)
+   ============================================================ */
+.dark .swipe-action-left {
+  background: linear-gradient(to right, #7f1d1d, #991b1b) !important;
+}
+.dark .swipe-action-right {
+  background: linear-gradient(to left, #14532d, #166534) !important;
+}
+.dark .swipe-action-btn {
+  color: #f8fafc !important;
+}
+.dark .swipeable-card::after {
+  background: rgba(255, 255, 255, 0.03) !important;
+}

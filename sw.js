@@ -46,8 +46,8 @@ const STATIC_ASSETS = [
 const CDN_ASSETS = [
   'https://cdn.tailwindcss.com',
   'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js',
-  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.min.js',
-  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
+  'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js',
+  'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css',
   'https://unpkg.com/html5-qrcode@2.3.4/html5-qrcode.min.js',
   'https://unpkg.com/vue@3/dist/vue.global.prod.js',
   'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap'
@@ -189,7 +189,7 @@ async function syncPendingInvoices() {
       return;
   }
 
-  // Citeşte toate operațiile pendinte
+  // Citește toate operațiile pendinte
   const ops = await new Promise((res, rej) => {
       try {
           const tx = db.transaction('pending_ops', 'readonly');
@@ -200,7 +200,7 @@ async function syncPendingInvoices() {
   });
 
   if (ops.length === 0) {
-      console.log('SW: Nicio operație pendinтă');
+      console.log('SW: Nicio operație pendintă');
       db.close();
       return;
   }
@@ -232,7 +232,7 @@ async function syncPendingInvoices() {
 
   db.close();
   notify({ status: 'done', synced, failed });
-  console.log(`📤 SW: Sync complet — ${synced} reuşite, ${failed} eşuate`);
+  console.log(`📤 SW: Sync complet — ${synced} reușite, ${failed} eșuate`);
 }
 
 // [R4-FIX 2] Handler mesaje de la window client

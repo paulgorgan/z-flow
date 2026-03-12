@@ -89,7 +89,7 @@
     {
       "name": "Dashboard",
       "short_name": "Home",
-      "url": "/z-flow/index.html",
+      "url": "./index.html",
       "icons": [
         {
           "src": "icons/icon-96.png",
@@ -100,7 +100,7 @@
     {
       "name": "Clienți",
       "short_name": "Clienți",
-      "url": "/z-flow/index.html#financiar",
+      "url": "./index.html#financiar",
       "icons": [
         {
           "src": "icons/icon-96.png",

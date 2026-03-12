@@ -17,7 +17,7 @@ const KEY_Z = (
 );
 
 // Inițializăm clientul Supabase
-const zf = supabase.createClient('https://exrypxknksgrtrwnbtrl.supabase.co', 'sb_publishable_nKFEv_6AOyKBFp3f_AnZmw_MMZ9MXl5');
+const zf = supabase.createClient(URL_Z, KEY_Z);
 
 // ==========================================
 // RETRY — Exponential Backoff pentru erori de rețea
@@ -507,9 +507,14 @@ async function updateFactura(id, payload) {
  */
 async function deleteFactura(id) {
     if (_demoOps.isLocal()) { _demoOps.deleteFactura(id); return; }
-    const uid = _getCurrentUserId();
-    const { error } = await zf.from("facturi").delete().eq("id", id).eq('user_id', uid);
-    if (error) throw error;
+    try {
+        const uid = _getCurrentUserId();
+        const { error } = await zf.from("facturi").delete().eq("id", id).eq('user_id', uid);
+        if (error) throw error;
+    } catch (err) {
+        ZFlowLogger.error('facturi', 'deleteFactura failed: ' + (err.message || err));
+        throw err;
+    }
 }
 
 /**
@@ -555,9 +560,14 @@ async function updateClient(id, payload) {
  */
 async function deleteClient(id) {
     if (_demoOps.isLocal()) { _demoOps.deleteClient(id); return; }
-    const uid = _getCurrentUserId();
-    const { error } = await zf.from("clienti").delete().eq("id", id).eq('user_id', uid);
-    if (error) throw error;
+    try {
+        const uid = _getCurrentUserId();
+        const { error } = await zf.from("clienti").delete().eq("id", id).eq('user_id', uid);
+        if (error) throw error;
+    } catch (err) {
+        ZFlowLogger.error('clienti', 'deleteClient failed: ' + (err.message || err));
+        throw err;
+    }
 }
 
 /**
@@ -606,39 +616,52 @@ async function uploadFacturaPDF(file, numarFactura, idx = 0) {
  * Login cu email și parolă
  */
 async function signIn(email, password) {
-    const { data, error } = await zf.auth.signInWithPassword({
-        email: email,
-        password: password
-    });
-    
-    if (error) throw error;
-    return data;
+    try {
+        const { data, error } = await zf.auth.signInWithPassword({
+            email: email,
+            password: password
+        });
+        if (error) throw error;
+        return data;
+    } catch (err) {
+        ZFlowLogger.error('auth', 'signIn failed: ' + (err.message || err));
+        throw err;
+    }
 }
 
 /**
  * Înregistrare utilizator nou
  */
 async function signUp(email, password, metadata = {}) {
-    const { data, error } = await zf.auth.signUp({
-        email: email,
-        password: password,
-        options: {
-            data: metadata
-        }
-    });
-    
-    if (error) throw error;
-    return data;
+    try {
+        const { data, error } = await zf.auth.signUp({
+            email: email,
+            password: password,
+            options: {
+                data: metadata
+            }
+        });
+        if (error) throw error;
+        return data;
+    } catch (err) {
+        ZFlowLogger.error('auth', 'signUp failed: ' + (err.message || err));
+        throw err;
+    }
 }
 
 /**
  * Deconectare
  */
 async function signOut() {
-    // [PERF-FIX] golește cache _restore la deconectare — sesiunea nouă va reîncărca din localStorage
-    _demoOps._restoreCache.clear();
-    const { error } = await zf.auth.signOut();
-    if (error) throw error;
+    try {
+        // [PERF-FIX] golește cache _restore la deconectare — sesiunea nouă va reîncărca din localStorage
+        _demoOps._restoreCache.clear();
+        const { error } = await zf.auth.signOut();
+        if (error) throw error;
+    } catch (err) {
+        ZFlowLogger.error('auth', 'signOut failed: ' + (err.message || err));
+        throw err;
+    }
 }
 
 /**
@@ -1140,8 +1163,10 @@ function initRealtimeSubscriptions() {
         .subscribe((status, err) => {
             if (status === 'SUBSCRIBED') {
                 ZFlowLogger.info('supabase', '[Realtime] Canal activ — schimbările din DB vor apărea în timp real');
-            } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+            } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
                 ZFlowLogger.error('supabase', '[Realtime] Eroare canal:', status, err?.message || '');
+            } else if (status === 'CLOSED') {
+                ZFlowLogger.info('supabase', '[Realtime] Canal închis (cleanup normal)');
             } else {
                 ZFlowLogger.info('supabase', '[Realtime] status:', status);
             }

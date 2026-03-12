@@ -79,7 +79,7 @@ function renderMain(lista = null) {
 
     container.innerHTML = paginatC
         .map((f) => {
-            const _esc = typeof escapeHTML === 'function' ? escapeHTML : (s => String(s||''));
+            const _esc = typeof escapeHTML === 'function' ? escapeHTML : (s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'));
             const sumaScadenta = (f.facturi || []).reduce((acc, fac) => {
                 if (fac.status_plata !== "Incasat" && fac.data_scadenta) {
                     const dScad = new Date(fac.data_scadenta);
@@ -159,7 +159,7 @@ const filtreazaListaFirmeDebounced = debounce(function () {
     if (q && filtrate.length === 0) {
         const container = document.getElementById("lista-firme-global");
         if (container) {
-            showEmptyState(container, "Niciun rezultat", `Nu am găsit clienți pentru „${(typeof escapeHTML==='function'?escapeHTML:s=>String(s||''))(q)}”. Verifică termenul de căutare.`, "search");
+            showEmptyState(container, "Niciun rezultat", `Nu am găsit clienți pentru „${(typeof escapeHTML==='function'?escapeHTML:s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'))(q)}”. Verifică termenul de căutare.`, "search");
         }
         return;
     }
@@ -211,7 +211,7 @@ function renderFurnizori(lista) {
     const paginatF = pagF.items;
 
     container.innerHTML = paginatF.map((f) => {
-        const _esc = typeof escapeHTML === 'function' ? escapeHTML : (s => String(s||''));
+        const _esc = typeof escapeHTML === 'function' ? escapeHTML : (s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'));
         const areRestante = f.sumaScadenta > 0;
         return `
 <div onclick="arataDetaliiFurnizor('${f.id}')" class="card-flow group flex flex-col p-5 mb-3 transition-all cursor-pointer relative overflow-hidden bg-white border border-slate-100 hover:border-red-200 hover:shadow-lg active:scale-[0.98]">
@@ -277,7 +277,7 @@ const filtreazaListaFurnizoriDebounced = debounce(function () {
     );
     if (q && filtrate.length === 0) {
         const container = document.getElementById("lista-furnizori-global");
-        if (container) showEmptyState(container, "Niciun rezultat", `Nu am găsit furnizori pentru „${(typeof escapeHTML==='function'?escapeHTML:s=>String(s||''))(q)}”.`, "search");
+        if (container) showEmptyState(container, "Niciun rezultat", `Nu am găsit furnizori pentru „${(typeof escapeHTML==='function'?escapeHTML:s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'))(q)}”.`, "search");
         return;
     }
     ZFlowStore.furnizoriCurrentPage = 1;
@@ -299,7 +299,7 @@ function arataDetaliiFurnizor(id) {
 
     const cardEl = document.getElementById("card-detaliu-furnizor");
     if (cardEl) {
-        const _esc = typeof escapeHTML === 'function' ? escapeHTML : (s => String(s||''));
+        const _esc = typeof escapeHTML === 'function' ? escapeHTML : (s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'));
         const sumaScadenta = furnizor.sumaScadenta || 0;
         cardEl.innerHTML = `
             <div class="flex justify-between items-start mb-4">
@@ -340,7 +340,7 @@ function arataDetaliiFurnizor(id) {
             .sort((a, b) => new Date(b.data_plata) - new Date(a.data_plata))
             .slice(0, 5);
 
-        const _esc = typeof escapeHTML === 'function' ? escapeHTML : (s => String(s||''));
+        const _esc = typeof escapeHTML === 'function' ? escapeHTML : (s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'));
         const timelineHtml = ultimelePlati.length > 0 ? ultimelePlati.map(fac => `
             <div class="flex items-center gap-3 py-2 border-b border-slate-100 last:border-0">
                 <div class="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
@@ -978,8 +978,8 @@ window.renderMainThrottled = renderMainThrottled;
 window.renderFurnizoriThrottled = renderFurnizoriThrottled;
 window._recomputeFurnizoriData = _recomputeFurnizoriData;
 window.renderMain = renderMain;
-window.filtreazaListaFirme = filtreazaListaFirme;
-window.arataDetalii = arataDetalii;
+// filtreazaListaFirme este definită în app.js și se setează pe window acolo
+// arataDetalii este definită în app.js și se setează pe window acolo (forward reference eliminată)
 window.renderFurnizori = renderFurnizori;
 window.filtreazaListaFurnizori = filtreazaListaFurnizori;
 window.arataDetaliiFurnizor = arataDetaliiFurnizor;
