@@ -2416,6 +2416,7 @@ function genereazaCardFactura(fac, client, azi) {
     const dScad = fac.data_scadenta ? new Date(fac.data_scadenta) : null;
     if (dScad) dScad.setHours(0, 0, 0, 0);
     const esteScadenta = !isIncasat && dScad && dScad < azi;
+    const esteIminent = !isIncasat && dScad && !esteScadenta && dScad >= azi && dScad <= new Date(+azi + 5*86400000);
     
     const f = client; // alias pentru compatibilitate cu codul vechi
 
@@ -2485,6 +2486,10 @@ function genereazaCardFactura(fac, client, azi) {
             <div class="flex items-center gap-2 bg-red-50 border border-red-100 rounded-xl px-3 py-2">
                 <svg class="w-3 h-3 text-red-500 flex-shrink-0 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg>
                 <span class="text-[9px] font-black text-red-600 uppercase animate-pulse">Scadență depășită — termen expirat</span>
+            </div>` : esteIminent ? `
+            <div class="flex items-center gap-2 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">
+                <svg class="w-3 h-3 text-amber-500 flex-shrink-0 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg>
+                <span class="text-[9px] font-black text-amber-600 uppercase animate-pulse">Scadent în ≤5 zile — urmărire necesară</span>
             </div>` : ''}
 
             ${fac.note ? `
@@ -4792,19 +4797,24 @@ async function importaDateSaga(tipImport = 'clienti') {
                             String(f.numar_factura||'').trim() === String(csvFact.nr_factura||'').trim()
                         );
                         if (existingFact) {
-                            // Factură existentă — verificăm dacă statusul s-a schimbat (ex. Neincasat→Incasat)
+                            // Factură existentă — verificăm dacă statusul sau nota s-a schimbat
                             const newStatus = _detectaStatusPlata(csvFact, isFurnizori);
                             const isPaidNow = isFurnizori ? (newStatus === 'Platit') : (newStatus === 'Incasat');
                             const wasUnpaid = isFurnizori
                                 ? (existingFact.status_plata !== 'Platit')
                                 : (existingFact.status_plata !== 'Incasat');
-                            if (isPaidNow && wasUnpaid) {
-                                // Status schimbat spre plătit → actualizare (incasare/plată din contabilitate)
+                            const newNote = (csvFact.descriere || '').trim();
+                            const noteChanged = newNote && newNote !== (existingFact.note || '').trim();
+                            if ((isPaidNow && wasUnpaid) || noteChanged) {
+                                // Status schimbat spre plătit SAU nota actualizată → upsert
                                 try {
+                                    const updatePayload = {};
+                                    if (isPaidNow && wasUnpaid) updatePayload.status_plata = newStatus;
+                                    if (noteChanged) updatePayload.note = newNote;
                                     if (isFurnizori) {
-                                        await ZFlowDB.updateFacturaPlatit(existingFact.id, { status_plata: newStatus });
+                                        await ZFlowDB.updateFacturaPlatit(existingFact.id, updatePayload);
                                     } else {
-                                        await ZFlowDB.updateFactura(existingFact.id, { status_plata: newStatus });
+                                        await ZFlowDB.updateFactura(existingFact.id, updatePayload);
                                     }
                                     actualizate++;
                                 } catch (updErr) {
