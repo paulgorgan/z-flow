@@ -6,6 +6,51 @@
 // Evită render-uri redundante cauzate de event-uri rapide (Realtime, CRUD)
 const _renderThrottle = { main: false, furnizori: false, facturi: false };
 
+// ── Helpers sortare după scadența cea mai apropiată de azi ────────────────────
+/** Parsare sigură dată în financiar.js (ISO YYYY-MM-DD și DD/MM/YY) */
+function _parseDateFin(s) {
+    if (!s) return null;
+    if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
+        const d = new Date(s + (s.length === 10 ? 'T12:00:00' : ''));
+        return isNaN(d) ? null : d;
+    }
+    if (s.includes('/')) {
+        const p = s.split('/');
+        if (p.length === 3) {
+            let y = parseInt(p[2], 10); if (y < 100) y += 2000;
+            const d = new Date(y, parseInt(p[1], 10) - 1, parseInt(p[0], 10), 12);
+            return isNaN(d) ? null : d;
+        }
+    }
+    return null;
+}
+/** Distanța în zile față de azi (absolut) */
+function _dueDistanceFin(s, azi) {
+    const d = _parseDateFin(s);
+    if (!d) return 9999;
+    d.setHours(0, 0, 0, 0);
+    return Math.abs(d - azi) / 86400000;
+}
+/** Scadența deschisă cu distanța minimă față de azi pentru o entitate */
+function _closestOpenDueForEntity(facturi, paidStatus, azi) {
+    let minDist = Infinity;
+    for (const f of (facturi || [])) {
+        if (f.status_plata === paidStatus) continue;
+        const dist = _dueDistanceFin(f.data_scadenta, azi);
+        if (dist < minDist) minDist = dist;
+    }
+    return minDist;
+}
+/** Comparator: facturi neachitate cu scadența cea mai apropiată de azi prime; achitate ultimele */
+function _sortFacturiDueClosestFin(a, b, azi, paidStatus) {
+    const aPlata = a.status_plata === paidStatus;
+    const bPlata = b.status_plata === paidStatus;
+    if (aPlata && !bPlata) return 1;
+    if (!aPlata && bPlata) return -1;
+    return _dueDistanceFin(a.data_scadenta, azi) - _dueDistanceFin(b.data_scadenta, azi);
+}
+
+
 function renderMainThrottled() {
     if (_renderThrottle.main) return; // render deja programat pentru acest frame
     _renderThrottle.main = true;
@@ -62,21 +107,28 @@ function renderMain(lista = null) {
     const azi = new Date();
     azi.setHours(0, 0, 0, 0);
 
-    // Sortare: Facturile depășite primele
+    // Sortare: entitățile cu scadența cea mai apropiată de azi primele
     sursa.sort((a, b) => {
-        const aRestant = (a.facturi || []).some(
-            (f) =>
-                f.status_plata !== "Incasat" &&
-                f.data_scadenta &&
-                new Date(f.data_scadenta).setHours(0, 0, 0, 0) < azi
-        );
-        const bRestant = (b.facturi || []).some(
-            (f) =>
-                f.status_plata !== "Incasat" &&
-                f.data_scadenta &&
-                new Date(f.data_scadenta).setHours(0, 0, 0, 0) < azi
-        );
-        return bRestant - aRestant;
+        const distA = _closestOpenDueForEntity(a.facturi, 'Incasat', azi);
+        const distB = _closestOpenDueForEntity(b.facturi, 'Incasat', azi);
+        if (distA !== distB) return distA - distB;
+        // Secundar: sold restant descrescător
+        const aScad = (a.facturi || []).reduce((acc, f) => {
+            if (f.status_plata !== 'Incasat' && f.data_scadenta) {
+                const d = new Date(f.data_scadenta); d.setHours(0,0,0,0);
+                if (d < azi) acc += Number(f.valoare) || 0;
+            }
+            return acc;
+        }, 0);
+        const bScad = (b.facturi || []).reduce((acc, f) => {
+            if (f.status_plata !== 'Incasat' && f.data_scadenta) {
+                const d = new Date(f.data_scadenta); d.setHours(0,0,0,0);
+                if (d < azi) acc += Number(f.valoare) || 0;
+            }
+            return acc;
+        }, 0);
+        if (bScad !== aScad) return bScad - aScad;
+        return (b.sold || 0) - (a.sold || 0);
     });
 
     // Paginare clienți
@@ -250,17 +302,14 @@ function renderFurnizori(lista) {
     const azi = new Date();
     azi.setHours(0, 0, 0, 0);
 
-    // Sortare: restanțele primele
+    // Sortare: entitățile cu scadența cea mai apropiată de azi primele
     sursa.sort((a, b) => {
-        const aRestant = (a.facturi || []).some(
-            (f) => f.status_plata !== "Platit" && f.data_scadenta &&
-                new Date(f.data_scadenta).setHours(0, 0, 0, 0) < azi
-        );
-        const bRestant = (b.facturi || []).some(
-            (f) => f.status_plata !== "Platit" && f.data_scadenta &&
-                new Date(f.data_scadenta).setHours(0, 0, 0, 0) < azi
-        );
-        return bRestant - aRestant;
+        const distA = _closestOpenDueForEntity(a.facturi, 'Platit', azi);
+        const distB = _closestOpenDueForEntity(b.facturi, 'Platit', azi);
+        if (distA !== distB) return distA - distB;
+        // Secundar: sumaScadenta descrescătoare
+        if ((b.sumaScadenta || 0) !== (a.sumaScadenta || 0)) return (b.sumaScadenta || 0) - (a.sumaScadenta || 0);
+        return (b.sold || 0) - (a.sold || 0);
     });
 
     // Paginare furnizori
@@ -495,11 +544,8 @@ function arataDetaliiFurnizor(id) {
             showEmptyState(listaEl, "Nicio factură", "Adaugă prima factură de plătit pentru acest furnizor", "period");
         } else {
             const perPage = ZFlowStore.furnizoriFacturiPerPage || 20;
-            const sorted = toateFacturi.sort((a, b) => {
-                if (a.status_plata === "Platit" && b.status_plata !== "Platit") return 1;
-                if (b.status_plata === "Platit" && a.status_plata !== "Platit") return -1;
-                return 0;
-            });
+            // Sortare: scadența cea mai apropiată de azi prima; plătite ultimele
+            const sorted = [...toateFacturi].sort((a, b) => _sortFacturiDueClosestFin(a, b, azi, 'Platit'));
             const facturi = perPage === 0 ? sorted : sorted.slice(0, perPage);
             listaEl.innerHTML = `
             <div class="flex items-center gap-2 px-1 mb-2">

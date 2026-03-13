@@ -1666,7 +1666,7 @@ function schimbaTab(id, btn) {
         }
     }
 
-    if (id === "home") incarcaDashboard();
+    if (id === "home") { _dashboardHash = null; incarcaDashboard(); }
 
     ZFlowStore.currentTab = id;
 }
@@ -1898,9 +1898,15 @@ let _dashboardHash = null;
 function _getDashboardHash() {
     const fi = ZFlowStore.dateFacturiBI || [];
     const fp = ZFlowStore.dateFacturiPlatit || [];
+    const dl = ZFlowStore.dateLocal || [];
+    const df = ZFlowStore.dateFurnizori || [];
     const sumFi = fi.reduce((s, f) => s + (Number(f.valoare) || 0), 0);
     const sumFp = fp.reduce((s, f) => s + (Number(f.valoare) || 0), 0);
-    return `${fi.length}|${fp.length}|${sumFi | 0}|${sumFp | 0}|${new Date().toDateString()}`;
+    const neincasatFi = fi.filter(f => f.status_plata !== 'Incasat').length;
+    const neplatitFp  = fp.filter(f => f.status_plata !== 'Platit').length;
+    const restCli  = dl.filter(c => (c.facturi || []).some(f => f.status_plata !== 'Incasat' && f.data_scadenta)).length;
+    const restFurn = df.filter(f => (f.sumaScadenta || 0) > 0).length;
+    return `${fi.length}|${fp.length}|${sumFi | 0}|${sumFp | 0}|${neincasatFi}|${neplatitFp}|${restCli}|${restFurn}|${new Date().toDateString()}`;
 }
 
 /**
@@ -2008,25 +2014,41 @@ function incarcaDashboard() {
         if (_planBadge) _planBadge.classList.add('hidden');
     }
 
-    // Alerte: facturi scadente sau depășite
-    const scadenteClient = facturiIncasat.filter(f => {
-        if (f.status_plata === "Incasat" || !f.data_scadenta) return false;
-        const d = new Date(f.data_scadenta); d.setHours(0,0,0,0);
-        return d <= azi;
-    });
-    const scadenteFurnizor = facturiPlatit.filter(f => {
-        if (f.status_plata === "Platit" || !f.data_scadenta) return false;
-        const d = new Date(f.data_scadenta); d.setHours(0,0,0,0);
-        return d <= azi;
-    });
+    // Alerte din CLIENTI și FURNIZORI — sursă: ZFlowStore.dateLocal / dateFurnizori (entități cu facturi scadente)
+    const _parseScad = (s) => {
+        if (!s) return null;
+        if (/^\d{4}-\d{2}-\d{2}/.test(s)) { const d = new Date(s); d.setHours(0,0,0,0); return isNaN(d)?null:d; }
+        if (s.includes('/')) {
+            const p = s.split('/'); if (p.length !== 3) return null;
+            let y = parseInt(p[2],10); if (y < 100) y += 2000;
+            const d = new Date(y, parseInt(p[1],10)-1, parseInt(p[0],10)); d.setHours(0,0,0,0);
+            return isNaN(d)?null:d;
+        }
+        return null;
+    };
+    // Clienți cu cel puțin o factură neîncasată cu scadența <= azi
+    const clientiRestanti = (ZFlowStore.dateLocal || []).filter(cli =>
+        (cli.facturi || []).some(f => {
+            if (f.status_plata === 'Incasat') return false;
+            const d = _parseScad(f.data_scadenta); return d && d <= azi;
+        })
+    );
+    const totalScadenteClientVal = clientiRestanti.reduce((s, cli) =>
+        s + (cli.facturi || []).reduce((acc, f) => {
+            if (f.status_plata === 'Incasat') return acc;
+            const d = _parseScad(f.data_scadenta); if (!d || d > azi) return acc;
+            return acc + (Number(f.valoare) || 0);
+        }, 0)
+    , 0);
+    // Furnizori cu sumaScadenta > 0 (calculat în _recomputeFurnizoriData)
+    const furnizoriRestanti = (ZFlowStore.dateFurnizori || []).filter(furn => (furn.sumaScadenta || 0) > 0);
+    const totalScadenteFurnizorVal = furnizoriRestanti.reduce((s, f) => s + (f.sumaScadenta || 0), 0);
 
     const alerteContainer = document.getElementById("home-alerte");
     const alerteList     = document.getElementById("home-alerte-list");
     if (alerteContainer && alerteList) {
-        const nrAlerte = scadenteClient.length + scadenteFurnizor.length;
+        const nrAlerte = clientiRestanti.length + furnizoriRestanti.length;
         if (nrAlerte > 0) {
-            const totalScadenteClientVal = scadenteClient.reduce((s, f) => s + (Number(f.valoare) || 0), 0);
-            const totalScadenteFurnizorVal = scadenteFurnizor.reduce((s, f) => s + (Number(f.valoare) || 0), 0);
             const totalVal = totalScadenteClientVal + totalScadenteFurnizorVal;
             alerteContainer.classList.remove("hidden");
             alerteList.innerHTML = `
@@ -2042,14 +2064,14 @@ function incarcaDashboard() {
                     </span>
                   </div>
                   <div class="space-y-1.5">
-                    ${scadenteClient.length ? `
+                    ${clientiRestanti.length ? `
                     <div class="flex items-center justify-between bg-red-100/60 rounded-xl px-3 py-1.5">
-                        <p class="text-[10px] text-red-700 font-bold">${scadenteClient.length} factur${scadenteClient.length > 1 ? "i" : "ă"} de încasat depășit${scadenteClient.length > 1 ? "e" : "ă"}</p>
+                        <p class="text-[10px] text-red-700 font-bold">${clientiRestanti.length} client${clientiRestanti.length > 1 ? "i cu" : " cu"} scadențe depășite</p>
                         <p class="text-[11px] font-black text-red-700">${Math.round(totalScadenteClientVal).toLocaleString()} lei</p>
                     </div>` : ""}
-                    ${scadenteFurnizor.length ? `
+                    ${furnizoriRestanti.length ? `
                     <div class="flex items-center justify-between bg-red-100/60 rounded-xl px-3 py-1.5">
-                        <p class="text-[10px] text-red-700 font-bold">${scadenteFurnizor.length} factur${scadenteFurnizor.length > 1 ? "i" : "ă"} de plătit depășit${scadenteFurnizor.length > 1 ? "e" : "ă"}</p>
+                        <p class="text-[10px] text-red-700 font-bold">${furnizoriRestanti.length} furnizor${furnizoriRestanti.length > 1 ? "i cu" : " cu"} scadențe depășite</p>
                         <p class="text-[11px] font-black text-red-700">${Math.round(totalScadenteFurnizorVal).toLocaleString()} lei</p>
                     </div>` : ""}
                     <div class="flex items-center justify-between pt-1.5 border-t border-red-200/80 mt-0.5">
@@ -2404,6 +2426,40 @@ function filtreazaFirmeInCollapse(q) {
 // DETALII CLIENT & FACTURI
 // ==========================================
 
+// ── Helpers sortare facturi după scadența cea mai apropiată de azi ──────────────
+/** Parsare sigură dată: suportă YYYY-MM-DD (ISO) și DD/MM/YY sau DD/MM/YYYY */
+function _parseInvoiceDateSafe(s) {
+    if (!s) return null;
+    if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
+        const d = new Date(s + (s.length === 10 ? 'T12:00:00' : ''));
+        return isNaN(d) ? null : d;
+    }
+    if (s.includes('/')) {
+        const p = s.split('/');
+        if (p.length === 3) {
+            let y = parseInt(p[2], 10); if (y < 100) y += 2000;
+            const d = new Date(y, parseInt(p[1], 10) - 1, parseInt(p[0], 10), 12, 0, 0);
+            return isNaN(d) ? null : d;
+        }
+    }
+    return null;
+}
+/** Distanța în zile (valoare absolută) față de azi — folosit la sortare */
+function _dueDistanceDaysForSort(dateStr, azi) {
+    const d = _parseInvoiceDateSafe(dateStr);
+    if (!d) return 9999;
+    d.setHours(0, 0, 0, 0);
+    return Math.abs(d - azi) / 86400000;
+}
+/** Comparator: facturi neachitate cu scadența cea mai apropiată de azi prime; achitate ultimele */
+function _sortFacturiByDueClosest(a, b, azi, paidStatus) {
+    const aPlata = a.status_plata === paidStatus;
+    const bPlata = b.status_plata === paidStatus;
+    if (aPlata && !bPlata) return 1;
+    if (!aPlata && bPlata) return -1;
+    return _dueDistanceDaysForSort(a.data_scadenta, azi) - _dueDistanceDaysForSort(b.data_scadenta, azi);
+}
+
 /**
  * Generează HTML pentru un card de factură (cu suport swipe pe mobile)
  * @param {Object} fac - Obiectul facturii
@@ -2417,7 +2473,8 @@ function genereazaCardFactura(fac, client, azi) {
     if (dScad) dScad.setHours(0, 0, 0, 0);
     const esteScadenta = !isIncasat && dScad && dScad < azi;
     const esteIminent = !isIncasat && dScad && !esteScadenta && dScad >= azi && dScad <= new Date(+azi + 5*86400000);
-    
+    const serie = fac.serie || fac.serie_factura || '';
+
     const f = client; // alias pentru compatibilitate cu codul vechi
 
     const uitHtml = fac.numar_auto ? `
@@ -2456,7 +2513,7 @@ function genereazaCardFactura(fac, client, azi) {
             </button>
         </div>
         <!-- Card Content -->
-        <div class="swipe-content card-flow flex flex-col gap-3 p-4 bg-white border border-slate-100 rounded-2xl">
+        <div class="swipe-content card-flow flex flex-col gap-2 p-3 mb-2 ${isIncasat ? 'bg-white' : 'bg-red-50/40 border-red-100'} border rounded-2xl">
             <div class="grid grid-cols-2 gap-2">
                 <div class="flex items-center gap-2 ${fac.status_anaf === 'validated' ? 'bg-slate-50 border-slate-100' : 'bg-amber-50 border-amber-200 animate-pulse'} border px-2 py-2 rounded-xl">
                     <span class="flex h-2 w-2 relative">
@@ -2469,28 +2526,22 @@ function genereazaCardFactura(fac, client, azi) {
                 ${uitHtml}
             </div>
 
-            <div class="flex justify-between items-center py-1">
-                <div>
-                    <h4 class="font-black text-slate-800 text-[15px]">#${escapeHtml(fac.numar_factura) || 'N/A'}</h4>
-                    <p class="text-[10px] font-bold text-slate-400 uppercase">Emis: ${formateazaDataZFlow(fac.data_emiterii)}</p>
+            <!-- Info row — stil identic cu #lista-facturi-platit-detaliu > .flex.items-center.justify-between -->
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <span class="w-2 h-2 rounded-full flex-shrink-0 ${isIncasat ? 'bg-emerald-400' : esteScadenta ? 'bg-red-500' : esteIminent ? 'bg-amber-400' : 'bg-blue-400'}"></span>
+                    <div>
+                        <p class="text-[11px] font-black text-slate-800 uppercase">${serie ? escapeHtml(serie) + ' ' : ''}#${escapeHtml(fac.numar_factura) || '—'}</p>
+                        <p class="text-[8px] font-bold text-slate-400 uppercase">Emis: ${formateazaDataZFlow(fac.data_emiterii)}</p>
+                        <p class="text-[8px] font-bold ${esteScadenta ? 'text-red-400' : esteIminent ? 'text-amber-400' : 'text-slate-400'} uppercase">Scad: ${fac.data_scadenta ? formateazaDataZFlow(fac.data_scadenta) : '—'}</p>
+                        ${esteScadenta ? '<span class="inline-block mt-0.5 bg-red-100 text-red-600 text-[8px] font-black px-2 py-0.5 rounded-full uppercase animate-pulse">⚠ DEPĂȘIT</span>' : esteIminent ? '<span class="inline-block mt-0.5 bg-amber-100 text-amber-600 text-[8px] font-black px-2 py-0.5 rounded-full uppercase animate-pulse">⚡ IMINENT</span>' : ''}
+                    </div>
                 </div>
                 <div class="text-right">
-                    <p class="font-black ${esteScadenta ? 'text-red-600 animate-pulse' : 'text-blue-900'} text-[18px] leading-none tracking-tighter">
-                        ${Number(fac.valoare || 0).toLocaleString()} lei
-                    </p>
-                    <p class="text-[9px] font-black text-slate-300 uppercase mt-1">Scadență: ${formateazaDataZFlow(fac.data_scadenta)}</p>
+                    <b class="text-xs ${isIncasat ? 'text-blue-900' : esteScadenta ? 'text-red-600' : 'text-amber-600'}">${Number(fac.valoare || 0).toLocaleString()} lei</b>
+                    <p class="text-[7px] font-black uppercase ${isIncasat ? 'text-emerald-600' : esteScadenta ? 'text-red-500' : 'text-amber-500'}">${isIncasat ? 'ACHITAT' : esteScadenta ? 'RESTANT' : 'NEACHITAT'}</p>
                 </div>
             </div>
-
-            ${esteScadenta ? `
-            <div class="flex items-center gap-2 bg-red-50 border border-red-100 rounded-xl px-3 py-2">
-                <svg class="w-3 h-3 text-red-500 flex-shrink-0 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg>
-                <span class="text-[9px] font-black text-red-600 uppercase animate-pulse">Scadență depășită — termen expirat</span>
-            </div>` : esteIminent ? `
-            <div class="flex items-center gap-2 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">
-                <svg class="w-3 h-3 text-amber-500 flex-shrink-0 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg>
-                <span class="text-[9px] font-black text-amber-600 uppercase animate-pulse">Scadent în ≤5 zile — urmărire necesară</span>
-            </div>` : ''}
 
             ${fac.note ? `
             <div class="flex items-start gap-2 p-2.5 bg-amber-50 border border-amber-100 rounded-xl">
@@ -2696,21 +2747,8 @@ function arataDetalii(id) {
         return;
     }
 
-    // Sortare Facturi
-    const facturiSortate = [...f.facturi].sort((a, b) => {
-        const aScad = a.data_scadenta ? new Date(a.data_scadenta).setHours(0, 0, 0, 0) : null;
-        const bScad = b.data_scadenta ? new Date(b.data_scadenta).setHours(0, 0, 0, 0) : null;
-        const aDepas = a.status_plata !== "Incasat" && aScad && aScad < azi ? 1 : 0;
-        const bDepas = b.status_plata !== "Incasat" && bScad && bScad < azi ? 1 : 0;
-
-        const aPriority = aDepas ? 3 : (a.status_plata !== "Incasat" ? 2 : 1);
-        const bPriority = bDepas ? 3 : (b.status_plata !== "Incasat" ? 2 : 1);
-
-        if (aPriority !== bPriority) return bPriority - aPriority;
-        if (aScad && bScad && (aDepas || bDepas)) return aScad - bScad;
-        if (aScad && bScad) return aScad - bScad;
-        return 0;
-    });
+    // Sortare Facturi — scadența cea mai apropiată de azi prima; achitate ultimele
+    const facturiSortate = [...f.facturi].sort((a, b) => _sortFacturiByDueClosest(a, b, azi, 'Incasat'));
 
     // Generare HTML Facturi - cu Lazy Loading (#6 TODO)
     // Salvăm facturile sortate pentru Load More
@@ -6626,7 +6664,38 @@ function exportaCSV(tip) {
                 f.note || ''
             ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(',');
         });
-        csv = BOM + [headers.join(','), ...lines].join('\n');
+
+        // Secțiune secundară: facturi de încasat cu scadența în ultimele 30 zile
+        const azi30 = new Date(); azi30.setHours(23, 59, 59, 999);
+        const start30 = new Date(); start30.setDate(start30.getDate() - 29); start30.setHours(0, 0, 0, 0);
+        const facturiIncasare30 = rows.filter(f => {
+            if (f.status_plata === 'Incasat') return false;
+            const d = _parseInvoiceDateSafe(f.data_scadenta || f.data_emiterii);
+            return d && d >= start30 && d <= azi30;
+        });
+        const lines30 = facturiIncasare30.map(f => {
+            const client = ZFlowStore.dateLocal.find(c => String(c.id) === String(f.client_id));
+            return [
+                f.numar_factura || '',
+                client?.nume_firma || '',
+                client?.cui || '',
+                Number(f.valoare || 0),
+                f.data_emiterii || '',
+                f.data_scadenta || '',
+                f.status_plata || '',
+                f.numar_auto || '',
+                f.note || ''
+            ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(',');
+        });
+
+        csv = BOM + [
+            headers.join(','),
+            ...lines,
+            '',
+            '"Facturi clienti de incasat in ultimele 30 zile"',
+            headers.join(','),
+            ...lines30
+        ].join('\n');
         numeFile = `zflow_facturi_clienti_${new Date().toISOString().split('T')[0]}.csv`;
 
     } else if (tip === 'facturi_platit') {
