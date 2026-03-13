@@ -4675,6 +4675,8 @@ async function importaDateSaga(tipImport = 'clienti') {
                 const isFurnizori = tipImport === 'furnizori';
                 const tipLabel = isFurnizori ? 'Furnizori' : 'Clienți';
                 let importate = 0;
+                let actualizate = 0;      // facturi existente cu status actualizat (ex. Neincasat→Incasat)
+                let duplicateSilent = 0;  // facturi existente fără nicio modificare — skip silențios
                 let clientiNoi = 0;
                 const erori = [];
 
@@ -4768,11 +4770,35 @@ async function importaDateSaga(tipImport = 'clienti') {
                         }
 
                         const _dupArray = isFurnizori ? (ZFlowStore.dateFacturiPlatit||[]) : (ZFlowStore.dateFacturiBI||[]);
-                        const dupCheck = _dupArray.find(f =>
+                        const existingFact = _dupArray.find(f =>
                             String(f[idField]||'') === String(realEntityId) &&
                             String(f.numar_factura||'').trim() === String(csvFact.nr_factura||'').trim()
                         );
-                        if (dupCheck) { erori.push(`Duplicat: ${csvFact.nr_factura}`); continue; }
+                        if (existingFact) {
+                            // Factură existentă — verificăm dacă statusul s-a schimbat (ex. Neincasat→Incasat)
+                            const newStatus = _detectaStatusPlata(csvFact, isFurnizori);
+                            const isPaidNow = isFurnizori ? (newStatus === 'Platit') : (newStatus === 'Incasat');
+                            const wasUnpaid = isFurnizori
+                                ? (existingFact.status_plata !== 'Platit')
+                                : (existingFact.status_plata !== 'Incasat');
+                            if (isPaidNow && wasUnpaid) {
+                                // Status schimbat spre plătit → actualizare (incasare/plată din contabilitate)
+                                try {
+                                    if (isFurnizori) {
+                                        await ZFlowDB.updateFacturaPlatit(existingFact.id, { status_plata: newStatus });
+                                    } else {
+                                        await ZFlowDB.updateFactura(existingFact.id, { status_plata: newStatus });
+                                    }
+                                    actualizate++;
+                                } catch (updErr) {
+                                    erori.push(`Eroare actualizare ${csvFact.nr_factura}: ${updErr.message}`);
+                                }
+                            } else {
+                                // Datele identice → duplicat silențios, NU adaugăm în erori
+                                duplicateSilent++;
+                            }
+                            continue; // factură existentă procesată, trecem la următoarea
+                        }
 
                         try {
                             if (isFurnizori) {
@@ -4840,10 +4866,12 @@ async function importaDateSaga(tipImport = 'clienti') {
                 const duplicates = erori.filter(e => e.startsWith('Duplicat')).length;
                 const entitatiLabel = isFurnizori ? 'furnizori' : 'clienți';
                 let mesaj = `Import ${tipLabel}: ${importate} facturi noi`;
+                if (actualizate > 0) mesaj += `, ${actualizate} actualizate`;
                 if (clientiNoi > 0) mesaj += `, ${clientiNoi} ${entitatiLabel} noi`;
-                if (duplicates > 0) mesaj += ` (${duplicates} duplicate ignorate)`;
+                if (duplicateSilent > 0) mesaj += ` (${duplicateSilent} duplicate ignorate)`;
+                else if (duplicates > 0) mesaj += ` (${duplicates} duplicate ignorate)`;
 
-                if (importate > 0 || clientiNoi > 0) {
+                if (importate > 0 || actualizate > 0 || clientiNoi > 0) {
                     showNotification(mesaj, 'success');
                     // Reîncarcă store din Supabase fără reinit complet (evită pierderea datelor)
                     try {
@@ -4899,6 +4927,8 @@ async function importaDateSaga(tipImport = 'clienti') {
                         ZFlowLogger.error('app', '[Import] Eroare reîncărcare date:', refreshErr);
                         await init(false);
                     }
+                } else if (duplicateSilent > 0 && erori.length === 0) {
+                    showNotification(`Toate facturile există deja (${duplicateSilent} duplicate ignorate)`, 'warning');
                 } else if (duplicates === erori.length && erori.length > 0) {
                     showNotification(`Toate facturile există deja (${duplicates} duplicate)`, 'warning');
                 } else if (erori.length > 0) {

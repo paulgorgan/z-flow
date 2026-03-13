@@ -35,7 +35,51 @@ Datele sunt fictive și nu au legătură cu persoane sau entități reale.
 Același format ca `clienti_facturi.csv`, cu STATUS `Platit`/`Neplatit`.
 
 **Furnizori incluși:** MetalPrim, UniTrans, LuminaTech, PackSmart, CloudHost  
-**Facturi:** 12 total — mix de Platit (5) și Neplatit (7)
+**Facturi:** 18 total — mix de Platit (5) și Neplatit (13)
+
+---
+
+### 2b. `clienti_facturi_update.csv` ⬆️ UPDATE (ultimele 30 zile)
+**Modul:** Financiar → Import Facturi SAGA (Clienți) — **fișier de actualizare**
+
+Simulează un export din SAGA / WinMentor după 30 de zile de activitate.  
+Conține **3 tipuri de rânduri** pentru testarea logicii de import inteligent:
+
+| Tip rând | Comportament așteptat |
+|----------|----------------------|
+| Invoice existent, **status schimbat** (Neincasat → Incasat) | **UPDATE** — actualizează statusul în Supabase |
+| Invoice **nou** (nr. factură inexistentă) | **INSERT** — adaugă în Supabase |
+| Invoice existent, **status identic** (Incasat→Incasat) | **SKIP silențios** — duplicat ignorat fără eroare |
+
+**Clienți incluși:** Nova Construct, Aura Digital, Helio Energy, Prodeco Food, Vega Retail, Transalpin Cargo, DataPoint Analytics  
+**Facturi:** 28 total — 9 actualizări status, 6 noi, 13 nemodificate
+
+**Incasări simulate (Neincasat → Incasat):**
+- NCF-2026-002, NCF-2026-003 (Nova Construct)
+- ADF-2026-002 (Aura Digital)
+- HEF-2026-002 (Helio Energy)
+- PFF-2026-002 (Prodeco Food)
+- VRF-2026-002, VRF-2026-003 (Vega Retail)
+- TAC-2026-002 (Transalpin Cargo)
+- DPA-2026-002, DPA-2026-003 (DataPoint Analytics)
+
+**Facturi noi (ultim 30 zile):** NCF-2026-005, ADF-2026-005, HEF-2026-005, TAC-2026-004, DPA-2026-005, VRF-2026-006
+
+---
+
+### 2c. `furnizori_facturi_update.csv` ⬆️ UPDATE (ultimele 30 zile)
+**Modul:** Financiar → Import Facturi SAGA (Furnizori) — **fișier de actualizare**
+
+Simulează export din SAGA după 30 de zile cu plăți efectuate.
+
+**Plăți simulate (Neplatit → Platit):**
+- MP-2026-F002, MP-2026-F003 (MetalPrim)
+- UT-2026-F002, UT-2026-F003 (UniTrans)
+- LT-2026-F002, LT-2026-F003 (LuminaTech)
+- PS-2026-F002 (PackSmart)
+- CH-2026-F003 (CloudHost)
+
+**Facturi noi (ultim 30 zile):** MP-2026-F005, UT-2026-F005, LT-2026-F005, PS-2026-F004, CH-2026-F004
 
 ---
 
