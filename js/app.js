@@ -638,14 +638,8 @@ function updateDashboardKPI() {
         if (f.status_plata === "Incasat") {
             totalIncasat += valoare;
         } else {
-            // Restante = neîncasate cu scadență DEPĂȘITĂ
-            if (f.data_scadenta) {
-                const dataScadenta = new Date(f.data_scadenta);
-                dataScadenta.setHours(0, 0, 0, 0);
-                if (dataScadenta < azi) {
-                    totalRestante += valoare;
-                }
-            }
+            // Neîncasat = TOATE facturile neachitate (similar cu FURNIZORI „Neplătit")
+            totalRestante += valoare;
         }
         
         // Facturat luna aceasta (după data emiterii)
@@ -2027,11 +2021,12 @@ function incarcaDashboard() {
     });
 
     const alerteContainer = document.getElementById("home-alerte");
-    if (alerteContainer) {
+    const alerteList     = document.getElementById("home-alerte-list");
+    if (alerteContainer && alerteList) {
         const nrAlerte = scadenteClient.length + scadenteFurnizor.length;
         if (nrAlerte > 0) {
             alerteContainer.classList.remove("hidden");
-            alerteContainer.innerHTML = `
+            alerteList.innerHTML = `
                 <button onclick="schimbaTab('financiar', document.getElementById('nav-btn-fin'))" class="w-full text-left bg-red-50 border border-red-200 rounded-2xl p-4 hover:bg-red-100 active:bg-red-200 transition-all">
                   <div class="flex items-center justify-between">
                     <p class="text-xs font-black text-red-700 uppercase flex items-center gap-1.5">
@@ -2050,6 +2045,7 @@ function incarcaDashboard() {
                 </button>`;
         } else {
             alerteContainer.classList.add("hidden");
+            alerteList.innerHTML = "";
         }
         // Badge pe butonul Financiar
         const badge = document.getElementById("nav-badge-financiar");

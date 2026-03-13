@@ -106,7 +106,7 @@ function renderMain(lista = null) {
         </div>
         <div class="text-right flex flex-col items-end">
             <p class="text-blue-900 font-black text-[20px] leading-none tracking-tighter">${Math.round(f.sold).toLocaleString()} <span class="text-[11px] font-bold">lei</span></p>
-            <p class="text-[9px] font-semibold text-slate-400 mt-1">Sold total</p>
+            <p class="text-[9px] font-semibold text-slate-400 mt-1">De încasat</p>
         </div>
     </div>
     ${areRestante ? `
@@ -139,6 +139,41 @@ function renderMain(lista = null) {
         .join("");
 
     _renderClientiPagination(sursa.length);
+
+    // Notificare scadențe restante afișată deasupra listei
+    const alertaFin = document.getElementById("fin-alerte-clienti");
+    if (alertaFin) {
+        const clientiRestanti = sursa.filter(f =>
+            (f.facturi || []).some(fac =>
+                fac.status_plata !== "Incasat" &&
+                fac.data_scadenta &&
+                new Date(fac.data_scadenta).setHours(0, 0, 0, 0) < azi
+            )
+        );
+        if (clientiRestanti.length > 0) {
+            const totalRestant = clientiRestanti.reduce((sum, f) =>
+                sum + (f.facturi || []).reduce((acc, fac) => {
+                    if (fac.status_plata !== "Incasat" && fac.data_scadenta) {
+                        const d = new Date(fac.data_scadenta); d.setHours(0, 0, 0, 0);
+                        if (d < azi) acc += Number(fac.valoare) || 0;
+                    }
+                    return acc;
+                }, 0)
+            , 0);
+            alertaFin.classList.remove("hidden");
+            alertaFin.innerHTML = `
+<div class="flex items-center justify-between bg-red-50 border border-red-200 rounded-2xl px-4 py-3 mb-1 animate-pulse">
+    <div class="flex items-center gap-2">
+        <svg class="w-4 h-4 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
+        <p class="text-[11px] font-bold text-red-700">${clientiRestanti.length} client${clientiRestanti.length > 1 ? "i cu" : " cu"} scadențe depășite</p>
+    </div>
+    <p class="text-[13px] font-black text-red-600 leading-none">${Math.round(totalRestant).toLocaleString()} lei</p>
+</div>`;
+        } else {
+            alertaFin.classList.add("hidden");
+            alertaFin.innerHTML = "";
+        }
+    }
 
     // Update Total Portofoliu
     const totalPort = ZFlowStore.dateLocal.reduce((acc, f) => acc + (Number(f.sold) || 0), 0);
@@ -263,6 +298,28 @@ function renderFurnizori(lista) {
     const totalEl = document.getElementById("total-general-platit");
     if (totalEl) totalEl.innerText = `${Math.round(totalPlatit).toLocaleString()} lei`;
     _renderFurnizoriPagination(sursa.length);
+
+    // Notificare scadențe restante afișată deasupra listei furnizori
+    const alertaFinF = document.getElementById("fin-alerte-furnizori");
+    if (alertaFinF) {
+        const furnizoriRestanti = sursa.filter(f => f.sumaScadenta > 0);
+        if (furnizoriRestanti.length > 0) {
+            const totalRestant = furnizoriRestanti.reduce((sum, f) => sum + (f.sumaScadenta || 0), 0);
+            alertaFinF.classList.remove("hidden");
+            alertaFinF.innerHTML = `
+<div class="flex items-center justify-between bg-red-50 border border-red-200 rounded-2xl px-4 py-3 mb-1 animate-pulse">
+    <div class="flex items-center gap-2">
+        <svg class="w-4 h-4 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
+        <p class="text-[11px] font-bold text-red-700">${furnizoriRestanti.length} furnizor${furnizoriRestanti.length > 1 ? "i cu" : " cu"} scadențe depășite</p>
+    </div>
+    <p class="text-[13px] font-black text-red-600 leading-none">${Math.round(totalRestant).toLocaleString()} lei</p>
+</div>`;
+        } else {
+            alertaFinF.classList.add("hidden");
+            alertaFinF.innerHTML = "";
+        }
+    }
+
     // Sync KPI restante/plătit
     updateFurnizoriKPI();
 }
