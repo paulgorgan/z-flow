@@ -97,7 +97,7 @@ function renderMain(lista = null) {
     <div class="flex-1 flex flex-col">
     <div class="flex justify-between items-start w-full">
         <div class="max-w-[60%]">
-            <h4 class="font-extrabold text-slate-800 text-[15px] leading-tight truncate tracking-tight">${_esc(f.nume_firma || f.cui)}</h4>
+            <h4 class="text-[15px] font-black text-slate-800 leading-tight truncate">${_esc(f.nume_firma || f.cui)}</h4>
             ${esteSiClientSiFurnizor(f.cui) ? '<span class="inline-block text-[7px] font-black uppercase px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 mt-0.5">Client + Furnizor</span>' : ''}
             <div class="flex items-center gap-1.5 mt-1.5">
                 <span class="w-2 h-2 rounded-full ${areRestante ? "bg-red-400" : "bg-emerald-400"}"></span>
@@ -219,7 +219,7 @@ function renderFurnizori(lista) {
     <div class="flex-1 flex flex-col">
     <div class="flex justify-between items-start w-full">
         <div class="max-w-[60%]">
-            <h4 class="font-extrabold text-slate-800 text-[15px] leading-tight truncate tracking-tight">${_esc(f.nume_firma || f.cui)}</h4>
+            <h4 class="text-[15px] font-black text-slate-800 leading-tight truncate">${_esc(f.nume_firma || f.cui)}</h4>
             ${esteSiClientSiFurnizor(f.cui) ? '<span class="inline-block text-[7px] font-black uppercase px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 mt-0.5">Client + Furnizor</span>' : ''}
             <div class="flex items-center gap-1.5 mt-1.5">
                 <span class="w-2 h-2 rounded-full ${areRestante ? "bg-red-400" : "bg-emerald-400"}"></span>

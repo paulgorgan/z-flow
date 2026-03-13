@@ -221,10 +221,10 @@ function renderProduse() {
               </div>
               <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-2">
-                  <p class="text-sm font-black text-slate-800 truncate">${p.nume}</p>
+                  <p class="text-[15px] font-black text-slate-800 truncate">${p.nume}</p>
                   ${p.sku ? `<span class="text-[9px] font-bold text-slate-400 uppercase bg-slate-100 px-1.5 py-0.5 rounded">${p.sku}</span>` : ''}
                 </div>
-                <p class="text-xs text-slate-400 font-semibold">${p.um || 'buc'} &middot; Stoc: <b class="text-slate-700">${stoc}</b> ${p.stoc_min ? `&middot; Min: ${p.stoc_min}` : ''}</p>
+                <p class="text-[10px] font-bold text-slate-400">${p.um || 'buc'} &middot; Stoc: <b class="text-slate-700">${stoc}</b> ${p.stoc_min ? `&middot; Min: ${p.stoc_min}` : ''}</p>
               </div>
               <div class="flex items-center gap-2">
                 <span class="text-[9px] font-black uppercase px-2 py-1 rounded-full ${stCls}">${stLabel}</span>

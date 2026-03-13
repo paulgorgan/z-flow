@@ -130,8 +130,8 @@ function renderComenziTransport() {
                 </svg>
               </div>
               <div class="flex-1 min-w-0">
-                <p class="text-sm font-black text-slate-800 truncate">${c.ruta_de || '—'} → ${c.ruta_la || '—'}</p>
-                <p class="text-xs text-slate-400 truncate">${cl?.nume_firma || 'Fără client'} &middot; ${sofer?.nume || 'Fără șofer'} &middot; ${veh?.nr_inmatriculare || 'Fără vehicul'}</p>
+                <p class="text-[15px] font-black text-slate-800 truncate">${c.ruta_de || '—'} → ${c.ruta_la || '—'}</p>
+                <p class="text-[10px] font-bold text-slate-400 truncate">${cl?.nume_firma || 'Fără client'} &middot; ${sofer?.nume || 'Fără șofer'} &middot; ${veh?.nr_inmatriculare || 'Fără vehicul'}</p>
                 ${c.tracking_code ? `<p class="text-[10px] font-mono text-blue-500 mt-0.5">${c.tracking_code}</p>` : ''}
               </div>
               <div class="flex flex-col items-end gap-1.5 flex-shrink-0">
@@ -197,8 +197,8 @@ function renderSoferi() {
           <span class="text-purple-700 font-black text-base">${(s.nume||'?').charAt(0).toUpperCase()}</span>
         </div>
         <div class="flex-1 min-w-0">
-          <p class="text-sm font-black text-slate-800 truncate">${s.nume || '—'}</p>
-          <p class="text-xs text-slate-400">${s.telefon || '—'} &middot; Permis: ${s.nr_permis || '—'}</p>
+          <p class="text-[15px] font-black text-slate-800 truncate">${s.nume || '—'}</p>
+          <p class="text-[10px] font-bold text-slate-400">${s.telefon || '—'} &middot; Permis: ${s.nr_permis || '—'}</p>
         </div>
         <div class="flex gap-1.5">
           <button onclick="deschideModalSofer('${s.id}')" class="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-blue-50 text-blue-500 transition-all" data-permission="edit">
@@ -261,8 +261,8 @@ function renderVehicule() {
           </svg>
         </div>
         <div class="flex-1 min-w-0">
-          <p class="text-sm font-black text-slate-800 font-mono">${v.nr_inmatriculare || '—'}</p>
-          <p class="text-xs text-slate-400">${v.marca||''} ${v.model||''} &middot; ${v.tip || 'Autovehicul'}</p>
+          <p class="text-[15px] font-black text-slate-800 font-mono truncate">${v.nr_inmatriculare || '—'}</p>
+          <p class="text-[10px] font-bold text-slate-400">${v.marca||''} ${v.model||''} &middot; ${v.tip || 'Autovehicul'}</p>
         </div>
         <div class="flex gap-1.5">
           <button onclick="trackeazaVehicul('${v.id}')" class="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-green-50 text-green-600 transition-all" title="Urmărire GPS pe hartă">
