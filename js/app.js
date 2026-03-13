@@ -2025,10 +2025,13 @@ function incarcaDashboard() {
     if (alerteContainer && alerteList) {
         const nrAlerte = scadenteClient.length + scadenteFurnizor.length;
         if (nrAlerte > 0) {
+            const totalScadenteClientVal = scadenteClient.reduce((s, f) => s + (Number(f.valoare) || 0), 0);
+            const totalScadenteFurnizorVal = scadenteFurnizor.reduce((s, f) => s + (Number(f.valoare) || 0), 0);
+            const totalVal = totalScadenteClientVal + totalScadenteFurnizorVal;
             alerteContainer.classList.remove("hidden");
             alerteList.innerHTML = `
                 <button onclick="schimbaTab('financiar', document.getElementById('nav-btn-fin'))" class="w-full text-left bg-red-50 border border-red-200 rounded-2xl p-4 hover:bg-red-100 active:bg-red-200 transition-all">
-                  <div class="flex items-center justify-between">
+                  <div class="flex items-center justify-between mb-2">
                     <p class="text-xs font-black text-red-700 uppercase flex items-center gap-1.5">
                       <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
                       Alerte scadențe
@@ -2038,9 +2041,21 @@ function incarcaDashboard() {
                       <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>
                     </span>
                   </div>
-                  <div class="mt-2 space-y-0.5">
-                    ${scadenteClient.length ? `<p class="text-[11px] text-red-600 font-semibold">${scadenteClient.length} factur${scadenteClient.length > 1 ? "i" : "ă"} de încasat depășit${scadenteClient.length > 1 ? "e" : "ă"}</p>` : ""}
-                    ${scadenteFurnizor.length ? `<p class="text-[11px] text-red-600 font-semibold">${scadenteFurnizor.length} factur${scadenteFurnizor.length > 1 ? "i" : "ă"} de plătit depășit${scadenteFurnizor.length > 1 ? "e" : "ă"}</p>` : ""}
+                  <div class="space-y-1.5">
+                    ${scadenteClient.length ? `
+                    <div class="flex items-center justify-between bg-red-100/60 rounded-xl px-3 py-1.5">
+                        <p class="text-[10px] text-red-700 font-bold">${scadenteClient.length} factur${scadenteClient.length > 1 ? "i" : "ă"} de încasat depășit${scadenteClient.length > 1 ? "e" : "ă"}</p>
+                        <p class="text-[11px] font-black text-red-700">${Math.round(totalScadenteClientVal).toLocaleString()} lei</p>
+                    </div>` : ""}
+                    ${scadenteFurnizor.length ? `
+                    <div class="flex items-center justify-between bg-red-100/60 rounded-xl px-3 py-1.5">
+                        <p class="text-[10px] text-red-700 font-bold">${scadenteFurnizor.length} factur${scadenteFurnizor.length > 1 ? "i" : "ă"} de plătit depășit${scadenteFurnizor.length > 1 ? "e" : "ă"}</p>
+                        <p class="text-[11px] font-black text-red-700">${Math.round(totalScadenteFurnizorVal).toLocaleString()} lei</p>
+                    </div>` : ""}
+                    <div class="flex items-center justify-between pt-1.5 border-t border-red-200/80 mt-0.5">
+                        <p class="text-[9px] font-bold text-red-500 uppercase">Total expus</p>
+                        <p class="text-[13px] font-black text-red-700">${Math.round(totalVal).toLocaleString()} lei</p>
+                    </div>
                   </div>
                 </button>`;
         } else {
@@ -2465,6 +2480,12 @@ function genereazaCardFactura(fac, client, azi) {
                     <p class="text-[9px] font-black text-slate-300 uppercase mt-1">Scadență: ${formateazaDataZFlow(fac.data_scadenta)}</p>
                 </div>
             </div>
+
+            ${esteScadenta ? `
+            <div class="flex items-center gap-2 bg-red-50 border border-red-100 rounded-xl px-3 py-2">
+                <svg class="w-3 h-3 text-red-500 flex-shrink-0 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg>
+                <span class="text-[9px] font-black text-red-600 uppercase animate-pulse">Scadență depășită — termen expirat</span>
+            </div>` : ''}
 
             ${fac.note ? `
             <div class="flex items-start gap-2 p-2.5 bg-amber-50 border border-amber-100 rounded-xl">

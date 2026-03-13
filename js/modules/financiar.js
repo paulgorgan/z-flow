@@ -22,6 +22,7 @@ function renderFurnizoriThrottled() {
 // Folosit după operații optimiste CRUD pe furnizori și facturi_platit
 function _recomputeFurnizoriData() {
     const azi = new Date(); azi.setHours(0, 0, 0, 0);
+    const limite5Zile = new Date(azi); limite5Zile.setDate(limite5Zile.getDate() + 5);
     ZFlowStore.dateFurnizori = (ZFlowStore.dateFurnizori || []).map(furn => { // [RISK-FIX 2]
         const fps = (ZFlowStore.dateFacturiPlatit || []).filter(fp2 => String(fp2.furnizor_id) === String(furn.id));
         const sold = fps.filter(fp2 => fp2.status_plata !== "Platit").reduce((s, fp2) => s + (Number(fp2.valoare) || 0), 0);
@@ -32,7 +33,14 @@ function _recomputeFurnizoriData() {
             }
             return acc;
         }, 0);
-        return { ...furn, facturi: fps, sold, sumaScadenta };
+        const sumaIminent5Zile = fps.reduce((acc, fac) => {
+            if (fac.status_plata !== "Platit" && fac.data_scadenta) {
+                const d = new Date(fac.data_scadenta); d.setHours(0, 0, 0, 0);
+                if (d >= azi && d <= limite5Zile) return acc + (Number(fac.valoare) || 0);
+            }
+            return acc;
+        }, 0);
+        return { ...furn, facturi: fps, sold, sumaScadenta, sumaIminent5Zile };
     });
 }
 
@@ -90,10 +98,19 @@ function renderMain(lista = null) {
             }, 0);
 
             const areRestante = sumaScadenta > 0;
+            const limite5Zile = new Date(azi); limite5Zile.setDate(limite5Zile.getDate() + 5);
+            const sumaIminent5Zile = (f.facturi || []).reduce((acc, fac) => {
+                if (fac.status_plata !== "Incasat" && fac.data_scadenta) {
+                    const d = new Date(fac.data_scadenta); d.setHours(0, 0, 0, 0);
+                    if (d >= azi && d <= limite5Zile) return acc + (Number(fac.valoare) || 0);
+                }
+                return acc;
+            }, 0);
+            const areIminent = sumaIminent5Zile > 0;
 
             return `
 <div onclick="arataDetalii('${f.id}')" class="card-flow group flex flex-col p-5 mb-3 transition-all cursor-pointer relative overflow-hidden bg-white border border-slate-100 hover:border-blue-200 hover:shadow-lg active:scale-[0.98]">
-    ${areRestante ? `<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-red-500 shadow-[2px_0_10px_rgba(239,68,68,0.3)]"></div>` : ""}
+    ${areRestante ? `<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-red-500 shadow-[2px_0_10px_rgba(239,68,68,0.3)]"></div>` : areIminent ? `<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-amber-400 shadow-[2px_0_10px_rgba(251,191,36,0.3)]"></div>` : ""}
     <div class="flex-1 flex flex-col">
     <div class="flex justify-between items-start w-full">
         <div class="max-w-[60%]">
@@ -107,6 +124,7 @@ function renderMain(lista = null) {
         <div class="text-right flex flex-col items-end">
             <p class="text-blue-900 font-black text-[20px] leading-none tracking-tighter">${Math.round(f.sold).toLocaleString()} <span class="text-[11px] font-bold">lei</span></p>
             <p class="text-[9px] font-semibold text-slate-400 mt-1">De încasat</p>
+            ${areIminent ? `<p class="text-[8px] font-black text-amber-500 animate-pulse mt-0.5">⚡ ${Math.round(sumaIminent5Zile).toLocaleString()} lei&nbsp;≤5&nbsp;zile</p>` : ''}
         </div>
     </div>
     ${areRestante ? `
@@ -116,6 +134,13 @@ function renderMain(lista = null) {
             <p class="text-[9px] font-bold text-red-500 uppercase">Scadență depășită</p>
         </div>
         <p class="text-red-600 font-black text-[13px] leading-none">${Math.round(sumaScadenta).toLocaleString()} lei</p>
+    </div>` : areIminent ? `
+    <div class="mt-3 py-2.5 px-3 bg-amber-50 rounded-xl border border-amber-100 flex justify-between items-center">
+        <div class="flex items-center gap-2">
+            <svg class="w-3.5 h-3.5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg>
+            <p class="text-[9px] font-bold text-amber-600 uppercase animate-pulse">Scadent în 5 zile</p>
+        </div>
+        <p class="text-amber-600 font-black text-[13px] leading-none">${Math.round(sumaIminent5Zile).toLocaleString()} lei</p>
     </div>` : ""}
     </div>
     <div class="flex gap-2 pt-4 mt-3">
@@ -248,22 +273,24 @@ function renderFurnizori(lista) {
     container.innerHTML = paginatF.map((f) => {
         const _esc = typeof escapeHTML === 'function' ? escapeHTML : (s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'));
         const areRestante = f.sumaScadenta > 0;
+        const areIminent = (f.sumaIminent5Zile || 0) > 0;
         return `
 <div onclick="arataDetaliiFurnizor('${f.id}')" class="card-flow group flex flex-col p-5 mb-3 transition-all cursor-pointer relative overflow-hidden bg-white border border-slate-100 hover:border-red-200 hover:shadow-lg active:scale-[0.98]">
-    ${areRestante ? `<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-red-500 shadow-[2px_0_10px_rgba(239,68,68,0.3)]"></div>` : ""}
+    ${areRestante ? `<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-red-500 shadow-[2px_0_10px_rgba(239,68,68,0.3)]"></div>` : areIminent ? `<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-amber-400 shadow-[2px_0_10px_rgba(251,191,36,0.3)]"></div>` : ""}
     <div class="flex-1 flex flex-col">
     <div class="flex justify-between items-start w-full">
         <div class="max-w-[60%]">
             <h4 class="text-[15px] font-black text-slate-800 leading-tight truncate">${_esc(f.nume_firma || f.cui)}</h4>
             ${esteSiClientSiFurnizor(f.cui) ? '<span class="inline-block text-[7px] font-black uppercase px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 mt-0.5">Client + Furnizor</span>' : ''}
             <div class="flex items-center gap-1.5 mt-1.5">
-                <span class="w-2 h-2 rounded-full ${areRestante ? "bg-red-400" : "bg-emerald-400"}"></span>
+                <span class="w-2 h-2 rounded-full ${areRestante ? "bg-red-400" : areIminent ? "bg-amber-400" : "bg-emerald-400"}"></span>
                 <p class="text-[10px] font-semibold text-slate-400">${_esc(f.oras || "—")}</p>
             </div>
         </div>
         <div class="text-right flex flex-col items-end">
             <p class="text-red-700 font-black text-[20px] leading-none tracking-tighter">${Math.round(f.sold).toLocaleString()} <span class="text-[11px] font-bold">lei</span></p>
             <p class="text-[9px] font-semibold text-slate-400 mt-1">De plătit</p>
+            ${areIminent ? `<p class="text-[8px] font-black text-amber-500 animate-pulse mt-0.5">⚡ ${Math.round(f.sumaIminent5Zile).toLocaleString()} lei&nbsp;≤5&nbsp;zile</p>` : ''}
         </div>
     </div>
     ${areRestante ? `
@@ -273,6 +300,13 @@ function renderFurnizori(lista) {
             <p class="text-[9px] font-bold text-red-500 uppercase">Scadență depășită</p>
         </div>
         <p class="text-red-600 font-black text-[13px] leading-none">${Math.round(f.sumaScadenta).toLocaleString()} lei</p>
+    </div>` : areIminent ? `
+    <div class="mt-3 py-2.5 px-3 bg-amber-50 rounded-xl border border-amber-100 flex justify-between items-center">
+        <div class="flex items-center gap-2">
+            <svg class="w-3.5 h-3.5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg>
+            <p class="text-[9px] font-bold text-amber-600 uppercase animate-pulse">Scadent în 5 zile</p>
+        </div>
+        <p class="text-amber-600 font-black text-[13px] leading-none">${Math.round(f.sumaIminent5Zile || 0).toLocaleString()} lei</p>
     </div>` : ""}
     </div>
     <div class="flex gap-2 pt-4 mt-3">
@@ -511,6 +545,7 @@ function arataDetaliiFurnizor(id) {
             <div>
                 <p class="text-[11px] font-black text-slate-800 uppercase">#${fac.numar_factura || "—"}${isImported ? ' <span class="text-[8px] font-bold text-slate-300 normal-case">SAGA</span>' : ''}</p>
                 <p class="text-[8px] font-bold text-slate-400 uppercase">E: ${formateazaDataZFlow(fac.data_emiterii)} | S: ${fac.data_scadenta ? formateazaDataZFlow(fac.data_scadenta) : "—"}</p>
+                ${isDepasit ? '<span class="inline-block mt-0.5 bg-red-100 text-red-600 text-[8px] font-black px-2 py-0.5 rounded-full uppercase animate-pulse">⚠ DEPĂȘIT</span>' : ''}
             </div>
         </div>
         <div class="flex items-center gap-3">
@@ -556,6 +591,7 @@ async function toggleStatusPlatit(id, statusCurent) {
         if (fp) { fp.status_plata = nouStatus; fp.data_plata = payload.data_plata; }
         // Recalculeaza dateFurnizori
         const azi = new Date(); azi.setHours(0, 0, 0, 0);
+        const limite5Zile = new Date(azi); limite5Zile.setDate(limite5Zile.getDate() + 5);
         ZFlowStore.dateFurnizori = ZFlowStore.dateFurnizori.map(furn => {
             const fps = ZFlowStore.dateFacturiPlatit.filter(fp2 => String(fp2.furnizor_id) === String(furn.id));
             const sold = fps.filter(fp2 => fp2.status_plata !== "Platit").reduce((s, fp2) => s + (Number(fp2.valoare) || 0), 0);
@@ -566,7 +602,14 @@ async function toggleStatusPlatit(id, statusCurent) {
                 }
                 return acc;
             }, 0);
-            return { ...furn, facturi: fps, sold, sumaScadenta };
+            const sumaIminent5Zile = fps.reduce((acc, fac) => {
+                if (fac.status_plata !== "Platit" && fac.data_scadenta) {
+                    const d = new Date(fac.data_scadenta); d.setHours(0,0,0,0);
+                    if (d >= azi && d <= limite5Zile) return acc + (Number(fac.valoare) || 0);
+                }
+                return acc;
+            }, 0);
+            return { ...furn, facturi: fps, sold, sumaScadenta, sumaIminent5Zile };
         });
         updateFurnizoriKPI();
         invalidateCashflowCache();
