@@ -66,16 +66,18 @@ function schimbaViewLogistic(view, updateStore = true) {
         // Un setTimeout scurt permite browser-ului să facă reflow înainte ca Leaflet
         // să măsoare dimensiunile containerului (#map are height: 320px în CSS).
         setTimeout(function () {
-            if (typeof window.initMap === 'function') {
-                if (!ZFlowStore.map) {
-                    window.initMap();            // prima inițializare — în container vizibil
-                } else {
-                    ZFlowStore.map.invalidateSize(); // harta există deja — recalculează dimensiunile
-                    if (typeof actualizaMarkerePeHarta === 'function') actualizaMarkerePeHarta();
+            requestAnimationFrame(function () {
+                if (typeof window.initMap === 'function') {
+                    if (!ZFlowStore.map) {
+                        window.initMap();            // prima inițializare — în container vizibil
+                    } else {
+                        ZFlowStore.map.invalidateSize(); // harta există deja — recalculează dimensiunile
+                        if (typeof actualizaMarkerePeHarta === 'function') actualizaMarkerePeHarta();
+                    }
                 }
-            }
-            if (typeof window.renderHartaVehicule === 'function') window.renderHartaVehicule();
-        }, 400); // 400ms: permite initLogistic() să termine fetch-urile + reflow înainte de markere
+                if (typeof window.renderHartaVehicule === 'function') window.renderHartaVehicule();
+            });
+        }, 400); // 400ms: permite initLogistic() să termine fetch-urile; rAF asigură reflow complet
     }
 }
 

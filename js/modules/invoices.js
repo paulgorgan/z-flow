@@ -160,7 +160,7 @@ const ZFlowInvoices = {
         azi.setHours(0, 0, 0, 0);
         
         facturi.forEach(f => {
-            const suma = parseFloat(f.suma) || 0;
+            const suma = parseFloat(f.valoare ?? f.suma) || 0;
             total += suma;
             
             if (f.status_plata === 'Incasat' || f.status_plata === 'Platit') {

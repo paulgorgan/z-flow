@@ -374,7 +374,7 @@ function _normalizeFacturi(arr) {
     // [R4-FIX 4] Alias-uri deprecate eliminate — toate modulele folosesc câmpurile canonice
     // Câmpuri canonice: numar_factura, valoare, data_emiterii
     if (!Array.isArray(arr)) return [];
-    return arr.map(f => ({
+    return arr.filter(f => f != null).map(f => ({
         ...f,
         // Normalizare defensivă: acceptă variante vechi din CSV/import dar nu le propagă
         numar_factura: f.numar_factura || f.nr_factura || '',
@@ -392,16 +392,21 @@ function _normalizeFacturi(arr) {
  * Încarcă toți clienții din baza de date
  */
 async function fetchClienti() {
-    if (_demoOps.isLocal()) {
-        _demoOps._restore('clienti', '_demoClienti');
-        return (window.ZFlowStore._demoClienti || []).map(c => ({...c}));
+    try {
+        if (_demoOps.isLocal()) {
+            _demoOps._restore('clienti', '_demoClienti');
+            return (window.ZFlowStore._demoClienti || []).map(c => ({...c}));
+        }
+        const uid = _getCurrentUserId();
+        return await withRetry(async () => {
+            const { data, error } = await zf.from("clienti").select("*").order("nume_firma").eq('user_id', uid);
+            if (error) throw error;
+            return data || [];
+        });
+    } catch (err) {
+        ZFlowLogger.error('supabase', '[fetchClienti] ' + (err.message || err));
+        throw err;
     }
-    const uid = _getCurrentUserId();
-    return withRetry(async () => {
-        const { data, error } = await zf.from("clienti").select("*").order("nume_firma").eq('user_id', uid);
-        if (error) throw error;
-        return data || [];
-    });
 }
 
 /**
@@ -411,16 +416,21 @@ async function fetchClienti() {
  * [QUALITY-FIX] Această funcție rămâne disponibilă pentru cazuri specifice (ex: export complet).
  */
 async function fetchFacturi() {
-    if (_demoOps.isLocal()) {
-        _demoOps._restore('facturi', '_demoFacturi');
-        return _normalizeFacturi(window.ZFlowStore._demoFacturi || []);
+    try {
+        if (_demoOps.isLocal()) {
+            _demoOps._restore('facturi', '_demoFacturi');
+            return _normalizeFacturi(window.ZFlowStore._demoFacturi || []);
+        }
+        const uid = _getCurrentUserId();
+        return await withRetry(async () => {
+            const { data, error } = await zf.from("facturi").select("*").order("created_at", { ascending: false }).eq('user_id', uid);
+            if (error) throw error;
+            return _normalizeFacturi(data || []);
+        });
+    } catch (err) {
+        ZFlowLogger.error('supabase', '[fetchFacturi] ' + (err.message || err));
+        throw err;
     }
-    const uid = _getCurrentUserId();
-    return withRetry(async () => {
-        const { data, error } = await zf.from("facturi").select("*").order("created_at", { ascending: false }).eq('user_id', uid);
-        if (error) throw error;
-        return _normalizeFacturi(data || []);
-    });
 }
 
 /**
@@ -432,23 +442,28 @@ async function fetchFacturi() {
  * @returns {Promise<{data: Array, count: number}>}
  */
 async function fetchFacturiPaginated(limit = 50, offset = 0, clientId = null) {
-    // Local check — admin și demo user folosesc stocul in-memory exclusiv, fără acces Supabase
-    if (_demoOps.isLocal()) {
-        const all = _normalizeFacturi(window.ZFlowStore._demoFacturi || []);
-        const filtered = clientId ? all.filter(f => String(f.client_id) === String(clientId)) : all;
-        return { data: filtered, count: filtered.length };
+    try {
+        // Local check — admin și demo user folosesc stocul in-memory exclusiv, fără acces Supabase
+        if (_demoOps.isLocal()) {
+            const all = _normalizeFacturi(window.ZFlowStore._demoFacturi || []);
+            const filtered = clientId ? all.filter(f => String(f.client_id) === String(clientId)) : all;
+            return { data: filtered, count: filtered.length };
+        }
+        const uid = _getCurrentUserId();
+        let query = zf
+            .from("facturi")
+            .select("*", { count: 'exact' })
+            .order("created_at", { ascending: false })
+            .range(offset, offset + limit - 1)
+            .eq('user_id', uid);
+        if (clientId) query = query.eq("client_id", clientId);
+        const { data, error, count } = await query;
+        if (error) throw error;
+        return { data: _normalizeFacturi(data || []), count: count || 0 };
+    } catch (err) {
+        ZFlowLogger.error('supabase', '[fetchFacturiPaginated] ' + (err.message || err));
+        throw err;
     }
-    const uid = _getCurrentUserId();
-    let query = zf
-        .from("facturi")
-        .select("*", { count: 'exact' })
-        .order("created_at", { ascending: false })
-        .range(offset, offset + limit - 1)
-        .eq('user_id', uid);
-    if (clientId) query = query.eq("client_id", clientId);
-    const { data, error, count } = await query;
-    if (error) throw error;
-    return { data: _normalizeFacturi(data || []), count: count || 0 };
 }
 
 /**
@@ -496,10 +511,15 @@ async function insertFactura(payload, strict = false) {
  * Actualizează o factură existentă
  */
 async function updateFactura(id, payload) {
-    if (_demoOps.isLocal()) { _demoOps.updateFactura(id, payload); return; }
-    const uid = _getCurrentUserId();
-    const { error } = await zf.from("facturi").update(payload).eq("id", id).eq('user_id', uid);
-    if (error) throw error;
+    try {
+        if (_demoOps.isLocal()) { _demoOps.updateFactura(id, payload); return; }
+        const uid = _getCurrentUserId();
+        const { error } = await zf.from("facturi").update(payload).eq("id", id).eq('user_id', uid);
+        if (error) throw new Error(error.message || 'Eroare actualizare factură');
+    } catch (err) {
+        ZFlowLogger.error('supabase', '[updateFactura] ' + (err.message || err));
+        throw err;
+    }
 }
 
 /**
@@ -549,10 +569,15 @@ async function insertClient(payload, strict = false) {
  * Actualizează un client existent
  */
 async function updateClient(id, payload) {
-    if (_demoOps.isLocal()) { _demoOps.updateClient(id, payload); return; }
-    const uid = _getCurrentUserId();
-    const { error } = await zf.from("clienti").update(payload).eq("id", id).eq('user_id', uid);
-    if (error) throw error;
+    try {
+        if (_demoOps.isLocal()) { _demoOps.updateClient(id, payload); return; }
+        const uid = _getCurrentUserId();
+        const { error } = await zf.from("clienti").update(payload).eq("id", id).eq('user_id', uid);
+        if (error) throw new Error(error.message || 'Eroare actualizare client');
+    } catch (err) {
+        ZFlowLogger.error('supabase', '[updateClient] ' + (err.message || err));
+        throw err;
+    }
 }
 
 /**
@@ -592,20 +617,22 @@ async function deletePDFFromStorage(publicUrl) {
  * Upload PDF factură în storage
  */
 async function uploadFacturaPDF(file, numarFactura, idx = 0) {
-    if (_demoOps.isLocal()) return _demoOps.uploadPDF(file); // admin & demo: mock URL    // idx garantează unicitate chiar dacă Date.now() returnează același ms pentru upload-uri rapide
-    const fileName = `${Date.now()}_${idx}_${numarFactura.replace(/\s+/g, "_")}.pdf`;
-    
-    const { data, error } = await zf.storage
-        .from("facturi-pdf")
-        .upload(fileName, file, { upsert: false });
-    
-    if (error) throw error;
-    
-    const { data: publicData } = zf.storage
-        .from("facturi-pdf")
-        .getPublicUrl(fileName);
-    
-    return publicData.publicUrl;
+    try {
+        if (_demoOps.isLocal()) return _demoOps.uploadPDF(file);
+        // idx garantează unicitate chiar dacă Date.now() returnează același ms pentru upload-uri rapide
+        const fileName = `${Date.now()}_${idx}_${numarFactura.replace(/\s+/g, "_")}.pdf`;
+        const { data, error } = await zf.storage
+            .from("facturi-pdf")
+            .upload(fileName, file, { upsert: false });
+        if (error) throw new Error(error.message || 'Eroare upload PDF');
+        const { data: publicData } = zf.storage
+            .from("facturi-pdf")
+            .getPublicUrl(fileName);
+        return publicData.publicUrl;
+    } catch (err) {
+        ZFlowLogger.error('supabase', '[uploadFacturaPDF] ' + (err.message || err));
+        throw err;
+    }
 }
 
 // ==========================================
@@ -668,18 +695,28 @@ async function signOut() {
  * Obține sesiunea curentă
  */
 async function getSession() {
-    const { data: { session }, error } = await zf.auth.getSession();
-    if (error) throw error;
-    return session;
+    try {
+        const { data: { session }, error } = await zf.auth.getSession();
+        if (error) throw error;
+        return session;
+    } catch (err) {
+        ZFlowLogger.error('supabase', '[getSession] ' + (err.message || err));
+        throw err;
+    }
 }
 
 /**
  * Obține utilizatorul curent
  */
 async function getCurrentUser() {
-    const { data: { user }, error } = await zf.auth.getUser();
-    if (error) throw error;
-    return user;
+    try {
+        const { data: { user }, error } = await zf.auth.getUser();
+        if (error) throw error;
+        return user;
+    } catch (err) {
+        ZFlowLogger.error('supabase', '[getCurrentUser] ' + (err.message || err));
+        throw err;
+    }
 }
 
 /**
@@ -767,16 +804,21 @@ async function upsertProfile(payload) {
  * Încarcă toți furnizorii din baza de date
  */
 async function fetchFurnizori() {
-    if (_demoOps.isLocal()) {
-        _demoOps._restore('furnizori', '_demoFurnizori');
-        return (window.ZFlowStore._demoFurnizori || []).map(f => ({...f}));
+    try {
+        if (_demoOps.isLocal()) {
+            _demoOps._restore('furnizori', '_demoFurnizori');
+            return (window.ZFlowStore._demoFurnizori || []).map(f => ({...f}));
+        }
+        const uid = _getCurrentUserId();
+        return await withRetry(async () => {
+            const { data, error } = await zf.from("furnizori").select("*").order("nume_firma").eq('user_id', uid);
+            if (error) throw error;
+            return data || [];
+        });
+    } catch (err) {
+        ZFlowLogger.error('supabase', '[fetchFurnizori] ' + (err.message || err));
+        throw err;
     }
-    const uid = _getCurrentUserId();
-    return withRetry(async () => {
-        const { data, error } = await zf.from("furnizori").select("*").order("nume_firma").eq('user_id', uid);
-        if (error) throw error;
-        return data || [];
-    });
 }
 
 /**
@@ -811,20 +853,30 @@ async function insertFurnizor(payload, strict = false) {
  * Actualizează un furnizor existent
  */
 async function updateFurnizor(id, payload) {
-    if (_demoOps.isLocal()) { _demoOps.updateFurnizor(id, payload); return; }
-    const uid = _getCurrentUserId();
-    const { error } = await zf.from("furnizori").update(payload).eq("id", id).eq('user_id', uid);
-    if (error) throw error;
+    try {
+        if (_demoOps.isLocal()) { _demoOps.updateFurnizor(id, payload); return; }
+        const uid = _getCurrentUserId();
+        const { error } = await zf.from("furnizori").update(payload).eq("id", id).eq('user_id', uid);
+        if (error) throw new Error(error.message || 'Eroare actualizare furnizor');
+    } catch (err) {
+        ZFlowLogger.error('supabase', '[updateFurnizor] ' + (err.message || err));
+        throw err;
+    }
 }
 
 /**
  * Șterge un furnizor
  */
 async function deleteFurnizor(id) {
-    if (_demoOps.isLocal()) { _demoOps.deleteFurnizor(id); return; }
-    const uid = _getCurrentUserId();
-    const { error } = await zf.from("furnizori").delete().eq("id", id).eq('user_id', uid);
-    if (error) throw error;
+    try {
+        if (_demoOps.isLocal()) { _demoOps.deleteFurnizor(id); return; }
+        const uid = _getCurrentUserId();
+        const { error } = await zf.from("furnizori").delete().eq("id", id).eq('user_id', uid);
+        if (error) throw new Error(error.message || 'Eroare ștergere furnizor');
+    } catch (err) {
+        ZFlowLogger.error('supabase', '[deleteFurnizor] ' + (err.message || err));
+        throw err;
+    }
 }
 
 // ==========================================
@@ -835,16 +887,21 @@ async function deleteFurnizor(id) {
  * Încarcă toate facturile de plătit
  */
 async function fetchFacturiPlatit() {
-    if (_demoOps.isLocal()) {
-        _demoOps._restore('facturi_platit', '_demoFacturiPlatit');
-        return _normalizeFacturi(window.ZFlowStore._demoFacturiPlatit || []);
+    try {
+        if (_demoOps.isLocal()) {
+            _demoOps._restore('facturi_platit', '_demoFacturiPlatit');
+            return _normalizeFacturi(window.ZFlowStore._demoFacturiPlatit || []);
+        }
+        const uid = _getCurrentUserId();
+        return await withRetry(async () => {
+            const { data, error } = await zf.from("facturi_platit").select("*").order("created_at", { ascending: false }).eq('user_id', uid);
+            if (error) throw error;
+            return _normalizeFacturi(data || []);
+        });
+    } catch (err) {
+        ZFlowLogger.error('supabase', '[fetchFacturiPlatit] ' + (err.message || err));
+        throw err;
     }
-    const uid = _getCurrentUserId();
-    return withRetry(async () => {
-        const { data, error } = await zf.from("facturi_platit").select("*").order("created_at", { ascending: false }).eq('user_id', uid);
-        if (error) throw error;
-        return _normalizeFacturi(data || []);
-    });
 }
 
 /**
@@ -872,30 +929,45 @@ async function insertFacturaPlatit(payload, strict = false) {
  * Actualizează o factură de plătit
  */
 async function updateFacturaPlatit(id, payload) {
-    if (_demoOps.isLocal()) { _demoOps.updateFacturaPlatit(id, payload); return; }
-    const uid = _getCurrentUserId();
-    const { error } = await zf.from("facturi_platit").update(payload).eq("id", id).eq('user_id', uid);
-    if (error) throw error;
+    try {
+        if (_demoOps.isLocal()) { _demoOps.updateFacturaPlatit(id, payload); return; }
+        const uid = _getCurrentUserId();
+        const { error } = await zf.from("facturi_platit").update(payload).eq("id", id).eq('user_id', uid);
+        if (error) throw new Error(error.message || 'Eroare actualizare factură furnizor');
+    } catch (err) {
+        ZFlowLogger.error('supabase', '[updateFacturaPlatit] ' + (err.message || err));
+        throw err;
+    }
 }
 
 /**
  * Șterge o factură de plătit
  */
 async function deleteFacturaPlatit(id) {
-    if (_demoOps.isLocal()) { _demoOps.deleteFacturaPlatit(id); return; }
-    const uid = _getCurrentUserId();
-    const { error } = await zf.from("facturi_platit").delete().eq("id", id).eq('user_id', uid);
-    if (error) throw error;
+    try {
+        if (_demoOps.isLocal()) { _demoOps.deleteFacturaPlatit(id); return; }
+        const uid = _getCurrentUserId();
+        const { error } = await zf.from("facturi_platit").delete().eq("id", id).eq('user_id', uid);
+        if (error) throw new Error(error.message || 'Eroare ștergere factură furnizor');
+    } catch (err) {
+        ZFlowLogger.error('supabase', '[deleteFacturaPlatit] ' + (err.message || err));
+        throw err;
+    }
 }
 
 /**
  * Reset parolă
  */
 async function resetPassword(email) {
-    const { error } = await zf.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin + (window.location.pathname.includes('/z-flow') ? '/z-flow/' : '/') + 'index.html'
-    });
-    if (error) throw error;
+    try {
+        const { error } = await zf.auth.resetPasswordForEmail(email, {
+            redirectTo: window.location.origin + (window.location.pathname.includes('/z-flow') ? '/z-flow/' : '/') + 'index.html'
+        });
+        if (error) throw error;
+    } catch (err) {
+        ZFlowLogger.error('supabase', '[resetPassword] ' + (err.message || err));
+        throw err;
+    }
 }
 
 /**
@@ -903,9 +975,14 @@ async function resetPassword(email) {
  * @param {Object} updates - { email: string } | { password: string }
  */
 async function updateUser(updates) {
-    const { data, error } = await zf.auth.updateUser(updates);
-    if (error) throw error;
-    return data;
+    try {
+        const { data, error } = await zf.auth.updateUser(updates);
+        if (error) throw error;
+        return data;
+    } catch (err) {
+        ZFlowLogger.error('supabase', '[updateUser] ' + (err.message || err));
+        throw err;
+    }
 }
 
 /**
@@ -913,9 +990,14 @@ async function updateUser(updates) {
  * @param {Object} meta - cheie-valoare de adăugat în user_metadata
  */
 async function updateUserMeta(meta) {
-    const { data, error } = await zf.auth.updateUser({ data: meta });
-    if (error) throw error;
-    return data;
+    try {
+        const { data, error } = await zf.auth.updateUser({ data: meta });
+        if (error) throw error;
+        return data;
+    } catch (err) {
+        ZFlowLogger.error('supabase', '[updateUserMeta] ' + (err.message || err));
+        throw err;
+    }
 }
 
 /**
@@ -1278,16 +1360,26 @@ async function insertComandaTransport(payload) {
     if (error) throw new Error(error.message || 'Eroare salvare comandă transport');
 }
 async function updateComandaTransport(id, payload) {
-    if (_demoOps.isLocal()) { _demoOps.updateComanda(id, payload); return; }
-    const uid = _getCurrentUserId();
-    const { error } = await zf.from('comenzi_transport').update(payload).eq('id', id).eq('user_id', uid);
-    if (error) throw new Error(error.message || 'Eroare actualizare comandă transport');
+    try {
+        if (_demoOps.isLocal()) { _demoOps.updateComanda(id, payload); return; }
+        const uid = _getCurrentUserId();
+        const { error } = await zf.from('comenzi_transport').update(payload).eq('id', id).eq('user_id', uid);
+        if (error) throw new Error(error.message || 'Eroare actualizare comandă transport');
+    } catch (err) {
+        ZFlowLogger.error('supabase', '[updateComandaTransport] ' + (err.message || err));
+        throw err;
+    }
 }
 async function deleteComandaTransport(id) {
-    if (_demoOps.isLocal()) { _demoOps.deleteComanda(id); return; }
-    const uid = _getCurrentUserId();
-    const { error } = await zf.from('comenzi_transport').delete().eq('id', id).eq('user_id', uid);
-    if (error) throw new Error(error.message || 'Eroare ștergere comandă transport');
+    try {
+        if (_demoOps.isLocal()) { _demoOps.deleteComanda(id); return; }
+        const uid = _getCurrentUserId();
+        const { error } = await zf.from('comenzi_transport').delete().eq('id', id).eq('user_id', uid);
+        if (error) throw new Error(error.message || 'Eroare ștergere comandă transport');
+    } catch (err) {
+        ZFlowLogger.error('supabase', '[deleteComandaTransport] ' + (err.message || err));
+        throw err;
+    }
 }
 
 // [R4-FIX 5] Admin: funcții pentru gestionarea datelor altor utilizatori Supabase

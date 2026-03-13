@@ -95,7 +95,7 @@ function _recomputeFurnizoriData() {
 function renderMain(lista = null) {
     // [PERF-FIX] FIX 5 — referință DOM cached; fallback la getElementById dacă cache nu e populat
     const container = window._DOM?.listaFirme || document.getElementById("lista-firme-global");
-    let sursa = lista || ZFlowStore.dateLocal;
+    let sursa = [...(lista || ZFlowStore.dateLocal)];
     if (!container) return;
 
     if (sursa.length === 0) {
@@ -169,8 +169,8 @@ function renderMain(lista = null) {
             <h4 class="text-[15px] font-black text-slate-800 leading-tight truncate">${_esc(f.nume_firma || f.cui)}</h4>
             ${esteSiClientSiFurnizor(f.cui) ? '<span class="inline-block text-[7px] font-black uppercase px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 mt-0.5">Client + Furnizor</span>' : ''}
             <div class="flex items-center gap-1.5 mt-1.5">
-                <span class="w-2 h-2 rounded-full ${areRestante ? "bg-red-400" : "bg-emerald-400"}"></span>
-                <p class="text-[10px] font-semibold text-slate-400">${_esc(f.oras || "Zalău")}</p>
+                <span class="w-2 h-2 rounded-full ${areRestante ? "bg-red-400" : areIminent ? "bg-amber-400" : "bg-emerald-400"}"></span>
+                <p class="text-[10px] font-semibold text-slate-400">${_esc(f.oras || "—")}</p>
             </div>
         </div>
         <div class="text-right flex flex-col items-end">
@@ -287,7 +287,7 @@ const filtreazaListaFirmeDebounced = debounce(function () {
 function renderFurnizori(lista) {
     // [PERF-FIX] FIX 5 — referință DOM cached; fallback la getElementById dacă cache nu e populat
     const container = window._DOM?.listaFurnizori || document.getElementById("lista-furnizori-global");
-    const sursa = lista || ZFlowStore.dateFurnizori;
+    const sursa = [...(lista || ZFlowStore.dateFurnizori)];
     if (!container) return;
 
     if (sursa.length === 0) {
@@ -578,7 +578,7 @@ function arataDetaliiFurnizor(id) {
                        </button>`;
                 return `
 <div class="card-flow flex flex-col gap-2 p-3 mb-2 ${isPlatit ? "bg-white" : "bg-red-50/40 border-red-100"}">
-    <div class="flex items-center gap-2 ${spvClass} border px-2 py-1.5 rounded-xl">
+    <div class="flex items-center gap-2 ${spvClass} border px-2 py-2 rounded-xl">
         <span class="flex h-2 w-2 relative">
             <span class="relative inline-flex rounded-full h-2 w-2 ${spvDotClass}"></span>
         </span>
@@ -588,7 +588,7 @@ function arataDetaliiFurnizor(id) {
         <div class="flex items-center gap-3">
             <span class="w-2 h-2 rounded-full flex-shrink-0 ${isPlatit ? "bg-emerald-400" : isDepasit ? "bg-red-500" : "bg-amber-400"}"></span>
             <div>
-                <p class="text-[11px] font-black text-slate-800 uppercase">#${fac.numar_factura || "—"}${isImported ? ' <span class="text-[8px] font-bold text-slate-300 normal-case">SAGA</span>' : ''}</p>
+                <p class="text-[11px] font-black text-slate-800 uppercase">${fac.serie ? escapeHtml(fac.serie) + ' ' : ''}#${fac.numar_factura || "—"}${isImported ? ' <span class="text-[8px] font-bold text-slate-300 normal-case">SAGA</span>' : ''}</p>
                 <p class="text-[8px] font-bold text-slate-400 uppercase">Emis: ${formateazaDataZFlow(fac.data_emiterii)}</p>
                 <p class="text-[8px] font-bold ${isDepasit ? 'text-red-400' : isIminent ? 'text-amber-400' : 'text-slate-400'} uppercase">Scad: ${fac.data_scadenta ? formateazaDataZFlow(fac.data_scadenta) : "—"}</p>
                 ${isDepasit ? '<span class="inline-block mt-0.5 bg-red-100 text-red-600 text-[8px] font-black px-2 py-0.5 rounded-full uppercase animate-pulse">⚠ DEPĂȘIT</span>' : isIminent ? '<span class="inline-block mt-0.5 bg-amber-100 text-amber-600 text-[8px] font-black px-2 py-0.5 rounded-full uppercase animate-pulse">⚡ IMINENT</span>' : ''}
@@ -596,8 +596,8 @@ function arataDetaliiFurnizor(id) {
         </div>
         <div class="flex items-center gap-3">
             <div class="text-right">
-                <b class="text-xs ${isPlatit ? "text-blue-900" : isDepasit ? "text-red-600" : "text-amber-600"}">${Number(fac.valoare).toLocaleString()} lei</b>
-                <p class="text-[7px] font-black uppercase ${isPlatit ? 'text-emerald-600' : isDepasit ? 'text-red-500' : 'text-amber-500'}">${isPlatit ? 'PLĂTIT' : isDepasit ? 'RESTANT' : 'NEACHITAT'}</p>
+                <b class="text-xs ${isPlatit ? "text-blue-900" : isDepasit ? "text-red-600" : "text-amber-600"}">${Number(fac.valoare || 0).toLocaleString()} lei</b>
+                <p class="text-[7px] font-black uppercase ${isPlatit ? 'text-emerald-600' : isDepasit ? 'text-red-500' : 'text-amber-500'}">${isPlatit ? 'ACHITAT' : isDepasit ? 'RESTANT' : 'NEACHITAT'}</p>
             </div>
             <div class="flex flex-col gap-1">
                 ${toggleBtn}

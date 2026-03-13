@@ -123,10 +123,10 @@ async function salveazaFacturaOrchestrator() {
         }
     }
 
+    let newUrls = []; // declarat înainte de try pentru a fi accesibil în catch (PDF orfane)
     setLoader(true);
     try {
         // #23 - Upload toate fișierele pending
-        let newUrls = [];
         if (pendingPDFFiles.length > 0) {
             for (let i = 0; i < pendingPDFFiles.length; i++) {
                 const uploadedUrl = await ZFlowDB.uploadFacturaPDF(pendingPDFFiles[i], nr, i);
@@ -158,7 +158,7 @@ async function salveazaFacturaOrchestrator() {
             await ZFlowDB.updateFactura(id, payload);
         } else {
             payload.status_plata = "Neincasat";
-            await ZFlowDB.insertFactura(payload);
+            await ZFlowDB.insertFactura(payload, true);
         }
 
         fileInput.value = "";
@@ -169,6 +169,7 @@ async function salveazaFacturaOrchestrator() {
         await init();
         if (cid) arataDetalii(cid);
     } catch (err) {
+        if (newUrls.length > 0) ZFlowLogger.warn('salveazaFacturaOrchestrator', 'PDF orfane — fișiere urcate dar factura neînregistrată', newUrls);
         ZFlowLogger.error('salveazaFacturaOrchestrator', err);
         showNotification('Eroare la salvare: ' + err.message, 'error');
     } finally {

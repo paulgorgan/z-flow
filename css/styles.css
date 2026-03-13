@@ -518,6 +518,10 @@ input, select, button {
   font-size: 2.5rem !important;
 }
 
+#total-general-platit {
+  font-size: 2.5rem !important;
+}
+
 .text-blue-900.font-black,
 .text-red-600.font-black {
   font-size: 14px !important;

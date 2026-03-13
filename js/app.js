@@ -2200,6 +2200,96 @@ function incarcaDashboard() {
     _setTrend('home-kpi-neincasat-trend', neincasat, prevIncasatEfPrec);
     _setTrend('home-kpi-neplatit-trend',  neplatit, prevNP);
     _setTrend('home-kpi-net-trend',       net, prevNet);
+
+    // [R19] Widgets secundare Home
+    _updateHomeMiniDepozit();
+    _updateHomeMiniLogistic();
+    _updateHomeAlerteSummary(clientiRestanti, furnizoriRestanti, totalScadenteClientVal, totalScadenteFurnizorVal);
+}
+
+// [R19] Helper: mini-widget Depozit pe Home
+function _updateHomeMiniDepozit() {
+    const produse = ZFlowStore.dateProduse || [];
+    const elText   = document.getElementById('home-mini-depozit-text');
+    const elAlerta = document.getElementById('home-mini-depozit-alerta');
+    const elBadge  = document.getElementById('home-mini-depozit-badge');
+    if (!elText) return;
+
+    let alerteStoc = 0;
+    produse.forEach(p => {
+        const stocCurent = (typeof calcStocCurent === 'function')
+            ? calcStocCurent(p.id)
+            : (Number(p.stoc_initial) || 0);
+        if (p.stoc_min && stocCurent < Number(p.stoc_min)) alerteStoc++;
+    });
+
+    elText.textContent = produse.length === 0
+        ? 'Niciun produs'
+        : produse.length + (produse.length === 1 ? ' produs' : ' produse');
+
+    if (elAlerta && elBadge) {
+        if (alerteStoc > 0) {
+            elBadge.textContent = '⚠ ' + alerteStoc + ' sub stoc minim';
+            elAlerta.classList.remove('hidden');
+        } else {
+            elAlerta.classList.add('hidden');
+        }
+    }
+}
+
+// [R19] Helper: mini-widget Logistic pe Home
+function _updateHomeMiniLogistic() {
+    const comenzi  = ZFlowStore.dateComenziTransport || [];
+    const elText   = document.getElementById('home-mini-logistic-text');
+    const elActiv  = document.getElementById('home-mini-logistic-activ');
+    const elBadge  = document.getElementById('home-mini-logistic-badge');
+    if (!elText) return;
+
+    const active = comenzi.filter(c => c.status === 'In curs' || c.status === 'Planificat').length;
+    const total  = comenzi.length;
+
+    elText.textContent = total === 0
+        ? 'Nicio comandă'
+        : total + (total === 1 ? ' comandă' : ' comenzi');
+
+    if (elActiv && elBadge) {
+        if (active > 0) {
+            elBadge.textContent = '● ' + active + ' în curs';
+            elActiv.classList.remove('hidden');
+        } else {
+            elActiv.classList.add('hidden');
+        }
+    }
+}
+
+// [R19] Helper: buton alerte scadențe pe Home (mereu vizibil, stare dinamică)
+function _updateHomeAlerteSummary(clientiRestanti, furnizoriRestanti, totalCliVal, totalFurnVal) {
+    const elSubtitle  = document.getElementById('home-alerte-scadente-subtitle');
+    const elIconWrap  = document.getElementById('home-alerte-icon-wrap');
+    const elIcon      = document.getElementById('home-alerte-icon');
+    if (!elSubtitle) return;
+
+    const nrClR  = (clientiRestanti  || []).length;
+    const nrFurnR = (furnizoriRestanti || []).length;
+    const total   = nrClR + nrFurnR;
+
+    if (total === 0) {
+        // Stare OK — verde
+        elSubtitle.textContent = 'Toate la zi ✓';
+        elSubtitle.className   = 'text-[9px] font-bold text-emerald-500 mt-0.5';
+        if (elIconWrap) elIconWrap.className = 'w-8 h-8 bg-emerald-50 rounded-xl flex items-center justify-center flex-shrink-0';
+        if (elIcon)     elIcon.className    = 'w-4 h-4 text-emerald-500';
+    } else {
+        // Stare alertă — roșu, afișează detalii
+        const parts = [];
+        if (nrClR  > 0) parts.push(nrClR  + (nrClR  === 1 ? ' client' : ' clienți'));
+        if (nrFurnR > 0) parts.push(nrFurnR + (nrFurnR === 1 ? ' furnizor' : ' furnizori'));
+        const totalLei = Math.round((totalCliVal || 0) + (totalFurnVal || 0));
+        elSubtitle.textContent = parts.join(' + ') + ' · ' + totalLei.toLocaleString() + ' lei restanți';
+        elSubtitle.className   = 'text-[9px] font-bold text-red-500 mt-0.5';
+        if (elIconWrap) elIconWrap.className = 'w-8 h-8 bg-red-50 rounded-xl flex items-center justify-center flex-shrink-0';
+        if (elIcon)     elIcon.className    = 'w-4 h-4 text-red-500';
+    }
 }
 
 function deschideModalFacturaPlatit(furnizorId, facturaId) {
@@ -2489,15 +2579,8 @@ function genereazaCardFactura(fac, client, azi) {
             <span class="text-[9px] font-bold text-slate-400 uppercase italic">FĂRĂ TRP</span>
         </div>`;
 
-    const sagaBadge = (fac.is_imported || fac.id_descarcare_anaf) ? `
-        <div class="absolute top-2 right-2 z-10 flex items-center gap-1 bg-violet-100 border border-violet-200 px-2 py-0.5 rounded-full">
-            <svg class="w-2.5 h-2.5 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
-            <span class="text-[8px] font-black text-violet-700 uppercase tracking-wide">SAGA</span>
-        </div>` : '';
-
     return `
     <div class="card-factura-client swipeable-card rounded-2xl shadow-sm mb-3 relative overflow-hidden" data-nr="${fac.numar_factura}" data-factura-id="${fac.id}" data-status="${fac.status_plata}">
-        ${sagaBadge}
         <!-- Swipe Action Left (Delete) -->
         <div class="swipe-actions swipe-action-left">
             <button class="swipe-action-btn" onclick="swipeStergeFactura('${fac.id}')">
@@ -2542,12 +2625,6 @@ function genereazaCardFactura(fac, client, azi) {
                     <p class="text-[7px] font-black uppercase ${isIncasat ? 'text-emerald-600' : esteScadenta ? 'text-red-500' : 'text-amber-500'}">${isIncasat ? 'ACHITAT' : esteScadenta ? 'RESTANT' : 'NEACHITAT'}</p>
                 </div>
             </div>
-
-            ${fac.note ? `
-            <div class="flex items-start gap-2 p-2.5 bg-amber-50 border border-amber-100 rounded-xl">
-                <svg class="w-3.5 h-3.5 text-amber-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z"/></svg>
-                <p class="text-[10px] font-medium text-amber-800 leading-snug">${escapeHtml(fac.note)}</p>
-            </div>` : ''}
 
             <div class="flex flex-col gap-2 mt-1">
                 <button onclick="toggleStatusPlata('${fac.id}', '${fac.status_plata}')"

@@ -1,0 +1,33 @@
+CUI,DENUMIRE,ADRESA,LOCALITATE,JUDET,NR. FACTURA,DATA EMITERE,DATA SCADENTA,VALOARE,STATUS,DESCRIERE
+RO60708192,MetalPrim SRL,Str. Industriilor nr. 3,Cluj-Napoca,Cluj,MP-2026-F001,15.01.2026,14.02.2026,15200.00,Platit,Tabla zincata lot 1 - achitat complet
+RO60708192,MetalPrim SRL,Str. Industriilor nr. 3,Cluj-Napoca,Cluj,MP-2026-F002,28.01.2026,27.02.2026,8900.00,Platit,Profile aluminiu constructie - platit 25.02
+RO60708192,MetalPrim SRL,Str. Industriilor nr. 3,Cluj-Napoca,Cluj,MP-2026-F003,10.02.2026,12.03.2026,22600.00,Platit,Otel beton armat lot 3 - livrare completa
+RO60708192,MetalPrim SRL,Str. Industriilor nr. 3,Cluj-Napoca,Cluj,MP-2026-F004,24.02.2026,26.03.2026,11400.00,Neplata,Inox medical grad lot 4 - in asteptare aviz
+RO60708192,MetalPrim SRL,Str. Industriilor nr. 3,Cluj-Napoca,Cluj,MP-2026-F005,06.03.2026,05.04.2026,17800.00,Neplata,Structuri metalice prefabricate Q2
+RO60708192,MetalPrim SRL,Str. Industriilor nr. 3,Cluj-Napoca,Cluj,MP-RESTANTA-001,12.01.2026,11.02.2026,6300.00,Neplata,RESTANTA - Accesorii fixare lot extra - DEPASIT 11.02
+RO60708192,MetalPrim SRL,Str. Industriilor nr. 3,Cluj-Napoca,Cluj,MP-RESTANTA-002,25.01.2026,24.02.2026,4100.00,Neplata,RESTANTA - Tabla cutata acoperis - DEPASIT 24.02
+RO70819203,UniTrans SRL,Str. Garii nr. 18,Ploiesti,Prahova,UT-2026-F001,08.01.2026,07.02.2026,7800.00,Platit,Curse TIR Romania-Germania x2 - platit
+RO70819203,UniTrans SRL,Str. Garii nr. 18,Ploiesti,Prahova,UT-2026-F002,22.01.2026,21.02.2026,5600.00,Platit,Transport frigorific marfa perisabila - achitat
+RO70819203,UniTrans SRL,Str. Garii nr. 18,Ploiesti,Prahova,UT-2026-F003,05.02.2026,07.03.2026,12400.00,Platit,Contract lunar transport intern - platit
+RO70819203,UniTrans SRL,Str. Garii nr. 18,Ploiesti,Prahova,UT-2026-F004,19.02.2026,21.03.2026,9200.00,Neplata,Curse urgente utilaje grele - de platit
+RO70819203,UniTrans SRL,Str. Garii nr. 18,Ploiesti,Prahova,UT-2026-F005,07.03.2026,06.04.2026,14600.00,Neplata,Abonament Q2 transport intern+extern
+RO70819203,UniTrans SRL,Str. Garii nr. 18,Ploiesti,Prahova,UT-RESTANTA-001,15.01.2026,14.02.2026,3400.00,Neplata,RESTANTA - Livrare 24h speciala - DEPASIT 14.02
+RO80920314,LuminaTech SRL,Str. Luminii nr. 7,Pitesti,Arges,LT-2026-F001,11.01.2026,10.02.2026,18900.00,Platit,Sisteme iluminat LED industrial - livrat+platit
+RO80920314,LuminaTech SRL,Str. Luminii nr. 7,Pitesti,Arges,LT-2026-F002,25.01.2026,24.02.2026,11200.00,Platit,Tablouri electrice distributie lot 2 - platit
+RO80920314,LuminaTech SRL,Str. Luminii nr. 7,Pitesti,Arges,LT-2026-F003,08.02.2026,10.03.2026,24500.00,Platit,Instalatie automatizare cladire inteligenta
+RO80920314,LuminaTech SRL,Str. Luminii nr. 7,Pitesti,Arges,LT-2026-F004,22.02.2026,24.03.2026,8700.00,Neplata,Senzori IoT monitorizare consum energetic
+RO80920314,LuminaTech SRL,Str. Luminii nr. 7,Pitesti,Arges,LT-2026-F005,09.03.2026,08.04.2026,31000.00,Neplata,Sistem UPS central 200kVA - comanda principala
+RO80920314,LuminaTech SRL,Str. Luminii nr. 7,Pitesti,Arges,LT-RESTANTA-001,20.01.2026,19.02.2026,5800.00,Neplata,RESTANTA - Cabluri date retea Cat7 - DEPASIT 19.02
+RO91031425,PackSmart SRL,Str. Fabricilor nr. 33,Buzau,Buzau,PS-2026-F001,09.01.2026,08.02.2026,9400.00,Platit,Ambalaje carton lot 1 - platit integral
+RO91031425,PackSmart SRL,Str. Fabricilor nr. 33,Buzau,Buzau,PS-2026-F002,23.01.2026,22.02.2026,6800.00,Platit,Folie stretch paleti 100 role - achitat
+RO91031425,PackSmart SRL,Str. Fabricilor nr. 33,Buzau,Buzau,PS-2026-F003,06.02.2026,08.03.2026,13200.00,Platit,Pungi biodegradabile personalizate lot 3
+RO91031425,PackSmart SRL,Str. Fabricilor nr. 33,Buzau,Buzau,PS-2026-F004,20.02.2026,22.03.2026,7600.00,Neplata,Etichete termice rola lot 4 - de aprobat
+RO91031425,PackSmart SRL,Str. Fabricilor nr. 33,Buzau,Buzau,PS-2026-F005,10.03.2026,09.04.2026,16400.00,Neplata,Ambalaje premium Q2 - precomanda confirmata
+RO91031425,PackSmart SRL,Str. Fabricilor nr. 33,Buzau,Buzau,PS-SCADENT-001,12.03.2026,16.03.2026,4200.00,Neplata,IMINENT - Folie bule protectie - scade 16.03
+RO91031425,PackSmart SRL,Str. Fabricilor nr. 33,Buzau,Buzau,PS-SCADENT-002,11.03.2026,17.03.2026,5900.00,Neplata,IMINENT - Casete arhivare documentare - scade 17.03
+RO12345098,CloudHost SRL,Str. Serverelor nr. 1,Bucuresti,Ilfov,CH-2026-F001,07.01.2026,06.02.2026,4800.00,Platit,Hosting VPS + domenii anuale - platit
+RO12345098,CloudHost SRL,Str. Serverelor nr. 1,Bucuresti,Ilfov,CH-2026-F002,21.01.2026,20.02.2026,3600.00,Platit,Licente Microsoft 365 Business 10 useri
+RO12345098,CloudHost SRL,Str. Serverelor nr. 1,Bucuresti,Ilfov,CH-2026-F003,04.02.2026,06.03.2026,7200.00,Platit,Backup cloud 500GB + CDN premium - platit
+RO12345098,CloudHost SRL,Str. Serverelor nr. 1,Bucuresti,Ilfov,CH-2026-F004,18.02.2026,20.03.2026,5400.00,Neplata,SSL certificate + securitate WAF anual
+RO12345098,CloudHost SRL,Str. Serverelor nr. 1,Bucuresti,Ilfov,CH-2026-F005,11.03.2026,10.04.2026,8900.00,Neplata,Upgrade server dedicat + migrare date
+RO12345098,CloudHost SRL,Str. Serverelor nr. 1,Bucuresti,Ilfov,CH-RESTANTA-001,14.01.2026,13.02.2026,2900.00,Neplata,RESTANTA - Suport tehnic prioritar - DEPASIT 13.02

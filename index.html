@@ -82,6 +82,33 @@
       /* Accesibilitate WCAG: clasa sr-only pentru etichete vizual ascunse */
       .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border-width:0}
     </style>
+    <!-- [R19] Global error handler — interceptează erori JS neprevăzute -->
+    <script>
+      window.onerror = function(msg, src, line, col, err) {
+        // Ignoră erori din scripturi externe (CDN, extensii browser)
+        if (src && (src.includes('cdn.') || src.includes('extension'))) return false;
+        // Logăm în ZFlowLogger dacă e disponibil, altfel console
+        var logger = window.ZFlowLogger;
+        var details = msg + ' @ ' + src + ':' + line + ':' + col;
+        if (logger && logger.error) {
+          logger.error('global', '[window.onerror] ' + details, err || '');
+        } else {
+          // ZFlowLogger nu e încărcat încă — salvăm în queue
+          (window._errorQueue = window._errorQueue || []).push({ msg: msg, src: src, line: line, col: col, ts: Date.now() });
+        }
+        return false; // nu suprimă eroarea din consolă
+      };
+
+      window.onunhandledrejection = function(event) {
+        var logger = window.ZFlowLogger;
+        var msg = (event.reason && event.reason.message) ? event.reason.message : (String(event.reason) || 'Promise rejection');
+        if (logger && logger.error) {
+          logger.error('global', '[unhandledRejection] ' + msg, event.reason || '');
+        } else {
+          (window._errorQueue = window._errorQueue || []).push({ msg: msg, ts: Date.now() });
+        }
+      };
+    </script>
   </head>
 
   <body class="bg-slate-50">
@@ -446,6 +473,75 @@
           <div id="home-alerte-list" class="space-y-2"></div>
         </div>
 
+  <!-- [R19] Buton Alerte Scadențe — mereu vizibil, stare dinamică -->
+  <button id="home-btn-alerte-scadente"
+          onclick="schimbaTab('financiar', document.getElementById('nav-btn-fin'))"
+          class="w-full flex items-center justify-between bg-white border border-slate-100 rounded-2xl px-4 py-3.5 shadow-sm hover:shadow-md hover:border-slate-200 active:scale-95 transition-all">
+    <div class="flex items-center gap-3">
+      <div id="home-alerte-icon-wrap" class="w-8 h-8 bg-slate-50 rounded-xl flex items-center justify-center flex-shrink-0">
+        <svg id="home-alerte-icon" class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/>
+        </svg>
+      </div>
+      <div class="text-left">
+        <p class="text-[11px] font-black text-slate-800 uppercase">Alerte Scadențe</p>
+        <p id="home-alerte-scadente-subtitle" class="text-[9px] font-bold text-slate-400 mt-0.5">Verificare...</p>
+      </div>
+    </div>
+    <svg class="w-3.5 h-3.5 text-slate-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/>
+    </svg>
+  </button>
+
+  <!-- [R19] Mini-rezumat Depozit + Logistic -->
+  <div class="grid grid-cols-2 gap-3">
+    <!-- Depozit mini -->
+    <div id="home-mini-depozit"
+         onclick="schimbaTab('depozit', document.querySelectorAll('.nav-item')[2])"
+         class="bg-white border border-slate-100 rounded-2xl p-3.5 shadow-sm cursor-pointer hover:shadow-md hover:border-slate-200 active:scale-95 transition-all">
+      <div class="flex items-center justify-between mb-2">
+        <div class="w-8 h-8 bg-blue-50 rounded-xl flex items-center justify-center">
+          <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/>
+          </svg>
+        </div>
+        <svg class="w-3.5 h-3.5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/>
+        </svg>
+      </div>
+      <p class="text-[11px] font-black text-slate-800 uppercase">Depozit</p>
+      <p id="home-mini-depozit-text" class="text-[9px] font-bold text-slate-400 mt-0.5">—</p>
+      <div id="home-mini-depozit-alerta" class="hidden mt-1.5">
+        <span id="home-mini-depozit-badge" class="inline-flex items-center gap-1 bg-amber-100 text-amber-700 text-[8px] font-black px-2 py-0.5 rounded-full uppercase">
+          ⚠ stoc minim
+        </span>
+      </div>
+    </div>
+
+    <!-- Logistic mini -->
+    <div id="home-mini-logistic"
+         onclick="schimbaTab('logistic', document.querySelectorAll('.nav-item')[1])"
+         class="bg-white border border-slate-100 rounded-2xl p-3.5 shadow-sm cursor-pointer hover:shadow-md hover:border-slate-200 active:scale-95 transition-all">
+      <div class="flex items-center justify-between mb-2">
+        <div class="w-8 h-8 bg-emerald-50 rounded-xl flex items-center justify-center">
+          <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12"/>
+          </svg>
+        </div>
+        <svg class="w-3.5 h-3.5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/>
+        </svg>
+      </div>
+      <p class="text-[11px] font-black text-slate-800 uppercase">Logistic</p>
+      <p id="home-mini-logistic-text" class="text-[9px] font-bold text-slate-400 mt-0.5">—</p>
+      <div id="home-mini-logistic-activ" class="hidden mt-1.5">
+        <span id="home-mini-logistic-badge" class="inline-flex items-center gap-1 bg-emerald-100 text-emerald-700 text-[8px] font-black px-2 py-0.5 rounded-full uppercase">
+          ● în curs
+        </span>
+      </div>
+    </div>
+  </div>
+
 
       </section>
 
@@ -517,7 +613,7 @@
           </button>
         </div>
 
-        <!-- VIEW: LISTA CLIENÈšI -->
+        <!-- VIEW: LISTA CLIENȚI -->
         <div id="view-firme" class="space-y-6">
           <div class="relative text-slate-400">
             <input
@@ -1392,7 +1488,7 @@
           <div id="lista-transporturi" class="space-y-3 px-2"></div>
         </div>
 
-        <!-- VIEW: È˜oferi -->
+        <!-- VIEW: Șoferi -->
         <div id="logistic-view-soferi" class="hidden space-y-3">
           <div class="flex justify-between items-center">
             <p class="text-xs font-black text-slate-500 uppercase">Șoferi înregistrați</p>
@@ -2557,7 +2653,7 @@
             data-action="stergeFacturaPlatitActiva"
             class="py-3 px-4 bg-red-100 text-red-600 rounded-xl text-[10px] font-black uppercase hidden"
           >
-            È˜terge
+            ȘTERGE
           </button>
           <button type="button"
             data-action="salveazaFacturaPlatit"
@@ -2703,7 +2799,7 @@
       </div>
     </div>
 
-    <!-- ==================== MODAL RECEPÈšIE (Task 1) ==================== -->
+    <!-- ==================== MODAL RECEPȚIE (Task 1) ==================== -->
     <div id="modal-receptie" class="modal-sheet" role="dialog" aria-modal="true">
       <div class="sheet-content">
         <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4"></div>
@@ -2858,7 +2954,7 @@
         <!-- Acțiuni suplimentare (Task 7 + Task 3) -->
         <div class="mt-4 space-y-2 border-t border-slate-100 pt-4">
           <div id="admin-delete-section" class="hidden space-y-2">
-    <!-- SECÈšIUNEA 1: SISTEM (admin only) -->
+    <!-- SECȚIUNEA 1: SISTEM (admin only) -->
     <div data-admin-only>
       <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">
         ⚙️ Sistem
@@ -2939,7 +3035,7 @@
       </button>
     </div>
 
-    <!-- SECÈšIUNEA 3: CONT (toți userii autentificați) -->
+    <!-- SECȚIUNEA 3: CONT (toți userii autentificați) -->
     <div class="border-t border-slate-100 pt-2">
       <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">
         Contul meu
@@ -2983,7 +3079,7 @@
             Salvează
           </button>
         </div>
-    <!-- SECÈšIUNEA PERICULOASĂ — colapsată implicit -->
+    <!-- SECȚIUNEA PERICULOASĂ — colapsată implicit -->
     <div class="border-t border-red-100 pt-2">
       <button type="button" data-action="expandNext" class="w-full text-[8px] font-black text-red-300 uppercase tracking-widest py-1 text-center hover:text-red-400 transition-all">
         Zona periculoasă</button>
@@ -3453,7 +3549,7 @@
     <div id="modal-sofer" class="modal-sheet" role="dialog" aria-modal="true">
       <div class="sheet-content">
         <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4"></div>
-        <h2 id="sofer-modal-title" class="text-lg font-black text-blue-900 uppercase tracking-tight text-center mb-4">È˜ofer Nou</h2>
+        <h2 id="sofer-modal-title" class="text-lg font-black text-blue-900 uppercase tracking-tight text-center mb-4">Șofer Nou</h2>
         <input type="hidden" id="sofer-id-hidden"/>
         <div class="space-y-3">
           <input type="text" id="sofer-name" placeholder="Nume complet *" class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"/>
@@ -3588,7 +3684,7 @@
       }
     </script>
 
-    <!-- ==================== MODAL MENTENANÈšĂ ==================== -->
+    <!-- ==================== MODAL MENTENANȚĂ ==================== -->
     <!-- Afișat utilizatorilor non-admin când modul de mentenanță este activ -->
     <div id="maintenance-overlay" class="hidden fixed inset-0 z-[9999] bg-blue-950 flex flex-col items-center justify-center p-8 text-center">
       <svg class="w-16 h-16 text-amber-400 mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
