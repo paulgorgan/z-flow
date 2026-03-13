@@ -390,16 +390,21 @@ async function init(goHome = true) {
         let cl, fc, fr, fp;
 
         try {
-            const [clRes, fcResult, frRes, fpRes] = await Promise.all([
+            const [clRes, fcResult, frRes, fpRes, profileRes] = await Promise.all([
                 ZFlowDB.fetchClienti(),
                 ZFlowDB.fetchFacturiPaginated(500, 0),
                 ZFlowDB.fetchFurnizori(),
-                ZFlowDB.fetchFacturiPlatit()
+                ZFlowDB.fetchFacturiPlatit(),
+                // [PERF-FIX R18] fetchProfile paralel — elimină 200–400ms serial
+                (!ZFlowStore.userProfile && !(ZFlowStore.userSession?.user?.email === 'admin' || ZFlowStore.userSession?.isDemo === true))
+                    ? ZFlowDB.fetchProfile().catch(() => null)
+                    : Promise.resolve(null)
             ]);
             cl = clRes;
             fc = fcResult.data || [];
             fr = frRes;
             fp = fpRes;
+            if (profileRes) ZFlowStore.userProfile = profileRes;
             ZFlowStore._freshDataLoaded = true; // [SWR] date Supabase au sosit — blochează render stale
             ZFlowStore._facturiTotal  = fcResult.count || 0;
             ZFlowStore._facturiLoaded = fc.length;
@@ -513,8 +518,9 @@ async function init(goHome = true) {
             ZFlowStore._demoFacturiPlatit = [];
         }
 
-        // Încarcă profilul firmei la fiecare init() — indiferent de tipul de user
-        if (!ZFlowStore.userProfile) {
+        // [PERF-FIX R18] fetchProfile mutat în Promise.all principal (paralel) — elimină await serial
+        // Fallback: dacă profilul nu s-a încărcat din Promise.all (sesiune locală/demo), încearcă din nou
+        if (!ZFlowStore.userProfile && !(ZFlowStore.userSession?.user?.email === 'admin' || ZFlowStore.userSession?.isDemo === true)) {
             try { const p = await ZFlowDB.fetchProfile(); if (p) ZFlowStore.userProfile = p; } catch(e) {
                 ZFlowLogger.warn('app', '[init] fetchProfile error:', e.message);
             }
@@ -526,17 +532,18 @@ async function init(goHome = true) {
         if (typeof renderFurnizori === 'function') renderFurnizori();
         if (typeof updateFurnizoriKPI === 'function') updateFurnizoriKPI();
 
-        // === Depozit & Logistic (non-fatal) ===
-        try {
-            await Promise.all([
-                typeof initDepozit  === 'function' ? initDepozit()  : Promise.resolve(),
-                typeof initLogistic === 'function' ? initLogistic() : Promise.resolve(),
-            ]);
+        // === Depozit & Logistic — fire-and-forget (non-blocking) ===
+        // [PERF-FIX R18] Nu mai blochăm loader-ul pentru date secundare.
+        // UI-ul Home + Financiar se afișează imediat; Depozit/Logistic se populează în background.
+        Promise.all([
+            typeof initDepozit  === 'function' ? initDepozit()  : Promise.resolve(),
+            typeof initLogistic === 'function' ? initLogistic() : Promise.resolve(),
+        ]).then(() => {
             if (typeof calculeazaKPIDepozit  === 'function') calculeazaKPIDepozit();
             if (typeof calculeazaKPILogistic === 'function') calculeazaKPILogistic();
-        } catch (depErr) {
+        }).catch(depErr => {
             ZFlowLogger.warn('app', '⚠️ Depozit/Logistic init (non-fatal):', depErr.message);
-        }
+        });
 
         populeazaBridgeUI();
         if (document.getElementById("map")) renderTransportTab();
@@ -1942,8 +1949,8 @@ function incarcaDashboard() {
 
     // KPI 1: Total FACTURAT în ultimele 30 zile (clienți — toate statusurile)
     const totalFacturat = facturiIncasat30.reduce((s, f) => s + (Number(f.valoare) || 0), 0);
-    // KPI 2: De ÎNCASAT — neîncasat emis în ultimele 30 zile
-    const neincasat = facturiIncasat30.filter(f => f.status_plata !== "Incasat").reduce((s, f) => s + (Number(f.valoare) || 0), 0);
+    // KPI 2: ÎNCASAT efectiv în ultimele 30 zile (facturi cu status_plata === 'Incasat')
+    const neincasat = facturiIncasat30.filter(f => f.status_plata === "Incasat").reduce((s, f) => s + (Number(f.valoare) || 0), 0);
     // KPI 3: De PLĂTIT — neplătit furnizori, primit în ultimele 30 zile
     const neplatit = facturiPlatit30.filter(f => f.status_plata !== "Platit").reduce((s, f) => s + (Number(f.valoare) || 0), 0);
     // KPI 4: Cashflow NET 30 zile = încasat efectiv - plătit efectiv
@@ -2075,11 +2082,11 @@ function incarcaDashboard() {
     };
     setTrend('home-kpi-facturat-trend', trendPct, true);
 
-    // Trend de incasat: reducere e buna (se incaseaza), crestere e rea (restante cresc)
-    const neincasatPrec = facturiIncasat.filter(inLunaPrecedenta).filter(f => f.status_plata !== 'Incasat')
+    // [R18] Trend: creștere încasări e BUNĂ (pozitivBun = true)
+    const neincasatPrec = facturiIncasat.filter(inLunaPrecedenta).filter(f => f.status_plata === 'Incasat')
         .reduce((s, f) => s + (Number(f.valoare) || 0), 0);
     const trendNeincasat = neincasatPrec > 0 ? Math.round(((neincasat - neincasatPrec) / neincasatPrec) * 100) : null;
-    setTrend('home-kpi-neincasat-trend', trendNeincasat, false);
+    setTrend('home-kpi-neincasat-trend', trendNeincasat, true);
 
     // Cashflow chart — ultimele 30 de zile (rolling window, se actualizează zilnic)
     const labels = [];
@@ -2155,7 +2162,9 @@ function incarcaDashboard() {
         else { el.innerText = '\u2014'; el.className = 'text-[7px] font-black text-slate-400'; }
     };
     _setTrend('home-kpi-facturat-trend',  totalFacturat, prevF);
-    _setTrend('home-kpi-neincasat-trend', neincasat, prevNI);
+    // [R18] prevNI = încasat efectiv din perioada anterioară (nu restanțe)
+    const prevIncasatEfPrec = _fp.filter(f => f.status_plata === 'Incasat').reduce((s, f) => s + (Number(f.valoare)||0), 0);
+    _setTrend('home-kpi-neincasat-trend', neincasat, prevIncasatEfPrec);
     _setTrend('home-kpi-neplatit-trend',  neplatit, prevNP);
     _setTrend('home-kpi-net-trend',       net, prevNet);
 }
