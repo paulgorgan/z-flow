@@ -140,32 +140,8 @@ const ZFlowMobile = {
      * Inițializează PWA back button handler
      */
     setupBackButton() {
-        // Adaugă intrare inițială în history
-        history.replaceState({ zflowView: 'firme' }, '', '#firme');
-        
-        window.addEventListener('popstate', (e) => {
-            // Verifică modal deschis
-            const modalDeschis = document.querySelector('.modal-sheet.active');
-            if (modalDeschis) {
-                modalDeschis.classList.remove('active');
-                history.pushState({ zflowView: window.ZFlowStore?.currentView || 'firme' }, '', '#' + (window.ZFlowStore?.currentView || 'firme'));
-                return;
-            }
-            
-            // Verifică FAB menu
-            const fabMenu = document.getElementById('fab-menu');
-            if (fabMenu?.classList.contains('active')) {
-                fabMenu.classList.remove('active');
-                history.pushState({ zflowView: window.ZFlowStore?.currentView || 'firme' }, '', '#' + (window.ZFlowStore?.currentView || 'firme'));
-                return;
-            }
-            
-            // Navigare normală
-            const view = e.state?.zflowView;
-            if (view && typeof window.comutaVedereFin === 'function') {
-                window.comutaVedereFin(view === 'detalii' ? 'firme' : view, false);
-            }
-        });
+        // Back button handler gestionat centralizat în app.js (PWA Back Button Handler)
+        // Acest stub rămâne pentru compatibilitate — nu adaugă listener duplicate
     },
 
     /**
@@ -229,8 +205,8 @@ const ZFlowMobile = {
         this.setupBackButton();
         this.setupOfflineHandler();
         
-        // Inițializează swipe pe liste
-        this.initSwipe('#lista-facturi-content');
+        // Swipe pe facturi dezactivat — acțiunile sunt în butoanele cardului
+        // this.initSwipe('#lista-facturi-content');
         this.initSwipe('#rezultat-analiza');
         
         ZFlowLogger.debug('mobile', '📱 ZFlowMobile initialized');

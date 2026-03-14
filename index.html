@@ -270,8 +270,7 @@
               >
                 —
               </p>
-              <!-- [R7-FIX 7] Badge plan abonament utilizator -->
-              <div id="home-plan-badge" class="hidden mt-0.5"></div>
+
               <p
                 id="home-firma-cui"
                 class="text-[9px] font-bold opacity-60 uppercase mt-0.5"
@@ -301,6 +300,8 @@
             >
               —
             </p>
+            <!-- [R7-FIX 7] Badge plan abonament — mutat în bara de jos -->
+            <div id="home-plan-badge" class="hidden"></div>
             <div class="flex items-center gap-1.5">
               <span
                 class="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"
@@ -463,35 +464,17 @@
         </div>
 
         <!-- Alerte Urgențe -->
-        <div id="home-alerte" class="hidden space-y-2">
+        <div id="home-alerte" class="space-y-2">
           <p
             class="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1 flex items-center gap-1"
           >
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="text-amber-500" style="color:#f59e0b"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-            Urgențe
+            Scadențe
           </p>
           <div id="home-alerte-list" class="space-y-2"></div>
         </div>
 
-  <!-- [R19] Buton Alerte Scadențe — mereu vizibil, stare dinamică -->
-  <button id="home-btn-alerte-scadente"
-          onclick="schimbaTab('financiar', document.getElementById('nav-btn-fin'))"
-          class="w-full flex items-center justify-between bg-white border border-slate-100 rounded-2xl px-4 py-3.5 shadow-sm hover:shadow-md hover:border-slate-200 active:scale-95 transition-all">
-    <div class="flex items-center gap-3">
-      <div id="home-alerte-icon-wrap" class="w-8 h-8 bg-slate-50 rounded-xl flex items-center justify-center flex-shrink-0">
-        <svg id="home-alerte-icon" class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/>
-        </svg>
-      </div>
-      <div class="text-left">
-        <p class="text-[11px] font-black text-slate-800 uppercase">Alerte Scadențe</p>
-        <p id="home-alerte-scadente-subtitle" class="text-[9px] font-bold text-slate-400 mt-0.5">Verificare...</p>
-      </div>
-    </div>
-    <svg class="w-3.5 h-3.5 text-slate-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-      <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/>
-    </svg>
-  </button>
+
 
   <!-- [R19] Mini-rezumat Depozit + Logistic -->
   <div class="grid grid-cols-2 gap-3">

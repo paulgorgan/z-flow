@@ -302,6 +302,24 @@ function renderFurnizori(lista) {
     const azi = new Date();
     azi.setHours(0, 0, 0, 0);
 
+    // Îmbogățim fiecare furnizor cu facturile lui dacă lipsesc
+    sursa.forEach(f => {
+        if (!f.facturi || f.facturi.length === 0) {
+            f.facturi = (ZFlowStore.dateFacturiPlatit || []).filter(fp =>
+                String(fp.furnizor_id) === String(f.id)
+            );
+        }
+        if (f.sumaScadenta === undefined) {
+            f.sumaScadenta = (f.facturi || []).reduce((acc, fp) => {
+                if (fp.status_plata !== 'Platit' && fp.data_scadenta) {
+                    const d = new Date(fp.data_scadenta); d.setHours(0,0,0,0);
+                    if (d < azi) return acc + (Number(fp.valoare) || 0);
+                }
+                return acc;
+            }, 0);
+        }
+    });
+
     // Sortare: entitățile cu scadența cea mai apropiată de azi primele
     sursa.sort((a, b) => {
         const distA = _closestOpenDueForEntity(a.facturi, 'Platit', azi);
@@ -336,7 +354,7 @@ function renderFurnizori(lista) {
             </div>
         </div>
         <div class="text-right flex flex-col items-end">
-            <p class="text-red-700 font-black text-[20px] leading-none tracking-tighter">${Math.round(f.sold).toLocaleString()} <span class="text-[11px] font-bold">lei</span></p>
+            <p class="text-red-700 font-black text-[22px] leading-none tracking-tighter">${Math.round(f.sold).toLocaleString()} <span class="text-[11px] font-bold">lei</span></p>
             <p class="text-[9px] font-semibold text-slate-400 mt-1">De plătit</p>
         </div>
     </div>

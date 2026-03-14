@@ -558,6 +558,15 @@ async function initDepozit() {
         ZFlowStore.dateReceptii    = receptii;
         ZFlowStore.dateLivrari     = livrari;
         ZFlowLogger.debug('depozit', `📦 Depozit: ${produse.length} produse, ${miscari.length} mișcări`);
+        // Persistă în IDB pentru refresh
+        if (typeof ZFlowIDB !== 'undefined') {
+            try {
+                await ZFlowIDB.save('produse', produse);
+                await ZFlowIDB.save('miscari_stoc', miscari);
+                await ZFlowIDB.save('receptii', receptii);
+                await ZFlowIDB.save('livrari', livrari);
+            } catch (_) {}
+        }
     } catch (err) {
         ZFlowLogger.warn('depozit', '[Depozit] Eroare inițializare (non-fatal):', err.message);
         ZFlowStore.dateProduse     = ZFlowStore.dateProduse     || [];

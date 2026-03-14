@@ -544,6 +544,14 @@ async function initLogistic() {
         ZFlowStore.dateVehicule           = vehicule;
         ZFlowStore.dateComenziTransport   = comenzi;
         ZFlowLogger.debug('logistic', `🚛 Logistic: ${soferi.length} șoferi, ${vehicule.length} vehicule, ${comenzi.length} comenzi`);
+        // Persistă în IDB pentru refresh
+        if (typeof ZFlowIDB !== 'undefined') {
+            try {
+                await ZFlowIDB.save('soferi', soferi);
+                await ZFlowIDB.save('vehicule', vehicule);
+                await ZFlowIDB.save('comenzi_transport', comenzi);
+            } catch (_) {}
+        }
     } catch (err) {
         ZFlowLogger.warn('logistic', '[Logistic] Eroare inițializare (non-fatal):', err.message);
         ZFlowStore.dateSoferi           = ZFlowStore.dateSoferi           || [];

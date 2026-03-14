@@ -541,9 +541,14 @@ async function init(goHome = true) {
         ]).then(() => {
             if (typeof calculeazaKPIDepozit  === 'function') calculeazaKPIDepozit();
             if (typeof calculeazaKPILogistic === 'function') calculeazaKPILogistic();
-        }).catch(depErr => {
-            ZFlowLogger.warn('app', '⚠️ Depozit/Logistic init (non-fatal):', depErr.message);
-        });
+            // Re-render tab activ dacă userul e deja pe depozit/logistic
+            const tab = ZFlowStore.currentTab;
+            if (tab === 'depozit'  && typeof renderDepozit  === 'function') renderDepozit();
+            if (tab === 'logistic' && typeof renderLogistic === 'function') renderLogistic();
+            // Actualizează mini-widget-urile din Home
+            if (typeof _updateHomeMiniDepozit  === 'function') _updateHomeMiniDepozit();
+            if (typeof _updateHomeMiniLogistic === 'function') _updateHomeMiniLogistic();
+        }).catch(() => {});
 
         populeazaBridgeUI();
         if (document.getElementById("map")) renderTransportTab();
@@ -1633,7 +1638,12 @@ function schimbaTab(id, btn) {
     document.querySelectorAll(".nav-item").forEach((l) => l.classList.remove("active"));
     if (btn) btn.classList.add("active");
 
-    if (id === "logistic") {
+    if (id === 'depozit') {
+        if (typeof renderDepozit === 'function') renderDepozit();
+    }
+
+    if (id === 'logistic') {
+        if (typeof renderLogistic === 'function') renderLogistic();
         // Nu inițializa harta aici — #map e în logistic-view-vehicule care e hidden implicit.
         // L.map() inițializat pe un container display:none are dimensiune 0×0 și nu încarcă tile-uri.
         // initMap() rulează din schimbaViewLogistic('vehicule') când div-ul e deja vizibil.
@@ -2048,9 +2058,9 @@ function incarcaDashboard() {
     const alerteList     = document.getElementById("home-alerte-list");
     if (alerteContainer && alerteList) {
         const nrAlerte = clientiRestanti.length + furnizoriRestanti.length;
+        // #home-alerte este mereu vizibil — nu mai togglem hidden
         if (nrAlerte > 0) {
             const totalVal = totalScadenteClientVal + totalScadenteFurnizorVal;
-            alerteContainer.classList.remove("hidden");
             alerteList.innerHTML = `
                 <button onclick="schimbaTab('financiar', document.getElementById('nav-btn-fin'))" class="w-full text-left bg-red-50 border border-red-200 rounded-2xl p-4 hover:bg-red-100 active:bg-red-200 transition-all">
                   <div class="flex items-center justify-between mb-2">
@@ -2068,21 +2078,31 @@ function incarcaDashboard() {
                     <div class="flex items-center justify-between bg-red-100/60 rounded-xl px-3 py-1.5">
                         <p class="text-[10px] text-red-700 font-bold">${clientiRestanti.length} client${clientiRestanti.length > 1 ? "i cu" : " cu"} scadențe depășite</p>
                         <p class="text-[11px] font-black text-red-700">${Math.round(totalScadenteClientVal).toLocaleString()} lei</p>
-                    </div>` : ""}
+                    </div>` : ''}
                     ${furnizoriRestanti.length ? `
                     <div class="flex items-center justify-between bg-red-100/60 rounded-xl px-3 py-1.5">
-                        <p class="text-[10px] text-red-700 font-bold">${furnizoriRestanti.length} furnizor${furnizoriRestanti.length > 1 ? "i cu" : " cu"} scadențe depășite</p>
+                        <p class="text-[10px] text-red-700 font-bold">${furnizoriRestanti.length} furnizor${furnizoriRestanti.length > 1 ? "i cu" : " cu"} facturi restante</p>
                         <p class="text-[11px] font-black text-red-700">${Math.round(totalScadenteFurnizorVal).toLocaleString()} lei</p>
-                    </div>` : ""}
-                    <div class="flex items-center justify-between pt-1.5 border-t border-red-200/80 mt-0.5">
-                        <p class="text-[9px] font-bold text-red-500 uppercase">Total expus</p>
-                        <p class="text-[13px] font-black text-red-700">${Math.round(totalVal).toLocaleString()} lei</p>
-                    </div>
+                    </div>` : ''}
                   </div>
                 </button>`;
         } else {
-            alerteContainer.classList.add("hidden");
-            alerteList.innerHTML = "";
+            // Stare OK — buton verde permanent
+            alerteList.innerHTML = `
+                <button onclick="schimbaTab('financiar', document.getElementById('nav-btn-fin'))" class="w-full text-left bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-3.5 hover:bg-emerald-100 active:bg-emerald-200 transition-all flex items-center gap-3">
+                  <div class="w-8 h-8 bg-emerald-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                  </div>
+                  <div class="text-left">
+                    <p class="text-[11px] font-black text-emerald-800 uppercase">Toate la zi ✓</p>
+                    <p class="text-[9px] font-bold text-emerald-600 mt-0.5">Nicio scadență depășită</p>
+                  </div>
+                  <svg class="w-3.5 h-3.5 text-emerald-400 flex-shrink-0 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/>
+                  </svg>
+                </button>`;
         }
         // Badge pe butonul Financiar
         const badge = document.getElementById("nav-badge-financiar");
@@ -2580,23 +2600,9 @@ function genereazaCardFactura(fac, client, azi) {
         </div>`;
 
     return `
-    <div class="card-factura-client swipeable-card rounded-2xl shadow-sm mb-3 relative overflow-hidden" data-nr="${fac.numar_factura}" data-factura-id="${fac.id}" data-status="${fac.status_plata}">
-        <!-- Swipe Action Left (Delete) -->
-        <div class="swipe-actions swipe-action-left">
-            <button class="swipe-action-btn" onclick="swipeStergeFactura('${fac.id}')">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                <span>Șterge</span>
-            </button>
-        </div>
-        <!-- Swipe Action Right (Toggle Payment) -->
-        <div class="swipe-actions swipe-action-right">
-            <button class="swipe-action-btn" onclick="swipeToggleIncasare('${fac.id}', '${fac.status_plata}')">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                <span>${isIncasat ? 'Anulează' : 'Încasare'}</span>
-            </button>
-        </div>
+    <div class="card-factura-client rounded-2xl shadow-sm mb-3 relative overflow-hidden" data-nr="${fac.numar_factura}" data-factura-id="${fac.id}" data-status="${fac.status_plata}">
         <!-- Card Content -->
-        <div class="swipe-content card-flow flex flex-col gap-2 p-3 mb-2 ${isIncasat ? 'bg-white' : 'bg-red-50/40 border-red-100'} border rounded-2xl">
+        <div class="card-flow flex flex-col gap-2 p-3 mb-2 ${isIncasat ? 'bg-white' : 'bg-red-50/40 border-red-100'} border rounded-2xl">
             <div class="grid grid-cols-2 gap-2">
                 <div class="flex items-center gap-2 ${fac.status_anaf === 'validated' ? 'bg-slate-50 border-slate-100' : 'bg-amber-50 border-amber-200 animate-pulse'} border px-2 py-2 rounded-xl">
                     <span class="flex h-2 w-2 relative">
@@ -6477,36 +6483,72 @@ document.addEventListener('DOMContentLoaded', () => {
     // Intrare inițială în history fără hash (URL curat)
     history.replaceState({ zflowView: 'firme' }, '', location.pathname);
 
+    // Variabilă pentru double-back-to-exit
+    let _backPressedOnce = false;
+    let _backPressTimer  = null;
+
     window.addEventListener('popstate', (e) => {
-        // 1. Dacă există un modal deschis, îl închidem și rămânem în app
+        // 1. Modal deschis → închide modal, rămâne în app
         const modalDeschis = document.querySelector('.modal-sheet.active');
         if (modalDeschis) {
             modalDeschis.classList.remove('active');
-            // Re-pushăm starea curentă pentru a putea da back din nou
-            history.pushState({ zflowView: ZFlowStore.currentView }, '', location.pathname);
+            history.pushState({ zflowView: ZFlowStore.currentTab || 'home' }, '', location.pathname);
             return;
         }
 
-        // 2. Dacă FAB menu e deschis, îl închidem
+        // 2. FAB menu deschis → închide FAB
         const fabMenu = document.getElementById('fab-menu');
         if (fabMenu && fabMenu.classList.contains('active')) {
             fabMenu.classList.remove('active');
-            history.pushState({ zflowView: ZFlowStore.currentView }, '', location.pathname);
+            history.pushState({ zflowView: ZFlowStore.currentTab || 'home' }, '', location.pathname);
             return;
         }
 
-        const view = e.state?.zflowView;
-
-        if (view && view !== 'firme') {
-            // Navigăm înapoi la vederea anterioară (fără pushState - suntem pe popstate)
-            comutaVedereFin(view === 'detalii' ? 'firme' : view, false);
-            // Re-pushăm starea curentă în history
-            history.pushState({ zflowView: ZFlowStore.currentView }, '', location.pathname);
-        } else {
-            // Suntem la 'firme' - rămânem în app
-            comutaVedereFin('firme', false);
-            history.pushState({ zflowView: 'firme' }, '', location.pathname);
+        // 3. Detalii client/furnizor deschise → înapoi la lista
+        const viewDetalii = document.getElementById('view-detalii');
+        const viewDetaliiFurn = document.getElementById('view-detalii-furnizor');
+        if (viewDetalii && !viewDetalii.classList.contains('hidden')) {
+            if (typeof comutaVedereFin === 'function') comutaVedereFin('firme', false);
+            history.pushState({ zflowView: 'financiar' }, '', location.pathname);
+            return;
         }
+        if (viewDetaliiFurn && !viewDetaliiFurn.classList.contains('hidden')) {
+            if (typeof comutaVedereFin === 'function') comutaVedereFin('furnizori', false);
+            history.pushState({ zflowView: 'financiar' }, '', location.pathname);
+            return;
+        }
+
+        // 4. Tab activ !== home → mergi la Home
+        const tabActiv = ZFlowStore.currentTab || 'home';
+        if (tabActiv !== 'home') {
+            const homeBtn = document.getElementById('nav-btn-home');
+            if (typeof schimbaTab === 'function') schimbaTab('home', homeBtn);
+            history.pushState({ zflowView: 'home' }, '', location.pathname);
+            return;
+        }
+
+        // 5. Deja pe Home → double-back-to-exit
+        if (_backPressedOnce) {
+            // Al doilea back: ieși din app
+            clearTimeout(_backPressTimer);
+            // PWA: încearcă window.close(), fallback history.go(-1)
+            if (window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches) {
+                // PWA standalone — nu poți window.close(), forțează minimizare
+                window.history.go(-(window.history.length));
+            } else {
+                window.close();
+            }
+            return;
+        }
+
+        // Primul back pe Home
+        _backPressedOnce = true;
+        showNotification('Apasă din nou Back pentru a ieși din aplicație', 'info', 2500);
+        history.pushState({ zflowView: 'home' }, '', location.pathname);
+
+        _backPressTimer = setTimeout(() => {
+            _backPressedOnce = false;
+        }, 2500);
     });
 });
 
