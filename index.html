@@ -38,9 +38,13 @@
     <link rel="dns-prefetch" href="https://exrypxknksgrtrwnbtrl.supabase.co" />
     <!-- LCP: preload icona cu prioritate ridicata — primul element vizual -->
     <link rel="preload" href="icons/icon.svg" as="image" type="image/svg+xml" fetchpriority="high" />
+    <!-- Preload resurse critice pentru LCP -->
+    <link rel="preload" href="./js/services/supabase.js" as="script">
+    <link rel="preload" href="./js/app.js" as="script">
+    <link rel="preload" href="./css/styles.css" as="style">
 
     <!-- Tailwind CSS (JIT via CDN) -->
-    <script src="https://cdn.tailwindcss.com" defer></script>
+    <script src="https://cdn.tailwindcss.com"></script>
 
     <!-- Runtime dependencies — heavy libs (jsPDF, xlsx, Chart.js) are loaded on-demand by JS modules -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" defer></script>
@@ -460,6 +464,10 @@
               <p id="home-kpi-net-breakdown" class="text-[7px] font-bold text-slate-400 tracking-wide">Net total</p>
               <span id="home-kpi-net-trend" class="text-[7px] font-black"></span>
             </div>
+            <div class="flex items-center gap-1 mt-0.5">
+              <span id="home-kpi-net-week-label" class="text-[7px] font-bold text-slate-300 tracking-wide hidden">vs săpt.</span>
+              <span id="home-kpi-net-week" class="text-[7px] font-black hidden"></span>
+            </div>
           </div>
         </div>
 
@@ -773,6 +781,7 @@
           ></div>
           <!-- Paginare Clienți -->
           <div id="clienti-pagination"></div>
+          <div id="clienti-scroll-sentinel" class="h-4 md:hidden"></div>
         </div>
 
         <!-- VIEW: ANALIZĂ BI -->
@@ -1010,6 +1019,7 @@
             <button type="button"
               id="btn-export-pdf"
               data-action="exportaPDF"
+              onclick="exportaPDF()"
               class="flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-800 text-white rounded-2xl text-[10px] font-black uppercase hover:bg-slate-900 transition-all shadow-sm flex-shrink-0"
             >
               <svg
@@ -1357,6 +1367,7 @@
           ></div>
           <!-- Paginare Furnizori -->
           <div id="furnizori-pagination"></div>
+          <div id="furnizori-scroll-sentinel" class="h-4 md:hidden"></div>
         </div>
         <div id="view-detalii-furnizor" class="hidden animate-pop">
           <div class="flex justify-between items-center mb-6 pl-2 pr-2">

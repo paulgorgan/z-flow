@@ -548,7 +548,14 @@ async function init(goHome = true) {
             // Actualizează mini-widget-urile din Home
             if (typeof _updateHomeMiniDepozit  === 'function') _updateHomeMiniDepozit();
             if (typeof _updateHomeMiniLogistic === 'function') _updateHomeMiniLogistic();
-        }).catch(() => {});
+        }).catch(() => {}).finally(() => {
+            // Notificare scadențe (non-blocking, după 3s)
+            setTimeout(() => {
+                if (typeof ZFlowNotifications !== 'undefined' && typeof ZFlowNotifications.checkScadente === 'function') {
+                    ZFlowNotifications.checkScadente().catch(() => {});
+                }
+            }, 3000);
+        });
 
         populeazaBridgeUI();
         if (document.getElementById("map")) renderTransportTab();
@@ -2221,6 +2228,37 @@ function incarcaDashboard() {
     _setTrend('home-kpi-neplatit-trend',  neplatit, prevNP);
     _setTrend('home-kpi-net-trend',       net, prevNet);
 
+    // Trend săptămânal Net
+    const _az7 = new Date(); _az7.setHours(0,0,0,0);
+    const _ac14 = new Date(+_az7 - 7*86400000);
+    const _ac21 = new Date(+_az7 - 14*86400000);
+    const _netW = (ZFlowStore.dateFacturiBI||[]).reduce((s,f) => {
+        const d = f.data_emiterii ? new Date(f.data_emiterii.includes('/')?
+            (([dd,mm,yy]=f.data_emiterii.split('/'), new Date(+(yy<100?2000+parseInt(yy):yy), mm-1, dd, 12))):
+            (f.data_emiterii+'T12:00:00')) : null;
+        return d && d>=_ac14 && d<_az7 && f.status_plata==='Incasat' ? s+(Number(f.valoare)||0) : s;
+    }, 0) - (ZFlowStore.dateFacturiPlatit||[]).reduce((s,f) => {
+        const d = f.data_emiterii ? new Date(f.data_emiterii+'T12:00:00') : null;
+        return d && d>=_ac14 && d<_az7 && f.status_plata==='Platit' ? s+(Number(f.valoare)||0) : s;
+    }, 0);
+    const _netWP = (ZFlowStore.dateFacturiBI||[]).reduce((s,f) => {
+        const d = f.data_emiterii ? new Date(f.data_emiterii.includes('/')?
+            (([dd,mm,yy]=f.data_emiterii.split('/'), new Date(+(yy<100?2000+parseInt(yy):yy), mm-1, dd, 12))):
+            (f.data_emiterii+'T12:00:00')) : null;
+        return d && d>=_ac21 && d<_ac14 && f.status_plata==='Incasat' ? s+(Number(f.valoare)||0) : s;
+    }, 0) - (ZFlowStore.dateFacturiPlatit||[]).reduce((s,f) => {
+        const d = f.data_emiterii ? new Date(f.data_emiterii+'T12:00:00') : null;
+        return d && d>=_ac21 && d<_ac14 && f.status_plata==='Platit' ? s+(Number(f.valoare)||0) : s;
+    }, 0);
+    const _elW = document.getElementById('home-kpi-net-week');
+    const _elWL = document.getElementById('home-kpi-net-week-label');
+    if (_elW && _elWL && _netWP !== 0) {
+        const _pW = Math.round(((_netW-_netWP)/Math.abs(_netWP))*100);
+        _elWL.classList.remove('hidden'); _elW.classList.remove('hidden');
+        _elW.textContent = _pW>0 ? `↑ ${_pW}%` : _pW<0 ? `↓ ${Math.abs(_pW)}%` : '—';
+        _elW.className = `text-[7px] font-black ${_pW>0?'text-emerald-500':_pW<0?'text-rose-500':'text-slate-400'}`;
+    } else if (_elW) { _elW.classList.add('hidden'); if(_elWL) _elWL.classList.add('hidden'); }
+
     // [R19] Widgets secundare Home
     _updateHomeMiniDepozit();
     _updateHomeMiniLogistic();
@@ -2600,7 +2638,7 @@ function genereazaCardFactura(fac, client, azi) {
         </div>`;
 
     return `
-    <div class="card-factura-client rounded-2xl shadow-sm mb-3 relative overflow-hidden" data-nr="${fac.numar_factura}" data-factura-id="${fac.id}" data-status="${fac.status_plata}">
+    <div class="card-factura-client rounded-2xl shadow-sm mb-3 relative overflow-hidden" data-nr="${fac.numar_factura}" data-serie="${serie}" data-factura-id="${fac.id}" data-status="${fac.status_plata}">
         <!-- Card Content -->
         <div class="card-flow flex flex-col gap-2 p-3 mb-2 ${isIncasat ? 'bg-white' : 'bg-red-50/40 border-red-100'} border rounded-2xl">
             <div class="grid grid-cols-2 gap-2">
@@ -2903,9 +2941,10 @@ function filtreazaFacturiInDetalii() {
     let visibleCount = 0;
 
     carduri.forEach(card => {
-        const nrFactura = card.getAttribute("data-nr") ? card.getAttribute("data-nr").toLowerCase() : "";
+        const nrFactura = (card.getAttribute("data-nr") || "").toLowerCase();
+        const serie     = (card.getAttribute("data-serie") || "").toLowerCase();
 
-        if (nrFactura.includes(termen)) {
+        if (!termen || nrFactura.includes(termen) || serie.includes(termen)) {
             card.style.setProperty("display", "flex", "important");
             visibleCount++;
         } else {
@@ -3685,6 +3724,21 @@ function clientiNextPage() {
         renderMain(ZFlowStore._clientiFiltrati);
     }
 }
+function initInfiniteScrollClienti() {
+    if (window.innerWidth >= 768) return;
+    const sentinel = document.getElementById('clienti-scroll-sentinel');
+    if (!sentinel) return;
+    if (window._clientiScrollObs) window._clientiScrollObs.disconnect();
+    window._clientiScrollObs = new IntersectionObserver(entries => {
+        if (!entries[0].isIntersecting) return;
+        const ps = ZFlowStore.clientiPageSize;
+        if (ps === 0) return;
+        const tp = Math.ceil((ZFlowStore._clientiFiltrati||[]).length / ps);
+        if (ZFlowStore.clientiCurrentPage < tp) clientiNextPage();
+    }, { rootMargin: '120px' });
+    window._clientiScrollObs.observe(sentinel);
+}
+window.initInfiniteScrollClienti = initInfiniteScrollClienti;
 function clientiPrevPage() {
     if (ZFlowStore.clientiCurrentPage > 1) {
         ZFlowStore.clientiCurrentPage--;
@@ -3716,6 +3770,21 @@ function furnizoriNextPage() {
         renderFurnizori(ZFlowStore._furnizoriFiltrati);
     }
 }
+function initInfiniteScrollFurnizori() {
+    if (window.innerWidth >= 768) return;
+    const sentinel = document.getElementById('furnizori-scroll-sentinel');
+    if (!sentinel) return;
+    if (window._furnizoriScrollObs) window._furnizoriScrollObs.disconnect();
+    window._furnizoriScrollObs = new IntersectionObserver(entries => {
+        if (!entries[0].isIntersecting) return;
+        const ps = ZFlowStore.furnizoriPageSize;
+        if (ps === 0) return;
+        const tp = Math.ceil((ZFlowStore._furnizoriFiltrati||[]).length / ps);
+        if (ZFlowStore.furnizoriCurrentPage < tp) furnizoriNextPage();
+    }, { rootMargin: '120px' });
+    window._furnizoriScrollObs.observe(sentinel);
+}
+window.initInfiniteScrollFurnizori = initInfiniteScrollFurnizori;
 function furnizoriPrevPage() {
     if (ZFlowStore.furnizoriCurrentPage > 1) {
         ZFlowStore.furnizoriCurrentPage--;
@@ -6226,7 +6295,51 @@ window.schimbaTab = schimbaTab;
 window.comutaVedereFin = comutaVedereFin;
 window.toggleFAB = toggleFAB;
 window.filtreazaFacturiInDetalii = filtreazaFacturiInDetalii;
-window.loadMoreFacturiClient = loadMoreFacturiClient;
+
+/**
+ * Filtrează facturile furnizorului după număr și serie — analog cu filtreazaFacturiInDetalii
+ */
+function filtreazaFacturiFurnizorInDetalii() {
+    const input = document.getElementById('search-facturi-furnizor-detaliu');
+    if (!input) return;
+
+    const termen = input.value.toLowerCase().trim();
+    const carduri = document.querySelectorAll('#lista-facturi-platit-detaliu .card-flow[data-nr]');
+    const container = document.getElementById('lista-facturi-platit-detaliu');
+
+    let visibleCount = 0;
+
+    carduri.forEach(card => {
+        const nr    = (card.getAttribute('data-nr')    || '').toLowerCase();
+        const serie = (card.getAttribute('data-serie') || '').toLowerCase();
+
+        if (!termen || nr.includes(termen) || serie.includes(termen)) {
+            card.style.removeProperty('display');
+            visibleCount++;
+        } else {
+            card.style.setProperty('display', 'none', 'important');
+        }
+    });
+
+    // Empty state
+    let emptyDiv = container?.querySelector('.empty-search-state-furn');
+    if (termen && visibleCount === 0) {
+        if (!emptyDiv && container) {
+            emptyDiv = document.createElement('div');
+            emptyDiv.className = 'empty-search-state-furn';
+            emptyDiv.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-10 px-8">
+                    <svg class="w-14 h-14 mx-auto mb-3 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    <p class="font-bold text-slate-400 text-sm uppercase tracking-wider mb-1">Nicio factură găsită</p>
+                    <p class="text-xs text-slate-400 text-center">Căutare: "<span class="font-semibold">${termen}</span>"</p>
+                </div>`;
+            container.appendChild(emptyDiv);
+        }
+    } else if (emptyDiv) {
+        emptyDiv.remove();
+    }
+}
+window.filtreazaFacturiFurnizorInDetalii = filtreazaFacturiFurnizorInDetalii;
 window.populeazaBridgeUI = populeazaBridgeUI;
 window.toggleFirmeBI = toggleFirmeBI;
 window.genereazaBI = genereazaBI;
@@ -6941,6 +7054,26 @@ document.addEventListener('keydown', function(e) {
                 }
                 break;
         }
+    }
+
+    // Ctrl+F / Cmd+F → focus search bar contextual
+    if ((e.ctrlKey || e.metaKey) && e.key === 'f' && !inInput) {
+        const tab = ZFlowStore?.currentTab || 'financiar';
+        let searchEl = null;
+        if (tab === 'financiar') {
+            const inDet  = !document.getElementById('view-detalii')?.classList.contains('hidden');
+            const inDetF = !document.getElementById('view-detalii-furnizor')?.classList.contains('hidden');
+            if (inDet)  searchEl = document.getElementById('search-facturi-detaliu');
+            else if (inDetF) searchEl = document.getElementById('search-facturi-furnizor-detaliu');
+            else {
+                const inFurn = !document.getElementById('view-furnizori')?.classList.contains('hidden');
+                searchEl = inFurn
+                    ? document.getElementById('search-furnizori')
+                    : document.getElementById('search-firme');
+            }
+        } else if (tab === 'depozit')  searchEl = document.getElementById('depozit-search-produse');
+        else if (tab === 'logistic')   searchEl = document.querySelector('#logistic input[type="text"]');
+        if (searchEl) { e.preventDefault(); searchEl.focus(); searchEl.select(); }
     }
 });
 

@@ -2618,3 +2618,76 @@ input {
 .dark .swipeable-card::after {
   background: rgba(255, 255, 255, 0.03) !important;
 }
+
+/* === CLS Prevention — rezervă spațiu pentru containerele principale === */
+
+/* Tab content — previne reflow la switch tab */
+.tab-content {
+  min-height: 100vh;
+}
+
+/* Lista de carduri — previne salt la populate */
+#lista-firme-global,
+#lista-furnizori-global {
+  min-height: 200px;
+}
+
+/* KPI cards home — dimensiuni fixe previn layout shift */
+#home-kpi-incasat,
+#home-kpi-net,
+#home-kpi-facturi,
+#home-kpi-cashflow {
+  min-height: 80px;
+}
+
+/* Home header card */
+.bg-gradient-to-br.from-blue-900 {
+  min-height: 140px;
+}
+
+/* Lista facturi detaliu */
+#lista-facturi-content,
+#lista-facturi-platit-detaliu {
+  min-height: 100px;
+}
+
+/* Skeleton loader — nu permite salt */
+.skeleton-card {
+  min-height: 96px;
+}
+
+/* === Uniformizare carduri Clienți / Furnizori — mobile & desktop === */
+
+/* Desktop: limităm lățimea listelor pentru lizibilitate */
+@media (min-width: 768px) {
+  #lista-firme-global,
+  #lista-furnizori-global {
+    max-width: 680px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+/* Card flow: border-radius uniform */
+.card-flow {
+  border-radius: 20px !important;
+}
+
+/* Carduri în interiorul detalii client/furnizor */
+#lista-facturi-content .card-factura-client,
+#lista-facturi-platit-detaliu .card-flow {
+  border-radius: 16px;
+}
+
+/* ============================================================
+   CLS PREVENTION v63.4 — rezervă spațiu înainte ca JS să populeze
+   ============================================================ */
+.tab-content { min-height: calc(100vh - 130px); }
+#lista-firme-global, #lista-furnizori-global { min-height: 160px; }
+.bg-gradient-to-br.from-blue-900.to-blue-800 { min-height: 136px; }
+#lista-facturi-content, #lista-facturi-platit-detaliu { min-height: 80px; }
+@media (min-width: 768px) {
+  #lista-firme-global, #lista-furnizori-global {
+    max-width: 720px; margin-left: auto; margin-right: auto;
+  }
+}

@@ -96,11 +96,14 @@ self.addEventListener('activate', event => {
 });
 
 // Fetch: Network first for HTML, cache first for assets
-self.addEventListener('fetch', event => {
+self.addEventListener('fetch', async event => {
   const url = new URL(event.request.url);
   
   // Skip non-GET requests
   if (event.request.method !== 'GET') return;
+  
+  // Skip non-HTTP schemes (chrome-extension://, data:, blob:, etc.)
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
   
   // Skip Supabase API calls
   if (url.hostname.includes('supabase')) return;
@@ -114,7 +117,10 @@ self.addEventListener('fetch', event => {
         .then(response => {
           if (response && response.ok) {
             const clone = response.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+            const scheme = new URL(event.request.url).protocol;
+            if (scheme === 'http:' || scheme === 'https:') {
+              caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+            }
           }
           return response;
         })
@@ -135,7 +141,10 @@ self.addEventListener('fetch', event => {
           if (cached) return cached;
           return fetch(event.request).then(response => {
             const clone = response.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+            const scheme = new URL(event.request.url).protocol;
+            if (scheme === 'http:' || scheme === 'https:') {
+              caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+            }
             return response;
           });
         })
@@ -143,26 +152,27 @@ self.addEventListener('fetch', event => {
     return;
   }
   
-  // Static assets (JS/CSS/icons): Cache First — cache-ul este mereu proaspat dupa install
-  // Dupa o actualizare, CACHE_NAME se schimba, vechiul cache e sters si activat cel nou.
-  event.respondWith(
-    caches.match(event.request).then(cached => {
-      if (cached) return cached; // Cache hit — raspuns instant fara retea
-      return fetch(event.request)
-        .then(response => {
-          if (response.ok) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-          }
-          return response;
-        })
-        .catch(() => {
-          if (event.request.mode === 'navigate') {
-            return caches.match('./index.html') || caches.match('./');
-          }
-        });
+  // Static assets (JS/CSS/icons): Stale-While-Revalidate
+  // Servire instant din cache + actualizare în background. CACHE_NAME asigură invalidare la deploy.
+  const cached = await caches.match(event.request);
+  const networkFetch = fetch(event.request)
+    .then(response => {
+      if (response && response.ok) {
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+      }
+      return response;
     })
-  );
+    .catch(() => null);
+
+  if (cached) {
+    event.waitUntil(networkFetch);
+    event.respondWith(Promise.resolve(cached));
+  } else {
+    event.respondWith(
+      networkFetch.then(r => r || caches.match('./index.html'))
+    );
+  }
 });
 
 // Background sync for offline actions
@@ -244,4 +254,30 @@ self.addEventListener('message', event => {
     if (event.data?.type === 'SKIP_WAITING') {
         self.skipWaiting();
     }
+});
+
+// ── Push Notifications ───────────────────────────────────────────────────
+self.addEventListener('push', event => {
+    if (!event.data) return;
+    let payload;
+    try { payload = event.data.json(); } catch { payload = { title: 'Z-FLOW', body: event.data.text() }; }
+    const options = {
+        body:    payload.body    || 'Ai scadențe care necesită atenție.',
+        icon:    payload.icon    || './icons/icon.svg',
+        tag:     payload.tag     || 'zflow-alert',
+        data:    payload.data    || { url: './' },
+        vibrate: [200, 100, 200]
+    };
+    event.waitUntil(self.registration.showNotification(payload.title || 'Z-FLOW Alerte', options));
+});
+
+self.addEventListener('notificationclick', event => {
+    event.notification.close();
+    if (event.action === 'dismiss') return;
+    event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+            for (const c of list) if ('focus' in c) return c.focus();
+            if (clients.openWindow) return clients.openWindow(event.notification.data?.url || './');
+        })
+    );
 });

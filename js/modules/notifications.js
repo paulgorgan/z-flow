@@ -201,6 +201,31 @@ const ZFlowNotifications = {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
         }).format(suma || 0) + ' RON';
+    },
+    /**
+     * Verifică scadențele și trimite notificare locală dacă există urgențe (≤5 zile)
+     */
+    async checkScadente() {
+        const facturi     = window.ZFlowStore?.dateFacturiBI    || [];
+        const facturiPlat = window.ZFlowStore?.dateFacturiPlatit || [];
+        const azi = new Date(); azi.setHours(0,0,0,0);
+        const prag = new Date(+azi + 5*86400000);
+        let restante = 0, iminente = 0;
+        facturi.forEach(f => {
+            if (f.status_plata === 'Incasat' || !f.data_scadenta) return;
+            const d = new Date(f.data_scadenta); d.setHours(0,0,0,0);
+            if (d < azi) restante++; else if (d <= prag) iminente++;
+        });
+        facturiPlat.forEach(f => {
+            if (f.status_plata === 'Platit' || !f.data_scadenta) return;
+            const d = new Date(f.data_scadenta); d.setHours(0,0,0,0);
+            if (d < azi) restante++; else if (d <= prag) iminente++;
+        });
+        if (restante + iminente === 0) return;
+        let body = '';
+        if (restante > 0)  body += `${restante} factură${restante>1?'i':''} restantă${restante>1?'':''}. `;
+        if (iminente > 0)  body += `${iminente} factură${iminente>1?'i':''} scade în ≤5 zile.`;
+        await this.send('⚠️ Z-FLOW Scadențe', { body: body.trim(), tag: 'zflow-scadente' });
     }
 };
 

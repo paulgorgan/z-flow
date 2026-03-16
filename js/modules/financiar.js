@@ -255,6 +255,7 @@ function renderMain(lista = null) {
     const totalPort = ZFlowStore.dateLocal.reduce((acc, f) => acc + (Number(f.sold) || 0), 0);
     const totalEl = document.getElementById("total-general");
     if (totalEl) totalEl.innerText = `${Math.round(totalPort).toLocaleString()} lei`;
+    if (typeof initInfiniteScrollClienti === 'function') requestAnimationFrame(initInfiniteScrollClienti);
 }
 
 // Debounce pentru căutarea clienți
@@ -397,6 +398,7 @@ function renderFurnizori(lista) {
     const totalEl = document.getElementById("total-general-platit");
     if (totalEl) totalEl.innerText = `${Math.round(totalPlatit).toLocaleString()} lei`;
     _renderFurnizoriPagination(sursa.length);
+    if (typeof initInfiniteScrollFurnizori === 'function') requestAnimationFrame(initInfiniteScrollFurnizori);
 
     // Notificare scadențe restante afișată deasupra listei furnizori
     const alertaFinF = document.getElementById("fin-alerte-furnizori");
@@ -566,6 +568,17 @@ function arataDetaliiFurnizor(id) {
             const sorted = [...toateFacturi].sort((a, b) => _sortFacturiDueClosestFin(a, b, azi, 'Platit'));
             const facturi = perPage === 0 ? sorted : sorted.slice(0, perPage);
             listaEl.innerHTML = `
+            <div class="sticky top-0 bg-[#f1f5f9]/95 backdrop-filter backdrop-blur-md z-30 pb-3 pt-2 mb-2">
+                <div class="relative">
+                    <input type="text" id="search-facturi-furnizor-detaliu"
+                           oninput="filtreazaFacturiFurnizorInDetalii()"
+                           placeholder="Caută nr. factură sau serie..."
+                           class="w-full h-12 pl-12 bg-white rounded-2xl border border-slate-200 text-[13px] font-bold shadow-sm outline-none focus:ring-2 focus:ring-red-100 transition-all" />
+                    <div class="absolute left-4 top-3.5 text-slate-300">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                    </div>
+                </div>
+            </div>
             <div class="flex items-center gap-2 px-1 mb-2">
                 <span class="text-[9px] font-bold text-slate-400 uppercase">Afișare</span>
                 <select onchange="furnizoriFacturiSetPerPage(this.value)"
@@ -595,7 +608,7 @@ function arataDetaliiFurnizor(id) {
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
                        </button>`;
                 return `
-<div class="card-flow flex flex-col gap-2 p-3 mb-2 ${isPlatit ? "bg-white" : "bg-red-50/40 border-red-100"}">
+<div class="card-flow flex flex-col gap-2 p-3 mb-2 ${isPlatit ? "bg-white" : "bg-red-50/40 border-red-100"}" data-nr="${_esc(fac.numar_factura || '')}" data-serie="${_esc(fac.serie || '')}">
     <div class="flex items-center gap-2 ${spvClass} border px-2 py-2 rounded-xl">
         <span class="flex h-2 w-2 relative">
             <span class="relative inline-flex rounded-full h-2 w-2 ${spvDotClass}"></span>
