@@ -2727,3 +2727,8 @@ input {
   min-height: 28px !important;
   line-height: 28px !important;
 }
+
+/* Depozit produs — span status badge font size */
+#depozit-lista-produse div.flex.items-center.gap-2 > span {
+  font-size: 9px !important;
+}

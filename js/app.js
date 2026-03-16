@@ -5266,9 +5266,9 @@ async function exportaPDF() {
         headStyles: { fillColor: [30, 58, 138], fontSize: 7, halign: "center", fontStyle: "bold", cellPadding: 2 },
         styles: { fontSize: 9, halign: "center", fontStyle: "bold", cellPadding: 3, overflow: 'linebreak' },
         columnStyles: {
-            0: { cellWidth: 61, textColor: [30, 58, 138] },
-            1: { cellWidth: 61, textColor: [185, 28, 28] },
-            2: { cellWidth: 60, textColor: cfNetVal >= 0 ? [5, 150, 105] : [185, 28, 28] },
+            0: { cellWidth: 55, textColor: [30, 58, 138] },
+            1: { cellWidth: 55, textColor: [185, 28, 28] },
+            2: { cellWidth: 54, textColor: cfNetVal >= 0 ? [5, 150, 105] : [185, 28, 28] },
         }
     });
 

@@ -179,16 +179,20 @@ function renderProduse() {
     const container = document.getElementById('depozit-lista-produse');
     if (!container) return;
     const q = (document.getElementById('depozit-search-produse')?.value || '').toLowerCase();
-    // [R6-FIX 3] Aplică filtrul de alerte dacă e activ
-    const all = (ZFlowStore.dateProduse || []).filter(p => {
+    // [R6-FIX 3] Aplică filtrul/sortarea de alerte dacă e activ
+    let all = (ZFlowStore.dateProduse || []).filter(p => {
         const matchQ = !q || (p.sku||'').toLowerCase().includes(q) || (p.nume||'').toLowerCase().includes(q);
-        if (_filtruAlerteActiv) {
-            const stoc = typeof calcStocCurent === 'function' ? calcStocCurent(p.id) : 0;
-            const isAlert = (p.stoc_min && stoc < Number(p.stoc_min)) || stoc <= 0;
-            return matchQ && isAlert;
-        }
         return matchQ;
     });
+    if (_filtruAlerteActiv) {
+        // Sortează produsele cu alertă (stoc scăzut/epuizat) primele în listă
+        all = all.slice().sort((a, b) => {
+            const sa = calcStocCurent(a.id), sb = calcStocCurent(b.id);
+            const alertA = ((a.stoc_min && sa < Number(a.stoc_min)) || sa <= 0) ? 0 : 1;
+            const alertB = ((b.stoc_min && sb < Number(b.stoc_min)) || sb <= 0) ? 0 : 1;
+            return alertA - alertB;
+        });
+    }
     ZFlowStore._produseFiltrate = all;
     const pagP = pagineaza(all, ZFlowStore.produsePageSize ?? 10, ZFlowStore.produseCurrentPage || 1);
     ZFlowStore.produseCurrentPage = pagP.currentPage;

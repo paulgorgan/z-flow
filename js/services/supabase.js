@@ -738,8 +738,8 @@ async function fetchProfile() {
     try {
         const { data: { user } } = await zf.auth.getUser();
         if (!user) {
-            // Nu e autentificat Supabase
-            return null;
+            // Nu e autentificat Supabase — încearcă fallback localStorage
+            try { const s = localStorage.getItem('zflow_profile_fallback'); return s ? JSON.parse(s) : null; } catch(e) { return null; }
         }
         const { data, error } = await zf
             .from("profiles")
@@ -769,8 +769,9 @@ async function upsertProfile(payload) {
     if (_demoOps.isLocal()) { _demoOps.upsertProfile(payload); return; }
     const { data: { user } } = await zf.auth.getUser();
     if (!user) {
-        // Nu e sesiune Supabase activă
+        // Nu e sesiune Supabase activă — salvează în localStorage ca fallback
         if (window.ZFlowStore) window.ZFlowStore.userProfile = { ...payload, onboarding_done: true };
+        try { localStorage.setItem('zflow_profile_fallback', JSON.stringify({ ...payload, onboarding_done: true })); } catch(e) {}
         return;
     }
     // Cache per-user (namespaced, nu shared) pentru recuperare offline
@@ -1246,7 +1247,7 @@ function initRealtimeSubscriptions() {
             if (status === 'SUBSCRIBED') {
                 ZFlowLogger.info('supabase', '[Realtime] Canal activ — schimbările din DB vor apărea în timp real');
             } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-                ZFlowLogger.error('supabase', '[Realtime] Eroare canal:', status, err?.message || '');
+                ZFlowLogger.warn('supabase', '[Realtime] Eroare canal:', status, err?.message || '');
             } else if (status === 'CLOSED') {
                 ZFlowLogger.info('supabase', '[Realtime] Canal închis (cleanup normal)');
             } else {
