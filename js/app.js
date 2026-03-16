@@ -549,12 +549,6 @@ async function init(goHome = true) {
             if (typeof _updateHomeMiniDepozit  === 'function') _updateHomeMiniDepozit();
             if (typeof _updateHomeMiniLogistic === 'function') _updateHomeMiniLogistic();
         }).catch(() => {}).finally(() => {
-            // Notificare scadențe (non-blocking, după 3s)
-            setTimeout(() => {
-                if (typeof ZFlowNotifications !== 'undefined' && typeof ZFlowNotifications.checkScadente === 'function') {
-                    ZFlowNotifications.checkScadente().catch(() => {});
-                }
-            }, 3000);
         });
 
         populeazaBridgeUI();
@@ -2084,12 +2078,12 @@ function incarcaDashboard() {
                     ${clientiRestanti.length ? `
                     <div class="flex items-center justify-between bg-red-100/60 rounded-xl px-3 py-1.5">
                         <p class="text-[10px] text-red-700 font-bold">${clientiRestanti.length} client${clientiRestanti.length > 1 ? "i cu" : " cu"} scadențe depășite</p>
-                        <p class="text-[11px] font-black text-red-700">${Math.round(totalScadenteClientVal).toLocaleString()} lei</p>
+                        <p style="font-size:0.9375rem!important" class="font-black text-red-700">${Math.round(totalScadenteClientVal).toLocaleString()} lei</p>
                     </div>` : ''}
                     ${furnizoriRestanti.length ? `
                     <div class="flex items-center justify-between bg-red-100/60 rounded-xl px-3 py-1.5">
                         <p class="text-[10px] text-red-700 font-bold">${furnizoriRestanti.length} furnizor${furnizoriRestanti.length > 1 ? "i cu" : " cu"} facturi restante</p>
-                        <p class="text-[11px] font-black text-red-700">${Math.round(totalScadenteFurnizorVal).toLocaleString()} lei</p>
+                        <p style="font-size:0.9375rem!important" class="font-black text-red-700">${Math.round(totalScadenteFurnizorVal).toLocaleString()} lei</p>
                     </div>` : ''}
                   </div>
                 </button>`;
@@ -2227,38 +2221,6 @@ function incarcaDashboard() {
     _setTrend('home-kpi-neincasat-trend', neincasat, prevIncasatEfPrec);
     _setTrend('home-kpi-neplatit-trend',  neplatit, prevNP);
     _setTrend('home-kpi-net-trend',       net, prevNet);
-
-    // Trend săptămânal Net
-    const _az7 = new Date(); _az7.setHours(0,0,0,0);
-    const _ac14 = new Date(+_az7 - 7*86400000);
-    const _ac21 = new Date(+_az7 - 14*86400000);
-    const _netW = (ZFlowStore.dateFacturiBI||[]).reduce((s,f) => {
-        const d = f.data_emiterii ? new Date(f.data_emiterii.includes('/')?
-            (([dd,mm,yy]=f.data_emiterii.split('/'), new Date(+(yy<100?2000+parseInt(yy):yy), mm-1, dd, 12))):
-            (f.data_emiterii+'T12:00:00')) : null;
-        return d && d>=_ac14 && d<_az7 && f.status_plata==='Incasat' ? s+(Number(f.valoare)||0) : s;
-    }, 0) - (ZFlowStore.dateFacturiPlatit||[]).reduce((s,f) => {
-        const d = f.data_emiterii ? new Date(f.data_emiterii+'T12:00:00') : null;
-        return d && d>=_ac14 && d<_az7 && f.status_plata==='Platit' ? s+(Number(f.valoare)||0) : s;
-    }, 0);
-    const _netWP = (ZFlowStore.dateFacturiBI||[]).reduce((s,f) => {
-        const d = f.data_emiterii ? new Date(f.data_emiterii.includes('/')?
-            (([dd,mm,yy]=f.data_emiterii.split('/'), new Date(+(yy<100?2000+parseInt(yy):yy), mm-1, dd, 12))):
-            (f.data_emiterii+'T12:00:00')) : null;
-        return d && d>=_ac21 && d<_ac14 && f.status_plata==='Incasat' ? s+(Number(f.valoare)||0) : s;
-    }, 0) - (ZFlowStore.dateFacturiPlatit||[]).reduce((s,f) => {
-        const d = f.data_emiterii ? new Date(f.data_emiterii+'T12:00:00') : null;
-        return d && d>=_ac21 && d<_ac14 && f.status_plata==='Platit' ? s+(Number(f.valoare)||0) : s;
-    }, 0);
-    const _elW = document.getElementById('home-kpi-net-week');
-    const _elWL = document.getElementById('home-kpi-net-week-label');
-    const _elWRow = document.getElementById('home-kpi-net-week-row');
-    if (_elW && _elWL && _netWP !== 0) {
-        const _pW = Math.round(((_netW-_netWP)/Math.abs(_netWP))*100);
-        _elW.textContent = _pW>0 ? `↑ ${_pW}%` : _pW<0 ? `↓ ${Math.abs(_pW)}%` : '—';
-        _elW.className = `text-[7px] font-black ${_pW>0?'text-emerald-500':_pW<0?'text-rose-500':'text-slate-400'}`;
-        if (_elWRow) _elWRow.classList.remove('hidden');
-    } else if (_elW) { _elW.textContent = ''; if (_elWRow) _elWRow.classList.add('hidden'); }
 
     // [R19] Widgets secundare Home
     _updateHomeMiniDepozit();

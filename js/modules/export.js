@@ -28,34 +28,24 @@ const ZFlowExport = {
         });
     },
     async _ensureJsPDF() {
+        // jsPDF și autoTable sunt încărcate static în index.html cu <script defer>
+        // Această funcție verifică doar că s-au inițializat corect
         if (!window.jspdf?.jsPDF) {
-            // Încearcă CDN primar (cdnjs), fallback la jsdelivr
-            try {
-                await this._loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
-            } catch (_) {
-                // CDN primar eșuat — fallback jsdelivr
-                await this._loadScript('https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js');
-            }
-            // Verificare explicită după load — scriptul a eșuat silențios?
-            if (!window.jspdf?.jsPDF) {
-                throw new Error('jsPDF nu s-a inițializat după încărcare (CDN indisponibil)');
-            }
+            throw new Error('jsPDF nu este disponibil. Reîncarcă pagina.');
         }
-        // autotable UMD looks for window.jsPDF (uppercase global), not window.jspdf.jsPDF
-        // bridge the namespace so the plugin attaches to the correct prototype
-        if (window.jspdf?.jsPDF && !window.jsPDF) {
+        // bridge namespace: autotable UMD caută window.jsPDF (uppercase)
+        if (!window.jsPDF) {
             window.jsPDF = window.jspdf.jsPDF;
         }
+        // autotable 3.8.x UMD exports applyPlugin but doesn't auto-apply in browser —
+        // call it manually if the method isn't on jsPDF.prototype yet
         if (typeof window.jspdf?.jsPDF?.prototype?.autoTable !== 'function') {
-            // Încearcă CDN primar, fallback la jsdelivr
-            try {
-                await this._loadScript('https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.28/dist/jspdf.plugin.autotable.min.js');
-            } catch (_) {
-                await this._loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js');
+            if (typeof window.jspdf?.applyPlugin === 'function') {
+                window.jspdf.applyPlugin(window.jspdf.jsPDF);
             }
         }
         if (typeof window.jspdf?.jsPDF?.prototype?.autoTable !== 'function') {
-            throw new Error('jsPDF autoTable plugin failed to initialize');
+            throw new Error('jsPDF autoTable plugin nu este disponibil. Reîncarcă pagina.');
         }
     },
     async _ensureXLSX() {

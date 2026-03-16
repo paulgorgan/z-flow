@@ -2639,7 +2639,6 @@ input {
 
 /* KPI cards home — dimensiuni fixe previn layout shift */
 #home-kpi-incasat,
-#home-kpi-net,
 #home-kpi-facturi,
 #home-kpi-cashflow {
   min-height: 80px;
@@ -2695,4 +2694,29 @@ input {
   #lista-firme-global, #lista-furnizori-global {
     max-width: 720px; margin-left: auto; margin-right: auto;
   }
+}
+
+/* ============================================================
+   KPI GRID HOME — carduri cu îlnălțime proprie (nu stretch)
+   Fix pentru: card Cashflow mai înalt decât celelalte 3 KPI-uri
+   ============================================================ */
+
+/* Gridul celor 4 KPI-uri din Home — fiecare card ia îlnălțimea proprie */
+#home .grid.grid-cols-2 {
+  align-items: start !important;
+}
+
+/* KPI Net — forțează text pe o linie, previne wrap */
+#home-kpi-net {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Fix ID-uri incorecte din regulile CLS prevention anterioare */
+#home-kpi-facturat,
+#home-kpi-neincasat,
+#home-kpi-neplatit,
+#home-kpi-net {
+  min-height: unset;
 }

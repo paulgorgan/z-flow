@@ -489,17 +489,13 @@
             </div>
             <p
               id="home-kpi-net"
-              class="text-lg font-black tabular-nums truncate text-slate-500 leading-tight"
+              class="text-lg font-black tabular-nums truncate text-slate-500"
             >
               — lei
             </p>
-            <div class="flex items-center gap-1.5 mt-0">
+            <div class="flex items-center gap-1.5 mt-0.5">
               <p id="home-kpi-net-breakdown" class="text-[7px] font-bold text-slate-400 tracking-wide">Net total</p>
               <span id="home-kpi-net-trend" class="text-[7px] font-black"></span>
-            </div>
-            <div id="home-kpi-net-week-row" class="flex items-center gap-1 mt-0 hidden">
-              <span id="home-kpi-net-week-label" class="text-[7px] font-bold text-slate-300 tracking-wide">vs săpt.</span>
-              <span id="home-kpi-net-week" class="text-[7px] font-black"></span>
             </div>
           </div>
         </div>
@@ -3681,6 +3677,9 @@
     <script src="js/modules/efactura.js" defer></script>
     <script src="js/modules/bridge.js" defer></script>
     <script src="js/modules/bulk.js" defer></script>
+    <!-- jsPDF + autoTable — încărcate static, disponibile garantat la Export -->
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js" defer></script>
     <script src="js/modules/export.js" defer></script>
     <script src="js/modules/anaf.js" defer></script>
     <script src="js/modules/attachments.js" defer></script>

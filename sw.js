@@ -54,8 +54,9 @@ const CDN_ASSETS = [
   'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css',
   'https://unpkg.com/html5-qrcode@2.3.4/html5-qrcode.min.js',
   'https://unpkg.com/vue@3/dist/vue.global.prod.js',
-  'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap'
-  // jsPDF, xlsx, Chart.js are lazy-loaded on demand — cached by fetch handler on first use
+  'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap',
+  'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js',
+  'https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js'
 ];
 
 // Install: Cache static assets
@@ -263,30 +264,4 @@ self.addEventListener('message', event => {
     if (event.data?.type === 'SKIP_WAITING') {
         self.skipWaiting();
     }
-});
-
-// ── Push Notifications ───────────────────────────────────────────────────
-self.addEventListener('push', event => {
-    if (!event.data) return;
-    let payload;
-    try { payload = event.data.json(); } catch { payload = { title: 'Z-FLOW', body: event.data.text() }; }
-    const options = {
-        body:    payload.body    || 'Ai scadențe care necesită atenție.',
-        icon:    payload.icon    || './icons/icon.svg',
-        tag:     payload.tag     || 'zflow-alert',
-        data:    payload.data    || { url: './' },
-        vibrate: [200, 100, 200]
-    };
-    event.waitUntil(self.registration.showNotification(payload.title || 'Z-FLOW Alerte', options));
-});
-
-self.addEventListener('notificationclick', event => {
-    event.notification.close();
-    if (event.action === 'dismiss') return;
-    event.waitUntil(
-        clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
-            for (const c of list) if ('focus' in c) return c.focus();
-            if (clients.openWindow) return clients.openWindow(event.notification.data?.url || './');
-        })
-    );
 });
