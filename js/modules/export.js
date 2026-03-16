@@ -37,14 +37,14 @@ const ZFlowExport = {
         if (!window.jsPDF) {
             window.jsPDF = window.jspdf.jsPDF;
         }
-        // autotable 3.8.x UMD exports applyPlugin but doesn't auto-apply in browser —
-        // call it manually if the method isn't on jsPDF.prototype yet
-        if (typeof window.jspdf?.jsPDF?.prototype?.autoTable !== 'function') {
-            if (typeof window.jspdf?.applyPlugin === 'function') {
-                window.jspdf.applyPlugin(window.jspdf.jsPDF);
+        // autotable 3.8.x UMD exports applyPlugin to window (globalThis), not to window.jspdf
+        // jsPDF 2.x plugins register on jsPDF.API (not prototype) — check there
+        if (typeof window.jspdf?.jsPDF?.API?.autoTable !== 'function') {
+            if (typeof window.applyPlugin === 'function') {
+                window.applyPlugin(window.jspdf.jsPDF);
             }
         }
-        if (typeof window.jspdf?.jsPDF?.prototype?.autoTable !== 'function') {
+        if (typeof window.jspdf?.jsPDF?.API?.autoTable !== 'function') {
             throw new Error('jsPDF autoTable plugin nu este disponibil. Reîncarcă pagina.');
         }
     },
