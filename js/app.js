@@ -1985,7 +1985,7 @@ function incarcaDashboard() {
     const elNet = document.getElementById("home-kpi-net");
     if (elNet) {
         elNet.innerText = fmt(net);
-        elNet.className = `text-lg font-black tabular-nums truncate ${net > 0 ? "text-emerald-600" : net < 0 ? "text-rose-600" : "text-slate-500"}`;
+        elNet.className = `text-lg font-black tabular-nums truncate leading-tight ${net > 0 ? "text-emerald-600" : net < 0 ? "text-rose-600" : "text-slate-500"}`;
     }
     // [FIX B4] Net 30 breakdown: afișează componentele de incasat și de plătit
     const elNetBreakdown = document.getElementById("home-kpi-net-breakdown");
@@ -2252,12 +2252,13 @@ function incarcaDashboard() {
     }, 0);
     const _elW = document.getElementById('home-kpi-net-week');
     const _elWL = document.getElementById('home-kpi-net-week-label');
+    const _elWRow = document.getElementById('home-kpi-net-week-row');
     if (_elW && _elWL && _netWP !== 0) {
         const _pW = Math.round(((_netW-_netWP)/Math.abs(_netWP))*100);
-        _elWL.classList.remove('hidden'); _elW.classList.remove('hidden');
         _elW.textContent = _pW>0 ? `↑ ${_pW}%` : _pW<0 ? `↓ ${Math.abs(_pW)}%` : '—';
         _elW.className = `text-[7px] font-black ${_pW>0?'text-emerald-500':_pW<0?'text-rose-500':'text-slate-400'}`;
-    } else if (_elW) { _elW.classList.add('hidden'); if(_elWL) _elWL.classList.add('hidden'); }
+        if (_elWRow) _elWRow.classList.remove('hidden');
+    } else if (_elW) { _elW.textContent = ''; if (_elWRow) _elWRow.classList.add('hidden'); }
 
     // [R19] Widgets secundare Home
     _updateHomeMiniDepozit();
@@ -5197,7 +5198,19 @@ async function importaDateSaga(tipImport = 'clienti') {
  * Altfel -> exportă toate facturile filtrate
  */
 async function exportaPDF() {
-    if (window.ZFlowExport) await window.ZFlowExport._ensureJsPDF();
+    try {
+        if (window.ZFlowExport) await window.ZFlowExport._ensureJsPDF();
+    } catch (e) {
+        // Retry automat o singură dată după 1.2s (CDN poate fi temporar lent)
+        try {
+            await new Promise(r => setTimeout(r, 1200));
+            if (window.ZFlowExport) await window.ZFlowExport._ensureJsPDF();
+        } catch (e2) {
+            ZFlowLogger.error('app', 'Eroare la încărcarea jsPDF (retry eșuat): ' + e2.message);
+            showNotification('Export PDF indisponibil · Verificați conexiunea la internet', 'error');
+            return;
+        }
+    }
 
     // VERIFICARE BULK SELECTION - dacă există facturi selectate, exportă doar selecția
     if (ZFlowStore.bulkMode && ZFlowStore.bulkSelectedFacturi.length > 0) {
@@ -5207,6 +5220,12 @@ async function exportaPDF() {
     }
     
     ZFlowLogger.debug('app', "📄 Export PDF - MOD COMPLET: toate facturile filtrate");
+    if (!window.jspdf?.jsPDF) {
+        showNotification('Biblioteca PDF nu este disponibilă. Reîncarcă pagina și încearcă din nou.', 'error');
+        return;
+    }
+
+    try {
 
     const curataText = (text) => {
         if (!text) return "";
@@ -5381,6 +5400,11 @@ async function exportaPDF() {
 
     doc.save(`Analiza_ZFlow_${new Date().toISOString().slice(0, 10)}.pdf`);
     saveZFlowData();
+
+    } catch (pdfErr) {
+        ZFlowLogger.error('app', 'Eroare la generarea PDF: ' + pdfErr.message);
+        showNotification('Eroare la generarea PDF · ' + pdfErr.message, 'error');
+    }
 }
 
 /**
@@ -7255,3 +7279,18 @@ window.inchideDashboardAdmin = inchideDashboardAdmin;
 window.invalidateCashflowCache = invalidateCashflowCache;
 window.exportaCSV = exportaCSV;
 window.toggleDarkMode = toggleDarkMode;
+
+/**
+ * Inițializează dark mode la startup — respectă preferința salvată sau OS
+ * Trebuie apelată sincron din <script> în <head> pentru a preveni FOUC
+ */
+function initDarkMode() {
+    const saved = localStorage.getItem('zflow-theme');
+    if (saved === 'dark') {
+        document.documentElement.classList.add('dark');
+    } else if (saved === null && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.documentElement.classList.add('dark');
+        localStorage.setItem('zflow-theme', 'dark');
+    }
+}
+window.initDarkMode = initDarkMode;

@@ -223,8 +223,8 @@ const ZFlowNotifications = {
         });
         if (restante + iminente === 0) return;
         let body = '';
-        if (restante > 0)  body += `${restante} factură${restante>1?'i':''} restantă${restante>1?'':''}. `;
-        if (iminente > 0)  body += `${iminente} factură${iminente>1?'i':''} scade în ≤5 zile.`;
+        if (restante > 0)  body += `${restante} factur${restante>1?'i':'ă'} restant${restante>1?'e':'ă'}. `;
+        if (iminente > 0)  body += `${iminente} factur${iminente>1?'i':'ă'} scade în ≤5 zile.`;
         await this.send('⚠️ Z-FLOW Scadențe', { body: body.trim(), tag: 'zflow-scadente' });
     }
 };

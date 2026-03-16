@@ -111,6 +111,8 @@ function renderMain(lista = null) {
     sursa.sort((a, b) => {
         const distA = _closestOpenDueForEntity(a.facturi, 'Incasat', azi);
         const distB = _closestOpenDueForEntity(b.facturi, 'Incasat', azi);
+        // Ambii fără scadențe deschise → sortare după sold desc
+        if (distA === Infinity && distB === Infinity) return (b.sold || 0) - (a.sold || 0);
         if (distA !== distB) return distA - distB;
         // Secundar: sold restant descrescător
         const aScad = (a.facturi || []).reduce((acc, f) => {
@@ -325,6 +327,8 @@ function renderFurnizori(lista) {
     sursa.sort((a, b) => {
         const distA = _closestOpenDueForEntity(a.facturi, 'Platit', azi);
         const distB = _closestOpenDueForEntity(b.facturi, 'Platit', azi);
+        // Ambii fără scadențe deschise → sortare după sold desc
+        if (distA === Infinity && distB === Infinity) return (b.sold || 0) - (a.sold || 0);
         if (distA !== distB) return distA - distB;
         // Secundar: sumaScadenta descrescătoare
         if ((b.sumaScadenta || 0) !== (a.sumaScadenta || 0)) return (b.sumaScadenta || 0) - (a.sumaScadenta || 0);

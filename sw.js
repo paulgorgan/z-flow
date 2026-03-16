@@ -5,6 +5,10 @@
 
 // Load build version — single source of truth for cache busting
 try { importScripts('./js/version.js'); } catch (e) {}
+
+// SW logger — activ doar în dev (localhost)
+const SW_DEV = self.location.hostname === 'localhost' || self.location.hostname === '127.0.0.1';
+const swLog = (...args) => { if (SW_DEV) console.log(...args); };
 const CACHE_NAME = 'zflow-' + (typeof ZFLOW_BUILD !== 'undefined' ? ZFLOW_BUILD : 'v61.1');
 const STATIC_ASSETS = [
   './',
@@ -40,7 +44,10 @@ const STATIC_ASSETS = [
   './js/modules/efactura.js',
   './js/modules/bridge.js',
   './manifest.json',
-  './icons/icon.svg'
+  './icons/icon.svg',
+  './icons/icon-192.png',
+  './icons/icon-512.png',
+  './icons/icon-maskable-192.png'
 ];
 
 const CDN_ASSETS = [
@@ -56,15 +63,15 @@ const CDN_ASSETS = [
 
 // Install: Cache static assets
 self.addEventListener('install', event => {
-  console.log('🔧 SW V2: Installing...');
+  swLog('🔧 SW V2: Installing...');
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        console.log('📦 SW V2: Caching static assets');
+        swLog('📦 SW V2: Caching static assets');
         return cache.addAll(STATIC_ASSETS);
       })
       .then(() => {
-        console.log('✅ SW V2: Static assets cached');
+        swLog('✅ SW V2: Static assets cached');
         return self.skipWaiting();
       })
       .catch(err => {
@@ -75,7 +82,7 @@ self.addEventListener('install', event => {
 
 // Activate: Clean old caches
 self.addEventListener('activate', event => {
-  console.log('🚀 SW V2: Activating...');
+  swLog('🚀 SW V2: Activating...');
   event.waitUntil(
     caches.keys()
       .then(keys => {
@@ -83,20 +90,20 @@ self.addEventListener('activate', event => {
           keys
             .filter(key => key !== CACHE_NAME)
             .map(key => {
-              console.log('🗑️ SW V2: Removing old cache:', key);
+              swLog('🗑️ SW V2: Removing old cache:', key);
               return caches.delete(key);
             })
         );
       })
       .then(() => {
-        console.log('✅ SW V2: Activated, claiming clients');
+        swLog('✅ SW V2: Activated, claiming clients');
         return self.clients.claim();
       })
   );
 });
 
 // Fetch: Network first for HTML, cache first for assets
-self.addEventListener('fetch', async event => {
+self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
   
   // Skip non-GET requests
@@ -153,31 +160,34 @@ self.addEventListener('fetch', async event => {
   }
   
   // Static assets (JS/CSS/icons): Stale-While-Revalidate
-  // Servire instant din cache + actualizare în background. CACHE_NAME asigură invalidare la deploy.
-  const cached = await caches.match(event.request);
-  const networkFetch = fetch(event.request)
-    .then(response => {
-      if (response && response.ok) {
-        const clone = response.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-      }
-      return response;
-    })
-    .catch(() => null);
+  // respondWith apelat sincron, logica async în interiorul promise-ului.
+  event.respondWith(
+    caches.match(event.request).then(cached => {
+      // Background revalidate — actualizează cache-ul cu versiunea nouă
+      const networkFetch = fetch(event.request)
+        .then(response => {
+          if (response && response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          }
+          return response;
+        })
+        .catch(() => null);
 
-  if (cached) {
-    event.waitUntil(networkFetch);
-    event.respondWith(Promise.resolve(cached));
-  } else {
-    event.respondWith(
-      networkFetch.then(r => r || caches.match('./index.html'))
-    );
-  }
+      // Dacă avem cache — servim instant, actualizăm în background
+      if (cached) {
+        event.waitUntil(networkFetch);
+        return cached;
+      }
+      // Fără cache — așteptăm rețeaua
+      return networkFetch.then(r => r || caches.match('./index.html'));
+    })
+  );
 });
 
 // Background sync for offline actions
 self.addEventListener('sync', event => {
-  console.log('🔄 SW V2: Background sync triggered:', event.tag);
+  swLog('🔄 SW V2: Background sync triggered:', event.tag);
   if (event.tag === 'sync-invoices') {
     event.waitUntil(syncPendingInvoices());
   }
@@ -185,7 +195,7 @@ self.addEventListener('sync', event => {
 
 async function syncPendingInvoices() {
   // [R4-FIX 2] Sync operații CRUD pendinte salvate în IDB 'pending_ops'
-  console.log('📤 SW V2: syncPendingInvoices — start');
+  swLog('📤 SW V2: syncPendingInvoices — start');
 
   let db;
   try {
@@ -210,12 +220,12 @@ async function syncPendingInvoices() {
   });
 
   if (ops.length === 0) {
-      console.log('SW: Nicio operație pendintă');
+      swLog('SW: Nicio operație pendintă');
       db.close();
       return;
   }
 
-  console.log(`SW: ${ops.length} operații de sincronizat`);
+  swLog(`SW: ${ops.length} operații de sincronizat`);
 
   // Notifică clientul activ de progress
   const clients = await self.clients.matchAll({ type: 'window' });
@@ -242,14 +252,14 @@ async function syncPendingInvoices() {
 
   db.close();
   notify({ status: 'done', synced, failed });
-  console.log(`📤 SW: Sync complet — ${synced} reușite, ${failed} eșuate`);
+  swLog(`📤 SW: Sync complet — ${synced} reușite, ${failed} eșuate`);
 }
 
 // [R4-FIX 2] Handler mesaje de la window client
 self.addEventListener('message', event => {
     if (event.data?.type === 'REGISTER_PENDING_OP') {
         // Clientul înregistrează o operație offline pentru sync ulterior
-        console.log('SW: Operație pendentă înregistrată:', event.data.op);
+        swLog('SW: Operație pendentă înregistrată:', event.data.op);
     }
     if (event.data?.type === 'SKIP_WAITING') {
         self.skipWaiting();

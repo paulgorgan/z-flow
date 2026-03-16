@@ -16,9 +16,31 @@ const ZFlowExport = {
         });
     },
     async _ensureJsPDF() {
-        if (window.jspdf?.jsPDF) return;
-        await this._loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
-        await this._loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js');
+        if (!window.jspdf?.jsPDF) {
+            // Încearcă CDN primar (cdnjs), fallback la jsdelivr
+            try {
+                await this._loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+            } catch (_) {
+                // CDN primar eșuat — fallback jsdelivr
+                await this._loadScript('https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js');
+            }
+        }
+        // autotable UMD looks for window.jsPDF (uppercase global), not window.jspdf.jsPDF
+        // bridge the namespace so the plugin attaches to the correct prototype
+        if (window.jspdf?.jsPDF && !window.jsPDF) {
+            window.jsPDF = window.jspdf.jsPDF;
+        }
+        if (typeof window.jspdf?.jsPDF?.prototype?.autoTable !== 'function') {
+            // Încearcă CDN primar, fallback la jsdelivr
+            try {
+                await this._loadScript('https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.28/dist/jspdf.plugin.autotable.min.js');
+            } catch (_) {
+                await this._loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js');
+            }
+        }
+        if (typeof window.jspdf?.jsPDF?.prototype?.autoTable !== 'function') {
+            throw new Error('jsPDF autoTable plugin failed to initialize');
+        }
     },
     async _ensureXLSX() {
         if (window.XLSX) return;

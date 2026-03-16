@@ -48,8 +48,9 @@
 
     <!-- Runtime dependencies — heavy libs (jsPDF, xlsx, Chart.js) are loaded on-demand by JS modules -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" defer></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css" />
-    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css" media="print" onload="this.media='all'" />
+    <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css" /></noscript>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js" defer></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.4/html5-qrcode.min.js" defer></script>
 
     <!-- Vue.js 3 — production build (minified, no dev warnings) -->
@@ -86,6 +87,15 @@
       /* Accesibilitate WCAG: clasa sr-only pentru etichete vizual ascunse */
       .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border-width:0}
     </style>
+    <!-- Dark mode init sincron — previne FOUC (Flash of Unstyled Content) -->
+    <script>
+      (function() {
+        var t = localStorage.getItem('zflow-theme');
+        if (t === 'dark' || (!t && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
     <!-- [R19] Global error handler — interceptează erori JS neprevăzute -->
     <script>
       window.onerror = function(msg, src, line, col, err) {
@@ -114,6 +124,29 @@
       };
     </script>
   </head>
+
+  <!-- Schema.org structured data for SEO -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Z-FLOW Enterprise",
+    "description": "Aplicație de gestiune financiară și facturare pentru IMM-uri din România",
+    "url": "https://paulgorgan.github.io/z-flow/",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Web, Android, iOS",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "RON"
+    },
+    "author": {
+      "@type": "Organization",
+      "name": "Z-FLOW"
+    },
+    "inLanguage": "ro"
+  }
+  </script>
 
   <body class="bg-slate-50">
     <!-- BANNER OFFLINE -->
@@ -456,17 +489,17 @@
             </div>
             <p
               id="home-kpi-net"
-              class="text-lg font-black tabular-nums truncate text-slate-500"
+              class="text-lg font-black tabular-nums truncate text-slate-500 leading-tight"
             >
               — lei
             </p>
-            <div class="flex items-center gap-1.5 mt-0.5">
+            <div class="flex items-center gap-1.5 mt-0">
               <p id="home-kpi-net-breakdown" class="text-[7px] font-bold text-slate-400 tracking-wide">Net total</p>
               <span id="home-kpi-net-trend" class="text-[7px] font-black"></span>
             </div>
-            <div class="flex items-center gap-1 mt-0.5">
-              <span id="home-kpi-net-week-label" class="text-[7px] font-bold text-slate-300 tracking-wide hidden">vs săpt.</span>
-              <span id="home-kpi-net-week" class="text-[7px] font-black hidden"></span>
+            <div id="home-kpi-net-week-row" class="flex items-center gap-1 mt-0.5 hidden">
+              <span id="home-kpi-net-week-label" class="text-[7px] font-bold text-slate-300 tracking-wide">vs săpt.</span>
+              <span id="home-kpi-net-week" class="text-[7px] font-black"></span>
             </div>
           </div>
         </div>
@@ -1036,7 +1069,7 @@
                   d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m.75 12 3 3m0 0 3-3m-3 3v-6m-1.5-9H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"
                 />
               </svg>
-              Export PDF
+              <span class="export-label">Export PDF</span>
             </button>
             <button type="button"
               id="btn-export-excel"
@@ -1057,7 +1090,7 @@
                   d="M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 0 1-1.125-1.125M3.375 19.5h7.5c.621 0 1.125-.504 1.125-1.125m-9.75 0V5.625m0 12.75v-1.5c0-.621.504-1.125 1.125-1.125m18.375 2.625V5.625m0 12.75c0 .621-.504 1.125-1.125 1.125m1.125-1.125h-7.5a1.125 1.125 0 0 1-1.125-1.125m0 0h7.5m-7.5 0V5.625m0 0h7.5m-7.5 0a1.125 1.125 0 0 1 1.125-1.125h5.25c.621 0 1.125.504 1.125 1.125m-8.25 0h8.25m-8.25 0v1.5c0 .621.504 1.125 1.125 1.125m0 0h7.5m-7.5 0v1.5c0 .621.504 1.125 1.125 1.125m0 0h7.5m-7.5 0V15m0 0h7.5"
                 />
               </svg>
-              Export Excel
+              <span class="export-label">Export Excel</span>
             </button>
           </div>
 

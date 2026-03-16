@@ -532,6 +532,11 @@ input, select, button {
   letter-spacing: -0.5px;
 }
 
+.text-red-700.font-black {
+  font-size: 22px !important;
+  letter-spacing: -0.5px;
+}
+
 #card-detaliu {
   background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
