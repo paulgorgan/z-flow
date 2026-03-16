@@ -349,7 +349,7 @@
         </div>
 
         <!-- 4 KPI Cards -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 items-start">
           <div
             class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100"
           >
@@ -497,7 +497,7 @@
               <p id="home-kpi-net-breakdown" class="text-[7px] font-bold text-slate-400 tracking-wide">Net total</p>
               <span id="home-kpi-net-trend" class="text-[7px] font-black"></span>
             </div>
-            <div id="home-kpi-net-week-row" class="flex items-center gap-1 mt-0.5 hidden">
+            <div id="home-kpi-net-week-row" class="flex items-center gap-1 mt-0 hidden">
               <span id="home-kpi-net-week-label" class="text-[7px] font-bold text-slate-300 tracking-wide">vs săpt.</span>
               <span id="home-kpi-net-week" class="text-[7px] font-black"></span>
             </div>
@@ -3701,9 +3701,31 @@
         window.addEventListener("load", () => {
           navigator.serviceWorker
             .register("./sw.js")
-            .then((reg) =>
-              console.log("Z-FLOW V2 Service Worker registered:", reg.scope),
-            )
+            .then((reg) => {
+              console.log("Z-FLOW V2 Service Worker registered:", reg.scope);
+
+              // Forțează activarea SW-ului nou imediat ce e instalat
+              // fără să aștepte închiderea tuturor tab-urilor
+              const forceActivate = (worker) => {
+                worker.addEventListener("statechange", () => {
+                  if (worker.state === "installed") {
+                    worker.postMessage({ type: "SKIP_WAITING" });
+                  }
+                });
+              };
+
+              if (reg.installing) {
+                forceActivate(reg.installing);
+              }
+              reg.addEventListener("updatefound", () => {
+                if (reg.installing) forceActivate(reg.installing);
+              });
+
+              // Reîncarcă pagina când SW-ul nou preia controlul
+              navigator.serviceWorker.addEventListener("controllerchange", () => {
+                window.location.reload();
+              });
+            })
             .catch((err) =>
               console.warn("Service Worker registration failed:", err),
             );

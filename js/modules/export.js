@@ -9,9 +9,21 @@ const ZFlowExport = {
     // ── Lazy-load helpers ────────────────────────────────────────────
     _loadScript(url) {
         return new Promise((resolve, reject) => {
-            if (document.querySelector(`script[src="${url}"]`)) { resolve(); return; }
+            // Verifică dacă scriptul există deja în DOM
+            const existing = document.querySelector(`script[src="${url}"]`);
+            if (existing) {
+                // Dacă tag-ul a eșuat anterior, îl elimină și reîncearcă
+                if (existing._zfLoadFailed) {
+                    existing.remove();
+                } else {
+                    // Script prezent și (probabil) încărcat cu succes
+                    resolve(); return;
+                }
+            }
             const s = document.createElement('script');
-            s.src = url; s.onload = resolve; s.onerror = reject;
+            s.src = url;
+            s.onload = () => { s._zfLoadFailed = false; resolve(); };
+            s.onerror = (err) => { s._zfLoadFailed = true; reject(err); };
             document.head.appendChild(s);
         });
     },
@@ -23,6 +35,10 @@ const ZFlowExport = {
             } catch (_) {
                 // CDN primar eșuat — fallback jsdelivr
                 await this._loadScript('https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js');
+            }
+            // Verificare explicită după load — scriptul a eșuat silențios?
+            if (!window.jspdf?.jsPDF) {
+                throw new Error('jsPDF nu s-a inițializat după încărcare (CDN indisponibil)');
             }
         }
         // autotable UMD looks for window.jsPDF (uppercase global), not window.jspdf.jsPDF

@@ -44,10 +44,7 @@ const STATIC_ASSETS = [
   './js/modules/efactura.js',
   './js/modules/bridge.js',
   './manifest.json',
-  './icons/icon.svg',
-  './icons/icon-192.png',
-  './icons/icon-512.png',
-  './icons/icon-maskable-192.png'
+  './icons/icon.svg'
 ];
 
 const CDN_ASSETS = [
@@ -75,7 +72,9 @@ self.addEventListener('install', event => {
         return self.skipWaiting();
       })
       .catch(err => {
-        console.warn('⚠️ SW V2: Cache install error:', err);
+        console.warn('⚠️ SW V2: Cache install error (non-fatal):', err);
+        // SW-ul se activează chiar și când precache-ul eșuează parțial
+        return self.skipWaiting();
       })
   );
 });
