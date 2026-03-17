@@ -776,6 +776,7 @@ async function verificaAuth() {
         const { session, user } = await ZFlowDB.signIn(email, pass);
         
         ZFlowStore.userSession = session;
+        setUserRole('user'); // Supabase users primesc permisiuni complete
         document.getElementById("modal-auth").classList.remove("active");
         
         // Afișează interfața după autentificare reușită
@@ -799,6 +800,18 @@ async function verificaAuth() {
                 await ZFlowDB.consumeSubscriptionToken(_pendingToken, user.email, null);
                 localStorage.removeItem('zflow_pending_token');
             } catch(_) {}
+        }
+
+        // [R7-FIX 5c] Aplică planul pending (stocat la înregistrare când sesiunea lipsea)
+        const _pendingPlan = localStorage.getItem('zflow_pending_plan');
+        if (_pendingPlan) {
+            try {
+                const _planInfo = JSON.parse(_pendingPlan);
+                await ZFlowDB.upsertProfile(_planInfo);
+                localStorage.removeItem('zflow_pending_plan');
+            } catch(_planErr) {
+                ZFlowLogger.warn('app', '[Login] Aplicare plan pending non-fatală:', _planErr.message);
+            }
         }
 
         // [R7-FIX 5b] Verifică dacă abonamentul a expirat
@@ -1020,6 +1033,15 @@ async function inregistrareUtilizator() {
 
         // PASUL 4: Consume token (cu autentificare automată)
         await ZFlowDB.consumeSubscriptionToken(codToken, email, pass);
+
+        // Salvează info plan în localStorage — va fi aplicat la primul login
+        // (necesar când email confirmation e activă și PASUL 5 nu are sesiune)
+        localStorage.setItem('zflow_pending_plan', JSON.stringify({
+            display_name: nume || null,
+            plan_type: tokenInfo.plan_type,
+            subscription_expires_at: expiresAt.toISOString(),
+            subscription_token: codToken
+        }));
 
         // PASUL 5: Salvează planul în profil
         try {

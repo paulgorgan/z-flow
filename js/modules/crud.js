@@ -166,7 +166,7 @@ async function salveazaFacturaOrchestrator() {
         inchideModal("modal-factura");
         // Corelare Financiar <-> Depozit: ofera bon iesire dupa salvarea facturii client (doar pt. noi)
         if (!id) showCorrelationPrompt('livrare', { obs: nr ? 'Ref. factura ' + nr : '' });
-        await init();
+        await init(false);
         if (cid) arataDetalii(cid);
     } catch (err) {
         if (newUrls.length > 0) ZFlowLogger.warn('salveazaFacturaOrchestrator', 'PDF orfane — fișiere urcate dar factura neînregistrată', newUrls);
