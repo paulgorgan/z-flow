@@ -967,6 +967,8 @@ window.clearIDBCache = clearIDBCache;
  * Deschide modalul de înregistrare
  */
 function deschideModalInregistrare() {
+    // Ascunde bannerul de verificare email dacă era afișat
+    document.getElementById('auth-verify-banner')?.classList.add('hidden');
     document.getElementById("modal-auth").classList.remove("active");
     document.getElementById("modal-register").classList.add("active");
 }
@@ -1037,7 +1039,12 @@ async function inregistrareUtilizator() {
 
         document.getElementById("modal-register")?.classList.remove("active");
         document.getElementById("modal-auth")?.classList.add("active");
-        showNotification(`Cont creat! Plan: ${planLabel}. Verifică email-ul pentru confirmare.`, "success");
+        // Arată banner de confirmare email în modalul de login
+        const _verifBanner = document.getElementById('auth-verify-banner');
+        const _verifEmail  = document.getElementById('auth-verify-email');
+        if (_verifBanner) _verifBanner.classList.remove('hidden');
+        if (_verifEmail)  _verifEmail.textContent = email;
+        showNotification(`Cont creat! Plan: ${planLabel}. Verifică email-ul pentru confirmare.`, "success", 6000);
 
     } catch (error) {
         ZFlowLogger.error('app', "Register error:", error);
@@ -3649,20 +3656,22 @@ function _paginareHTML(total, pageSize, currentPage, prefix) {
         `<option value="${v}" ${pageSize === v ? 'selected' : ''}>${v}</option>`
     ).join('');
     return `
-<div class="flex flex-col items-center gap-2 mt-2 mb-4 px-1">
-    <div class="flex items-center gap-3">
+<div class="flex flex-col items-center gap-1.5 mt-2 mb-4 px-1">
+    <div class="flex items-center justify-center gap-2 flex-wrap w-full">
         <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Afișare</span>
         <select onchange="${prefix}SetPageSize(this.value)"
-                class="text-[11px] font-black text-slate-700 bg-slate-100 border-none rounded-lg px-2 py-1 cursor-pointer outline-none hover:bg-slate-200 transition-all min-w-[56px]">
+                class="text-[11px] font-black text-slate-700 bg-slate-100 border-none rounded-lg px-2 py-1.5 cursor-pointer outline-none hover:bg-slate-200 transition-all min-w-[60px] min-h-[32px]">
             ${optiuni}
             <option value="0" ${pageSize === 0 ? 'selected' : ''}>Toate</option>
         </select>
+    </div>
+    <div class="flex items-center gap-2">
         <button onclick="${prefix}PrevPage()"
-                class="px-3 py-1.5 bg-slate-100 rounded-xl text-[9px] font-bold uppercase hover:bg-slate-200 transition-all disabled:opacity-40"
+                class="px-3 py-2 bg-slate-100 rounded-xl text-[9px] font-bold uppercase hover:bg-slate-200 transition-all disabled:opacity-40 min-h-[32px]"
                 ${currentPage <= 1 ? 'disabled' : ''}>← Ant.</button>
         <span class="text-[9px] font-black text-slate-500 whitespace-nowrap">${arataInfo}</span>
         <button onclick="${prefix}NextPage()"
-                class="px-3 py-1.5 bg-slate-100 rounded-xl text-[9px] font-bold uppercase hover:bg-slate-200 transition-all disabled:opacity-40"
+                class="px-3 py-2 bg-slate-100 rounded-xl text-[9px] font-bold uppercase hover:bg-slate-200 transition-all disabled:opacity-40 min-h-[32px]"
                 ${pageSize === 0 || currentPage >= totalPages ? 'disabled' : ''}>Urm. →</button>
     </div>
 </div>`;

@@ -665,7 +665,8 @@ async function signUp(email, password, metadata = {}) {
             email: email,
             password: password,
             options: {
-                data: metadata
+                data: metadata,
+                emailRedirectTo: 'https://paulgorgan.github.io/z-flow/'
             }
         });
         if (error) throw error;
