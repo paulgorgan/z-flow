@@ -9,7 +9,7 @@ try { importScripts('./js/version.js'); } catch (e) {}
 // SW logger — activ doar în dev (localhost)
 const SW_DEV = self.location.hostname === 'localhost' || self.location.hostname === '127.0.0.1';
 const swLog = (...args) => { if (SW_DEV) console.log(...args); };
-const CACHE_NAME = 'zflow-' + (typeof ZFLOW_BUILD !== 'undefined' ? ZFLOW_BUILD : 'v66.0');
+const CACHE_NAME = 'zflow-' + (typeof ZFLOW_BUILD !== 'undefined' ? ZFLOW_BUILD : 'v70.0');
 const STATIC_ASSETS = [
   './',
   './index.html',

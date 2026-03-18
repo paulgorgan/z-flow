@@ -292,6 +292,13 @@ h3 { font-size: 1.1rem !important; }
   width: 100%;
 }
 
+/* Keep client/supplier cards identical in mobile footprint */
+#view-firme #lista-firme-global .card-flow,
+#view-furnizori #lista-furnizori-global .card-flow {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
 @media (min-width: 640px) and (max-width: 1023px) {
   #lista-firme-global,
   #lista-furnizori-global {
@@ -861,10 +868,26 @@ input, select, button {
    ============================================ */
 @media (max-width: 1023px) {
   #view-analiza,
-  #view-firme,
   #view-detalii {
     padding: 0 16px;
     text-align: center;
+  }
+
+  /* Keep CLIENTI section footprint aligned with FURNIZORI on mobile */
+  #view-firme {
+    padding: 0 !important;
+    text-align: center;
+  }
+
+  #view-firme > .relative,
+  #view-firme > .bg-blue-900,
+  #view-firme > .grid.grid-cols-4,
+  #view-firme > #fin-alerte-clienti,
+  #view-firme > #lista-firme-global,
+  #view-firme > #clienti-pagination,
+  #view-firme > #clienti-scroll-sentinel {
+    width: 100% !important;
+    max-width: 100% !important;
   }
 
   .text-blue-200.text-xs.uppercase.tracking-widest,
@@ -887,21 +910,95 @@ input, select, button {
 
   .export-group {
     margin-bottom: 24px !important;
-    display: flex;
-    justify-content: center;
   }
 
-  .export-group .grid {
-    grid-template-columns: 1fr !important;
-    gap: 10px !important;
-    width: 100%;
-    max-width: 320px;
-    margin: 0 auto;
+  /* Export groups in Analiza must match card-flow width and never overflow */
+  #view-analiza .bi-left-panel .export-group {
+    width: 100% !important;
+    max-width: 100% !important;
+    align-self: stretch !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  #view-analiza .bi-left-panel .export-group.grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  #view-analiza .bi-left-panel .export-group.flex {
+    display: flex !important;
+    gap: 8px !important;
+  }
+
+  #view-analiza .bi-left-panel .export-group > * {
+    min-width: 0 !important;
+  }
+
+  #view-analiza .bi-left-panel .export-group.flex > * {
+    flex: 1 1 0 !important;
+  }
+
+  #view-analiza .bi-left-panel .export-group button {
+    width: 100% !important;
+    min-width: 0 !important;
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+    font-size: 9px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
   }
 
   .btn-action {
     height: 48px;
     justify-content: center;
+  }
+}
+
+/* Micro-tuning strict vizual pentru card contribuții pe mobile */
+@media (max-width: 640px) {
+  #card-contributii-mobile {
+    padding: 12px 14px !important;
+    border-radius: 18px !important;
+  }
+
+  #card-contributii-mobile .cursor-pointer {
+    gap: 6px !important;
+  }
+
+  #card-contributii-mobile .cursor-pointer > span:nth-child(2) {
+    font-size: 11px !important;
+    letter-spacing: 0.02em;
+  }
+
+  #card-contributii-mobile #cf-contributii {
+    font-size: 1rem !important;
+    line-height: 1.1;
+  }
+
+  #card-contributii-mobile button[data-action="deschideModalContributie"],
+  #card-contributii-mobile label[title="Import contribuții CSV"] {
+    font-size: 8px !important;
+    padding: 6px 10px !important;
+    border-radius: 10px !important;
+  }
+
+  #card-contributii-mobile #contributii-body {
+    margin-top: 2px;
+  }
+
+  #card-contributii-mobile #contributii-body .grid {
+    gap: 6px !important;
+    margin-top: 8px !important;
+    margin-bottom: 8px !important;
+  }
+
+  #card-contributii-mobile #contributii-body select {
+    min-height: 34px;
+    font-size: 10px !important;
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
   }
 }
 

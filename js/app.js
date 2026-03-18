@@ -535,6 +535,9 @@ async function init(goHome = true) {
         // === Contribuții buget stat — fire-and-forget (non-blocking) ===
         ZFlowDB.fetchContributii().then(r => {
             ZFlowStore.dateContributii = r || [];
+            invalidateCashflowCache();
+            if (typeof calculeazaCashflow === 'function') calculeazaCashflow();
+            if (typeof updateFurnizoriKPI === 'function') updateFurnizoriKPI();
         }).catch(() => {});
 
         // === Depozit & Logistic — fire-and-forget (non-blocking) ===
@@ -607,21 +610,46 @@ function aplicaUIAdmin() {
 window.aplicaUIAdmin = aplicaUIAdmin;
 
 /**
- * Actualizează statusul sincronizării
+ * Actualizează statusul sincronizării SAGA
  */
 function updateSyncStatus() {
-    const ultimaSincronizare = new Date();
+    const lastSyncISO = localStorage.getItem('lastSagaSync');
+    const ultimaSincronizare = lastSyncISO ? new Date(lastSyncISO) : null;
     const sapteZileInMs = 7 * 24 * 60 * 60 * 1000;
     const acum = new Date();
     const punctStatus = document.querySelector(".bg-blue-900 .w-1\\.5.h-1\\.5");
     const textStatus = document.querySelector(".bg-blue-900 .text-blue-100");
 
-    if (acum - ultimaSincronizare > sapteZileInMs) {
-        if (punctStatus) punctStatus.classList.replace("bg-emerald-500", "bg-red-500");
-        if (textStatus) textStatus.innerText = "Sincronizare SAGA: Necesară (peste 7 zile)";
+    if (!ultimaSincronizare || (acum - ultimaSincronizare > sapteZileInMs)) {
+        // Sincronizare necesară (peste 7 zile sau niciodată)
+        if (punctStatus) {
+            punctStatus.classList.remove("bg-emerald-500");
+            punctStatus.classList.add("bg-red-500");
+        }
+        if (textStatus) {
+            if (!ultimaSincronizare) {
+                textStatus.innerText = "Sincronizare SAGA: Prima sincronizare necesară";
+            } else {
+                const zileDeDupaSinc = Math.floor((acum - ultimaSincronizare) / (24 * 60 * 60 * 1000));
+                textStatus.innerText = `Sincronizare SAGA: Necesară (${zileDeDupaSinc} zile)`;
+            }
+        }
     } else {
-        if (punctStatus) punctStatus.classList.replace("bg-red-500", "bg-emerald-500");
-        if (textStatus) textStatus.innerText = "Sincronizat SAGA: Recent (sub 7 zile)";
+        // Sincronizare recentă (sub 7 zile)
+        if (punctStatus) {
+            punctStatus.classList.remove("bg-red-500");
+            punctStatus.classList.add("bg-emerald-500");
+        }
+        if (textStatus) {
+            const zileDeDupaSinc = Math.floor((acum - ultimaSincronizare) / (24 * 60 * 60 * 1000));
+            if (zileDeDupaSinc === 0) {
+                textStatus.innerText = "Sincronizat SAGA: Azi";
+            } else if (zileDeDupaSinc === 1) {
+                textStatus.innerText = "Sincronizat SAGA: Ieri";
+            } else {
+                textStatus.innerText = `Sincronizat SAGA: Acum ${zileDeDupaSinc} zile`;
+            }
+        }
     }
 }
 
@@ -1998,10 +2026,17 @@ function incarcaDashboard() {
     const neincasat = facturiIncasat30.filter(f => f.status_plata === "Incasat").reduce((s, f) => s + (Number(f.valoare) || 0), 0);
     // KPI 3: De PLĂTIT — neplătit furnizori, primit în ultimele 30 zile
     const neplatit = facturiPlatit30.filter(f => f.status_plata !== "Platit").reduce((s, f) => s + (Number(f.valoare) || 0), 0);
-    // KPI 4: Cashflow NET 30 zile = încasat efectiv - plătit efectiv
+    // KPI 4: Cashflow NET 30 zile = încasat efectiv - plătit efectiv - contribuții neachitate scadente în 30 zile
     const incasat30Efectiv = facturiIncasat30.filter(f => f.status_plata === "Incasat").reduce((s, f) => s + (Number(f.valoare) || 0), 0);
     const platit30Efectiv  = facturiPlatit30.filter(f => f.status_plata === "Platit").reduce((s, f) => s + (Number(f.valoare) || 0), 0);
-    const net = incasat30Efectiv - platit30Efectiv;
+    // Contribuții buget stat neachitate cu luna scadentă în ultimele 30 zile
+    const contributii30 = (ZFlowStore.dateContributii || []).filter(c => {
+        if (c.achitat) return false;
+        if (!c.luna) return false;
+        const d = new Date(c.luna.length >= 10 ? c.luna + 'T12:00:00' : c.luna + '-01T12:00:00');
+        return !isNaN(d) && d >= acum30 && d <= azi;
+    }).reduce((s, c) => s + (Number(c.suma) || 0), 0);
+    const net = incasat30Efectiv - platit30Efectiv - contributii30;
 
     const fmt = (v) => new Intl.NumberFormat("ro-RO", { style: "currency", currency: "RON", maximumFractionDigits: 0 }).format(v);
 
@@ -2089,13 +2124,28 @@ function incarcaDashboard() {
     const furnizoriRestanti = (ZFlowStore.dateFurnizori || []).filter(furn => (furn.sumaScadenta || 0) > 0);
     const totalScadenteFurnizorVal = furnizoriRestanti.reduce((s, f) => s + (f.sumaScadenta || 0), 0);
 
+    // Contribuții buget stat neachitate cu scadența depășită — scadenta = 25 ale lunii URMĂTOARE față de luna raportată
+    const contributiiScadente = (ZFlowStore.dateContributii || []).filter(c => {
+        if (c.achitat) return false;
+        if (!c.luna) return false;
+        const parts = (c.luna || '').substring(0, 7).split('-');
+        if (parts.length < 2) return false;
+        let an = parseInt(parts[0], 10);
+        let lunaIdx = parseInt(parts[1], 10); // 1-12
+        lunaIdx += 1;
+        if (lunaIdx > 12) { lunaIdx = 1; an += 1; }
+        const scad = new Date(an, lunaIdx - 1, 25, 23, 59, 59, 999);
+        return scad < azi;
+    });
+    const totalCtbScadenta = contributiiScadente.reduce((s, c) => s + (Number(c.suma) || 0), 0);
+
     const alerteContainer = document.getElementById("home-alerte");
     const alerteList     = document.getElementById("home-alerte-list");
     if (alerteContainer && alerteList) {
-        const nrAlerte = clientiRestanti.length + furnizoriRestanti.length;
+        const nrAlerte = clientiRestanti.length + furnizoriRestanti.length + contributiiScadente.length;
         // #home-alerte este mereu vizibil — nu mai togglem hidden
         if (nrAlerte > 0) {
-            const totalVal = totalScadenteClientVal + totalScadenteFurnizorVal;
+            const totalVal = totalScadenteClientVal + totalScadenteFurnizorVal + totalCtbScadenta;
             alerteList.innerHTML = `
                 <button onclick="schimbaTab('financiar', document.getElementById('nav-btn-fin'))" class="w-full text-left bg-red-50 border border-red-200 rounded-2xl p-4 hover:bg-red-100 active:bg-red-200 transition-all">
                   <div class="flex items-center justify-between mb-2">
@@ -2118,6 +2168,11 @@ function incarcaDashboard() {
                     <div class="flex items-center justify-between bg-red-100/60 rounded-xl px-3 py-1.5">
                         <p class="text-[10px] text-red-700 font-bold">${furnizoriRestanti.length} furnizor${furnizoriRestanti.length > 1 ? "i cu" : " cu"} facturi restante</p>
                         <p style="font-size:0.9375rem!important" class="font-black text-red-700">${Math.round(totalScadenteFurnizorVal).toLocaleString()} lei</p>
+                    </div>` : ''}
+                    ${contributiiScadente.length ? `
+                    <div class="flex items-center justify-between bg-orange-100/80 rounded-xl px-3 py-1.5">
+                        <p class="text-[10px] text-orange-700 font-bold">${contributiiScadente.length} contribuție${contributiiScadente.length > 1 ? 'i buget' : ' buget'} scadent${contributiiScadente.length > 1 ? 'e' : 'ă'} (25 luna)</p>
+                        <p style="font-size:0.9375rem!important" class="font-black text-orange-700">${Math.round(totalCtbScadenta).toLocaleString()} lei</p>
                     </div>` : ''}
                   </div>
                 </button>`;
@@ -2259,7 +2314,7 @@ function incarcaDashboard() {
     // [R19] Widgets secundare Home
     _updateHomeMiniDepozit();
     _updateHomeMiniLogistic();
-    _updateHomeAlerteSummary(clientiRestanti, furnizoriRestanti, totalScadenteClientVal, totalScadenteFurnizorVal);
+    _updateHomeAlerteSummary(clientiRestanti, furnizoriRestanti, totalScadenteClientVal, totalScadenteFurnizorVal, contributiiScadente, totalCtbScadenta);
 }
 
 // [R19] Helper: mini-widget Depozit pe Home
@@ -2318,7 +2373,7 @@ function _updateHomeMiniLogistic() {
 }
 
 // [R19] Helper: buton alerte scadențe pe Home (mereu vizibil, stare dinamică)
-function _updateHomeAlerteSummary(clientiRestanti, furnizoriRestanti, totalCliVal, totalFurnVal) {
+function _updateHomeAlerteSummary(clientiRestanti, furnizoriRestanti, totalCliVal, totalFurnVal, contributiiScadente, totalCtbScadenta) {
     const elSubtitle  = document.getElementById('home-alerte-scadente-subtitle');
     const elIconWrap  = document.getElementById('home-alerte-icon-wrap');
     const elIcon      = document.getElementById('home-alerte-icon');
@@ -2326,7 +2381,8 @@ function _updateHomeAlerteSummary(clientiRestanti, furnizoriRestanti, totalCliVa
 
     const nrClR  = (clientiRestanti  || []).length;
     const nrFurnR = (furnizoriRestanti || []).length;
-    const total   = nrClR + nrFurnR;
+    const nrCtb  = (contributiiScadente || []).length;
+    const total   = nrClR + nrFurnR + nrCtb;
 
     if (total === 0) {
         // Stare OK — verde
@@ -2339,7 +2395,8 @@ function _updateHomeAlerteSummary(clientiRestanti, furnizoriRestanti, totalCliVa
         const parts = [];
         if (nrClR  > 0) parts.push(nrClR  + (nrClR  === 1 ? ' client' : ' clienți'));
         if (nrFurnR > 0) parts.push(nrFurnR + (nrFurnR === 1 ? ' furnizor' : ' furnizori'));
-        const totalLei = Math.round((totalCliVal || 0) + (totalFurnVal || 0));
+        if (nrCtb  > 0) parts.push(nrCtb  + (nrCtb  === 1 ? ' contribuție' : ' contribuții'));
+        const totalLei = Math.round((totalCliVal || 0) + (totalFurnVal || 0) + (totalCtbScadenta || 0));
         elSubtitle.textContent = parts.join(' + ') + ' · ' + totalLei.toLocaleString() + ' lei restanți';
         elSubtitle.className   = 'text-[9px] font-bold text-red-500 mt-0.5';
         if (elIconWrap) elIconWrap.className = 'w-8 h-8 bg-red-50 rounded-xl flex items-center justify-center flex-shrink-0';
@@ -2433,7 +2490,7 @@ function _getCashflowHash() {
     const sel  = Array.from(document.querySelectorAll('#container-bi-checks input:checked')).map(i => i.value).join(',');
     const selF = Array.from(document.querySelectorAll('#container-bi-furnizori-checks input:checked')).map(i => i.value).join(',');
     const tip  = ZFlowStore.filtruTipBI || 'ambele';
-    return `${dataStart}|${dataEnd}|${sel}|${selF}|${tip}|${ZFlowStore.dateFacturiBI?.length ?? 0}|${ZFlowStore.dateFacturiPlatit?.length ?? 0}`;
+    return `${dataStart}|${dataEnd}|${sel}|${selF}|${tip}|${ZFlowStore.dateFacturiBI?.length ?? 0}|${ZFlowStore.dateFacturiPlatit?.length ?? 0}|${ZFlowStore.dateContributii?.length ?? 0}`;
 }
 
 /** Invalidează cache-ul cashflow (cheamă când datele sunt modificate) */
@@ -2490,9 +2547,10 @@ function calculeazaCashflow() {
     const activeClientIds = selectedClientIds;
 
     // Obține furnizorii selectați din checkboxes (sincronizare cu rapoarte)
+    // Niciun fallback la allFurnizorIds — comportament consistent cu clienții:
+    // dacă nu e selectat niciun furnizor, ieșirile sunt 0.
     const selectedFurnizorIds = Array.from(document.querySelectorAll("#container-bi-furnizori-checks input:checked")).map(i => String(i.value));
-    const allFurnizorIds = (ZFlowStore.dateFurnizori || []).map(f => String(f.id));
-    const activeFurnizorIds = selectedFurnizorIds.length > 0 ? selectedFurnizorIds : allFurnizorIds;
+    const activeFurnizorIds = selectedFurnizorIds;
 
     // Intrări: TOATE facturile clienți în perioadă - filtrate după selecție
     const intrari = (tip !== 'furnizori')
@@ -2510,10 +2568,11 @@ function calculeazaCashflow() {
           ).reduce((sum, f) => sum + (Number(f.valoare) || 0), 0)
         : 0;
 
-    // Contribuții buget de stat (TVA, CAS, CASS, Impozit) — filtrate pe aceeași perioadă
+    // Contribuții buget de stat (TVA, CAS, CASS, Impozit) — doar NEACHITATE, filtrate pe aceeași perioadă
     const contributii = (ZFlowStore.dateContributii || []).filter(c => {
+        if (c.achitat) return false; // cf-contributii = total NEACHITAT
         if (!c.luna) return !start && !end;
-        const d = new Date(c.luna + (c.luna.length === 10 ? 'T12:00:00' : ''));
+        const d = new Date((c.luna.length === 7 ? c.luna + '-01' : c.luna) + 'T12:00:00');
         if (isNaN(d)) return true;
         if (start && d < start) return false;
         if (end && d > end) return false;
@@ -2544,28 +2603,195 @@ function calculeazaCashflow() {
 // ==========================================
 
 /**
- * Randează lista contribuțiilor în panoul cashflow.
+ * Randează lista contribuțiilor în panoul din view-furnizori.
+ * Suportă paginare (15/pagină), filtrare după tip și status, afișare dată prietenoasă,
+ * toggle rapid achitat și sumar total.
  */
 function renderListaContributii() {
     const container = document.getElementById('lista-contributii');
     if (!container) return;
+
     const lista = ZFlowStore.dateContributii || [];
-    if (lista.length === 0) {
-        container.innerHTML = '<p class="text-[9px] text-slate-400 text-center py-1">Nicio contribuție adăugată</p>';
+
+    // Filtrare
+    const tipFiltru    = ZFlowStore.contributiiTipFiltru    || '';
+    const statusFiltru = ZFlowStore.contributiiStatusFiltru || 'toate';
+    let filtrate = lista;
+    if (tipFiltru)               filtrate = filtrate.filter(c => c.tip === tipFiltru);
+    if (statusFiltru === 'neachitate') filtrate = filtrate.filter(c => !c.achitat);
+    if (statusFiltru === 'achitate')   filtrate = filtrate.filter(c => !!c.achitat);
+
+    // Sortare: luna descrescătoare
+    filtrate = [...filtrate].sort((a, b) => (b.luna || '') > (a.luna || '') ? 1 : -1);
+
+    if (filtrate.length === 0) {
+        container.innerHTML = '<p class="text-[9px] text-slate-400 text-center py-2">Nicio contribuție.</p>';
         return;
     }
-    container.innerHTML = lista.map(c => {
-        const achitat = c.achitat ? '<span class="text-[8px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full font-bold">Achitat</span>' : '<span class="text-[8px] bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded-full font-bold">Neachitat</span>';
-        return `<div class="flex items-center justify-between bg-orange-50 border border-orange-100 rounded-lg px-2 py-1 gap-2 cursor-pointer hover:bg-orange-100 transition-all"
-                     data-action="deschideModalContributie" data-arg="${c.id}">
-            <span class="text-[9px] font-bold text-orange-800 truncate">${c.tip} · ${c.luna || ''}</span>
-            <div class="flex items-center gap-1 flex-shrink-0">
-                ${achitat}
-                <span class="text-[9px] font-bold text-orange-700">${new Intl.NumberFormat('ro-RO', {minimumFractionDigits: 2}).format(Number(c.suma) || 0)} lei</span>
+
+    // Paginare
+    const ps   = ZFlowStore.contributiiPageSize   || 15;
+    const total = filtrate.length;
+    const totalPages = Math.max(1, Math.ceil(total / ps));
+    const page = Math.min(Math.max(1, ZFlowStore.contributiiCurrentPage || 1), totalPages);
+    ZFlowStore.contributiiCurrentPage = page;
+    const from = (page - 1) * ps;
+    const paginate = filtrate.slice(from, from + ps);
+
+    // Formatare lună: '2026-03-01' sau '2026-03' → 'Mar 2026'
+    const fmtLuna = (s) => {
+        if (!s) return '—';
+        const d = new Date(s.length >= 10 ? s + 'T00:00:00' : s + '-01T00:00:00');
+        if (isNaN(d)) return s.substring(0, 7);
+        return d.toLocaleDateString('ro-RO', { month: 'short', year: 'numeric' });
+    };
+
+    // Sumar total neachitat pentru filtrul curent
+    const totalNeachitat = filtrate.filter(c => !c.achitat).reduce((s, c) => s + (Number(c.suma) || 0), 0);
+    const nrNeachitate   = filtrate.filter(c => !c.achitat).length;
+
+    const rows = paginate.map(c => {
+        const badgeClass = c.achitat
+            ? 'bg-emerald-100 text-emerald-700'
+            : 'bg-rose-100 text-rose-700';
+        const badgeText = c.achitat ? '✓' : '!';
+        const suma = new Intl.NumberFormat('ro-RO', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Number(c.suma) || 0);
+        return `<div class="flex items-center gap-2 px-2 py-1.5 rounded-lg border ${c.achitat ? 'bg-white border-slate-100' : 'bg-orange-50 border-orange-100'} hover:shadow-sm transition-all">
+            <button type="button"
+                    class="w-5 h-5 flex-shrink-0 rounded-full text-[9px] font-black flex items-center justify-center ${badgeClass} hover:opacity-75 transition-all"
+                    title="${c.achitat ? 'Marchează ca neachitat' : 'Marchează ca achitat'}"
+                    onclick="toggleAchitatContributie('${c.id}')">${badgeText}</button>
+            <div class="flex-1 min-w-0 cursor-pointer" data-action="deschideModalContributie" data-arg="${c.id}">
+                <span class="text-[9px] font-bold text-slate-700 truncate block">${c.tip} <span class="text-slate-400 font-semibold">· ${fmtLuna(c.luna)}</span></span>
+                ${c.observatii ? `<span class="text-[8px] text-slate-400 truncate block">${c.observatii}</span>` : ''}
             </div>
+            <span class="text-[10px] font-black tabular-nums flex-shrink-0 ${c.achitat ? 'text-slate-400 line-through' : 'text-orange-700'}">${suma} lei</span>
         </div>`;
     }).join('');
+
+    // Bara paginare inline
+    const prevDis = page <= 1 ? 'disabled opacity-40 cursor-default' : 'cursor-pointer hover:bg-slate-200';
+    const nextDis = page >= totalPages ? 'disabled opacity-40 cursor-default' : 'cursor-pointer hover:bg-slate-200';
+    const paginareHTML = totalPages > 1 ? `
+<div class="flex items-center justify-between mt-2 px-1">
+    <button type="button" class="px-2 py-1 bg-slate-100 rounded-lg text-[8px] font-bold uppercase ${prevDis} transition-all" onclick="contributiiPrevPage()" ${page<=1?'disabled':''}>← Ant.</button>
+    <span class="text-[8px] font-bold text-slate-400">${page}/${totalPages} (${total})</span>
+    <button type="button" class="px-2 py-1 bg-slate-100 rounded-lg text-[8px] font-bold uppercase ${nextDis} transition-all" onclick="contributiiNextPage()" ${page>=totalPages?'disabled':''}>Urm. →</button>
+</div>` : '';
+
+    // Sumar
+    const sumarHTML = nrNeachitate > 0
+        ? `<div class="flex justify-between items-center px-1 mb-1">
+               <span class="text-[8px] text-slate-400 font-semibold">${nrNeachitate} neachitate</span>
+               <span class="text-[9px] font-black text-orange-600">${new Intl.NumberFormat('ro-RO').format(Math.round(totalNeachitat))} lei</span>
+           </div>`
+        : '';
+
+    container.innerHTML = sumarHTML + rows + paginareHTML;
 }
+
+/** Avansează pagina contribuțiilor */
+function contributiiNextPage() {
+    const ps = ZFlowStore.contributiiPageSize || 15;
+    const total = (ZFlowStore.dateContributii || []).length;
+    const tp = Math.max(1, Math.ceil(total / ps));
+    if ((ZFlowStore.contributiiCurrentPage || 1) < tp) {
+        ZFlowStore.contributiiCurrentPage = (ZFlowStore.contributiiCurrentPage || 1) + 1;
+        renderListaContributii();
+    }
+}
+window.contributiiNextPage = contributiiNextPage;
+
+/** Retrocedează pagina contribuțiilor */
+function contributiiPrevPage() {
+    if ((ZFlowStore.contributiiCurrentPage || 1) > 1) {
+        ZFlowStore.contributiiCurrentPage--;
+        renderListaContributii();
+    }
+}
+window.contributiiPrevPage = contributiiPrevPage;
+
+/**
+ * Toggle rapid achitat/neachitat pentru o contribuție direct din listă.
+ */
+async function toggleAchitatContributie(id) {
+    const ctb = (ZFlowStore.dateContributii || []).find(c => String(c.id) === String(id));
+    if (!ctb) return;
+    const newVal = !ctb.achitat;
+    try {
+        await ZFlowDB.updateContributie(id, { achitat: newVal });
+        ctb.achitat = newVal; // update optimist în store
+        invalidateCashflowCache();
+        calculeazaCashflow();
+        if (typeof updateFurnizoriKPI === 'function') updateFurnizoriKPI();
+        renderListaContributii();
+    } catch (err) {
+        ZFlowLogger.error('ctb', 'Eroare toggle achitat:', err);
+        showNotification('Eroare la actualizare.', 'error');
+    }
+}
+window.toggleAchitatContributie = toggleAchitatContributie;
+
+/**
+ * Toggle vizibilitate panou contribu\u021bii (collapsed implicit).
+ */
+function toggleContributiiCollapse() {
+    const body = document.getElementById('contributii-body');
+    const chevron = document.getElementById('contributii-chevron');
+    if (!body) return;
+    const isHidden = body.classList.toggle('hidden');
+    if (chevron) chevron.style.transform = isHidden ? '' : 'rotate(180deg)';
+    if (!isHidden) renderListaContributii();
+}
+window.toggleContributiiCollapse = toggleContributiiCollapse;
+
+/**
+ * Randează butoane toggle categorie \u00een containerele #filtru-categorie-clienti / #filtru-categorie-furnizori.
+ * Extrage categoriile unice din store, creeaz\u0103 pill-uri clicabile.
+ */
+function renderFiltruCategorieBtns() {
+    // --- Clien\u021bi ---
+    const wrapCli = document.getElementById('filtru-categorie-clienti');
+    if (wrapCli) {
+        const catsCli = [...new Set((ZFlowStore.dateLocal || []).map(c => (c.categorie || '').trim()).filter(Boolean))].sort();
+        const selCli = ZFlowStore.filtruCategorieClienti || '';
+        wrapCli.innerHTML = catsCli.map(cat => {
+            const active = selCli === cat;
+            const esc = cat.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+            return `<button type="button" onclick="_toggleCategorieClienti('${esc}')"
+              class="flex-shrink-0 text-[8px] font-black px-2 py-0.5 rounded-full transition-all select-none ${active ? 'bg-blue-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-blue-100 hover:text-blue-800'}"
+            >${cat}</button>`;
+        }).join('');
+    }
+
+    // --- Furnizori ---
+    const wrapFurn = document.getElementById('filtru-categorie-furnizori');
+    if (wrapFurn) {
+        const catsFurn = [...new Set((ZFlowStore.dateFurnizori || []).map(f => (f.categorie || '').trim()).filter(Boolean))].sort();
+        const selFurn = ZFlowStore.filtruCategorieFurnizori || '';
+        wrapFurn.innerHTML = catsFurn.map(cat => {
+            const active = selFurn === cat;
+            return `<button type="button" onclick="_toggleCategorieFurnizori('${cat.replace(/'/g,"\\'")}')"
+              class="flex-shrink-0 text-[8px] font-black px-2 py-0.5 rounded-full transition-all select-none ${active ? 'bg-red-700 text-white' : 'bg-slate-100 text-slate-600 hover:bg-red-100 hover:text-red-800'}"
+            >${cat}</button>`;
+        }).join('');
+    }
+}
+window.renderFiltruCategorieBtns = renderFiltruCategorieBtns;
+
+function _toggleCategorieClienti(cat) {
+    ZFlowStore.filtruCategorieClienti = (ZFlowStore.filtruCategorieClienti === cat) ? '' : cat;
+    renderFiltruCategorieBtns();
+    filtreazaListaFirme();
+}
+window._toggleCategorieClienti = _toggleCategorieClienti;
+
+function _toggleCategorieFurnizori(cat) {
+    ZFlowStore.filtruCategorieFurnizori = (ZFlowStore.filtruCategorieFurnizori === cat) ? '' : cat;
+    renderFiltruCategorieBtns();
+    filtreazaListaFurnizori();
+}
+window._toggleCategorieFurnizori = _toggleCategorieFurnizori;
 
 /**
  * Deschide modalul pentru adăugare / editare contribuție buget stat.
@@ -2587,7 +2813,7 @@ async function deschideModalContributie(id = null) {
             document.getElementById('ctb-id').value = existing.id;
             document.getElementById('ctb-tip').value = existing.tip || 'TVA';
             document.getElementById('ctb-suma').value = existing.suma ?? '';
-            document.getElementById('ctb-luna').value = existing.luna || '';
+            document.getElementById('ctb-luna').value = (existing.luna || '').substring(0, 7);
             document.getElementById('ctb-achitat').checked = !!existing.achitat;
             document.getElementById('ctb-observatii').value = existing.observatii || '';
             document.getElementById('btn-sterge-ctb').classList.remove('hidden');
@@ -2608,10 +2834,11 @@ async function salveazaContributie() {
         showNotification('Introduceți o sumă validă (> 0).', 'error');
         return;
     }
+    const _lunaRaw = document.getElementById('ctb-luna')?.value || null;
     const payload = {
         tip:         document.getElementById('ctb-tip')?.value || 'TVA',
         suma,
-        luna:        document.getElementById('ctb-luna')?.value || null,
+        luna:        _lunaRaw ? (_lunaRaw.length === 7 ? _lunaRaw + '-01' : _lunaRaw) : null,
         achitat:     document.getElementById('ctb-achitat')?.checked || false,
         observatii:  document.getElementById('ctb-observatii')?.value?.trim() || null,
     };
@@ -2626,6 +2853,7 @@ async function salveazaContributie() {
         ZFlowStore.dateContributii = await ZFlowDB.fetchContributii() || [];
         invalidateCashflowCache();
         calculeazaCashflow();
+        if (typeof updateFurnizoriKPI === 'function') updateFurnizoriKPI();
         inchideModal('modal-contributie');
         showNotification('Contribuție salvată.', 'success');
     } catch (err) {
@@ -2647,6 +2875,7 @@ async function stergeContributie() {
         ZFlowStore.dateContributii = await ZFlowDB.fetchContributii() || [];
         invalidateCashflowCache();
         calculeazaCashflow();
+        if (typeof updateFurnizoriKPI === 'function') updateFurnizoriKPI();
         inchideModal('modal-contributie');
         showNotification('Contribuție ștearsă.', 'success');
     } catch (err) {
@@ -2657,12 +2886,45 @@ async function stergeContributie() {
 window.stergeContributie = stergeContributie;
 
 /**
- * Invalidează cache cashflow la orice modificare de date sau filtre
- * (apelat din: salveazaClient, salveazaFacturaOrchestrator, toggleStatusPlata, stergeFactura)
+ * Import contribuții buget stat din fișier CSV.
+ * Coloane așteptate (header case-insensitive): tip, suma, luna, achitat, observatii
+ * @param {HTMLInputElement} input
  */
+async function importaContributiiCSV(input) {
+    const file = input?.files?.[0];
+    if (!file) return;
+    const text = await file.text();
+    const lines = text.split(/\r?\n/).filter(l => l.trim());
+    if (lines.length < 2) { showNotification('Fișier CSV gol sau fără date.', 'error'); return; }
+    const headers = lines[0].split(/[,;]/).map(h => h.trim().toLowerCase().replace(/['"]/g, ''));
+    const idx = k => headers.indexOf(k);
+    let importate = 0, erori = 0;
+    for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(/[,;]/).map(c => c.trim().replace(/^["']|["']$/g, ''));
+        const suma = parseFloat((cols[idx('suma')] || '').replace(',', '.'));
+        if (!suma || suma <= 0) { erori++; continue; }
+        const _csvLuna = cols[idx('luna')] || null;
+        const payload = {
+            tip:        cols[idx('tip')] || 'Altele',
+            suma,
+            luna:       _csvLuna ? (_csvLuna.length === 7 ? _csvLuna + '-01' : _csvLuna) : null,
+            achitat:    ['da','true','1','yes'].includes((cols[idx('achitat')] || '').toLowerCase()),
+            observatii: cols[idx('observatii')] || null,
+        };
+        try { await ZFlowDB.insertContributie(payload); importate++; } catch(e) { erori++; }
+    }
+    ZFlowStore.dateContributii = await ZFlowDB.fetchContributii() || [];
+    invalidateCashflowCache();
+    if (typeof renderListaContributii === 'function') renderListaContributii();
+    if (typeof updateFurnizoriKPI === 'function') updateFurnizoriKPI();
+    showNotification(`Import contribuții: ${importate} adăugate${erori > 0 ? `, ${erori} erori` : ''}.`, importate > 0 ? 'success' : 'error');
+}
+window.importaContributiiCSV = importaContributiiCSV;
+
 function filtreazaListaFirme() {
     filtreazaListaFirmeDebounced();
 }
+window.filtreazaListaFirme = filtreazaListaFirme;
 
 /**
  * Toggle secțiunea de filtrare firme (checkboxuri) — collapsible
@@ -3907,13 +4169,20 @@ function initInfiniteScrollFurnizori() {
     const sentinel = document.getElementById('furnizori-scroll-sentinel');
     if (!sentinel) return;
     if (window._furnizoriScrollObs) window._furnizoriScrollObs.disconnect();
+    // Nu crea observer dacă suntem deja pe ultima pagină — previne auto-avans
+    const _psCheck = ZFlowStore.furnizoriPageSize;
+    if (_psCheck === 0) return;
+    const _tpCheck = Math.ceil((ZFlowStore._furnizoriFiltrati||[]).length / _psCheck);
+    if (ZFlowStore.furnizoriCurrentPage >= _tpCheck) return;
+    let firstFire = true;
     window._furnizoriScrollObs = new IntersectionObserver(entries => {
+        if (firstFire) { firstFire = false; return; }
         if (!entries[0].isIntersecting) return;
         const ps = ZFlowStore.furnizoriPageSize;
         if (ps === 0) return;
         const tp = Math.ceil((ZFlowStore._furnizoriFiltrati||[]).length / ps);
         if (ZFlowStore.furnizoriCurrentPage < tp) furnizoriNextPage();
-    }, { rootMargin: '120px' });
+    }, { rootMargin: '80px' });
     window._furnizoriScrollObs.observe(sentinel);
 }
 window.initInfiniteScrollFurnizori = initInfiniteScrollFurnizori;
@@ -4393,6 +4662,23 @@ async function exportaExcelSelectie() {
     const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Facturi Selectate");
+
+    // Sumar BI vizibil (pentru consistență cu valorile afișate în UI)
+    const biClienti = document.getElementById("suma-selectata-bi")?.innerText?.trim() || "0 lei";
+    const biFurnizori = document.getElementById("suma-platit-bi")?.innerText?.trim() || "0 lei";
+    const biContributii = document.getElementById("cf-contributii")?.innerText?.trim() || "0 lei";
+    const biNet = (document.getElementById("cf-net")?.innerText?.trim() || "0 lei").replace(/\u2212/g, "-");
+    const wsSumarSelectie = XLSX.utils.aoa_to_sheet([
+        ["Z-FLOW — SUMAR BI (SELECȚIE)"],
+        [],
+        ["Total Clienți (facturat)", biClienti],
+        ["Total Furnizori (plăți)", biFurnizori],
+        ["Contribuții Buget Stat", biContributii],
+        ["Diferență Net", biNet],
+    ]);
+    wsSumarSelectie["!cols"] = [{ wch: 30 }, { wch: 22 }];
+    XLSX.utils.book_append_sheet(wb, wsSumarSelectie, "Sumar BI");
+
     XLSX.writeFile(wb, `facturi_selectie_${new Date().toISOString().slice(0, 10)}.xlsx`);
     showNotification(`Excel generat cu ${facturiSelectate.length} facturi selectate`, "success");
 }
@@ -5233,6 +5519,7 @@ async function importaDateSaga(tipImport = 'clienti') {
                 }
 
                 localStorage.setItem('lastSagaSync', new Date().toISOString());
+                updateSyncStatus(); // Update UI sync status after successful import
 
                 const duplicates = erori.filter(e => e.startsWith('Duplicat')).length;
                 const entitatiLabel = isFurnizori ? 'furnizori' : 'clienți';
@@ -5425,11 +5712,13 @@ async function exportaPDF() {
           })
         : [];
 
-    // ── Preia sumele din bi-totale-bar ────────────────────────────────
+    // ── Preia sumele din bi-totale-bar si contributii ───────────────────
     const biClienti   = document.getElementById("suma-selectata-bi")?.innerText?.trim() || "0 lei";
     const biFurnizori = document.getElementById("suma-platit-bi")?.innerText?.trim()    || "0 lei";
     const biNet       = document.getElementById("cf-net")?.innerText?.trim()            || "0 lei";
-    const cfNetVal    = parseFloat(biNet.replace(/[^0-9,.-]/g, '').replace(',', '.')) || 0;
+    const biContributii = document.getElementById("cf-contributii")?.innerText?.trim() || "0 lei";
+    const biNetNormalized = biNet.replace(/\u2212/g, '-');
+    const cfNetVal    = parseFloat(biNetNormalized.replace(/[^0-9,.-]/g, '').replace(',', '.')) || 0;
 
     // ── Header raport ─────────────────────────────────────────────────
     doc.setFontSize(16);
@@ -5439,27 +5728,30 @@ async function exportaPDF() {
     doc.setTextColor(120);
     doc.text(curataText(`Perioada: ${pStart} — ${pEnd}   |   Generat: ${new Date().toLocaleDateString("ro-RO")}`), 14, 25);
 
-    // ── Tabel sumar bi-totale-bar ─────────────────────────────────────
+    // ── Tabel sumar bi-totale-bar + contributii ───────────────────────
     doc.autoTable({
         startY: 29,
         head: [[
             curataText("TOTAL CLIENȚI (facturat)"),
             curataText("TOTAL FURNIZORI (plăți)"),
+            curataText("CONTRIBUȚII BUGET STAT"),
             curataText("DIFERENȚĂ NET")
         ]],
         body: [[
             curataText(biClienti),
             curataText(biFurnizori),
-            curataText(biNet)
+            curataText(biContributii),
+            curataText(biNetNormalized)
         ]],
         theme: "grid",
         margin: { left: 14, right: 14 },
-        headStyles: { fillColor: [30, 58, 138], fontSize: 7, halign: "center", fontStyle: "bold", cellPadding: 2 },
+        headStyles: { fillColor: [30, 58, 138], fontSize: 6.8, halign: "center", fontStyle: "bold", cellPadding: 2 },
         styles: { fontSize: 9, halign: "center", fontStyle: "bold", cellPadding: 3, overflow: 'linebreak' },
         columnStyles: {
-            0: { cellWidth: 55, textColor: [30, 58, 138] },
-            1: { cellWidth: 55, textColor: [185, 28, 28] },
-            2: { cellWidth: 54, textColor: cfNetVal >= 0 ? [5, 150, 105] : [185, 28, 28] },
+            0: { cellWidth: 45.5, textColor: [30, 58, 138] },
+            1: { cellWidth: 45.5, textColor: [185, 28, 28] },
+            2: { cellWidth: 45.5, textColor: [217, 119, 6] },
+            3: { cellWidth: 45.5, textColor: cfNetVal >= 0 ? [5, 150, 105] : [185, 28, 28] },
         }
     });
 
@@ -5475,8 +5767,9 @@ async function exportaPDF() {
         ];
     });
 
+    const firstTableEndY = doc.lastAutoTable?.finalY || 39;
     doc.autoTable({
-        startY: 45,
+        startY: firstTableEndY + 8,
         head: [[curataText("CLIENT"), curataText("DOCUMENT"), curataText("EMIS LA"), curataText("SCADENTA"), curataText("SUMA"), curataText("STATUS")]],
         body: rows,
         theme: "striped",
@@ -5507,8 +5800,8 @@ async function exportaPDF() {
         const sD = pdfStartDate;
         const eD = pdfEndDate;
         const selFurnIds = Array.from(document.querySelectorAll("#container-bi-furnizori-checks input:checked")).map(i => String(i.value));
-        const allFurnIds = selFurnIds.length > 0 ? selFurnIds : ZFlowStore.dateFurnizori.map(f => String(f.id));
-        const filtrateFP = _filtreazaFacturiPlatit(sD, eD, allFurnIds, '');
+        // Fără fallback — consistent cu calculeazaCashflow: nicio selecție = nicio intrare
+        const filtrateFP = _filtreazaFacturiPlatit(sD, eD, selFurnIds, '');
 
         if (filtrateFP.length > 0) {
             const rowsFP = filtrateFP.map(f => {
@@ -5563,8 +5856,8 @@ async function exportaPDF() {
         });
         // Agreg facturile furnizori pe luni (dacă sunt disponibile)
         const selFurnIdsChart = Array.from(document.querySelectorAll("#container-bi-furnizori-checks input:checked")).map(i => String(i.value));
-        const allFurnIdsChart = selFurnIdsChart.length > 0 ? selFurnIdsChart : ZFlowStore.dateFurnizori.map(f => String(f.id));
-        const filtrateFPChart = _filtreazaFacturiPlatit(pdfStartDate, pdfEndDate, allFurnIdsChart, '');
+        // Fără fallback — consistent cu selecția activă
+        const filtrateFPChart = _filtreazaFacturiPlatit(pdfStartDate, pdfEndDate, selFurnIdsChart, '');
         filtrateFPChart.forEach(f => {
             const d = f.data_emiterii ? f.data_emiterii.substring(0, 7) : null;
             if (!d) return;
@@ -5752,8 +6045,8 @@ async function exportaExcel() {
         const sD2 = s ? new Date(s + "T00:00:00") : null;
         const eD2 = e ? new Date(e + "T23:59:59") : null;
         const selFurnIdsXlsx = Array.from(document.querySelectorAll("#container-bi-furnizori-checks input:checked")).map(i => String(i.value));
-        const allFurnIds = selFurnIdsXlsx.length > 0 ? selFurnIdsXlsx : ZFlowStore.dateFurnizori.map(f => String(f.id));
-        const filtrateFP = _filtreazaFacturiPlatit(sD2, eD2, allFurnIds, '');
+        // Fără fallback la toți furnizorii — exportul trebuie să reflecte exact selecția din BI
+        const filtrateFP = _filtreazaFacturiPlatit(sD2, eD2, selFurnIdsXlsx, '');
         const headersFP = ["Furnizor", "Nr. Factură", "Valoare", "Status", "Data Emitere", "Scadență", "Data Plată"];
         const rowsFP = filtrateFP.map(f => {
             const furn = ZFlowStore.dateFurnizori.find(fr => String(fr.id) === String(f.furnizor_id));
@@ -5771,7 +6064,21 @@ async function exportaExcel() {
         XLSX.utils.book_append_sheet(wb, wsFP, "Furnizori - De Platit");
     }
 
-    // Foaie 3: Cashflow summary (la Toate)
+    // Foaie 3: Contribuții Buget Stat
+    if (ZFlowStore.dateContributii?.length > 0) {
+        const contributiiData = ZFlowStore.dateContributii.map(c => [
+            c.tip || 'N/A',
+            c.suma || 0,
+            c.luna || '',
+            c.achitat ? 'Da' : 'Nu',
+            c.observatii || ''
+        ]);
+        const headersContributii = ['Tip', 'Suma (RON)', 'Luna', 'Achitat', 'Observații'];
+        const wsContributii = XLSX.utils.aoa_to_sheet([headersContributii, ...contributiiData]);
+        XLSX.utils.book_append_sheet(wb, wsContributii, 'Contributii');
+    }
+    
+    // Foaie 4: Cashflow summary (la Toate)
     if (ZFlowStore.filtruStatusBI === 'toate') {
         const totalIncasat = (ZFlowStore.dateFacturiBI || []).filter(f => f.status_plata === 'Incasat').reduce((s, f) => s + (Number(f.valoare) || 0), 0);
         const totalNeincasat = (ZFlowStore.dateFacturiBI || []).filter(f => f.status_plata !== 'Incasat').reduce((s, f) => s + (Number(f.valoare) || 0), 0);
@@ -5793,10 +6100,11 @@ async function exportaExcel() {
         XLSX.utils.book_append_sheet(wb, wsCF, "Cashflow");
     }
 
-    // ── Foaie Sumar — datele vizibile în bi-totale-bar ──────────────────
+    // ── Foaie Sumar — datele vizibile în bi-totale-bar + contributii ────
     const _biClienti   = document.getElementById("suma-selectata-bi")?.innerText?.trim() || "0 lei";
     const _biFurnizori = document.getElementById("suma-platit-bi")?.innerText?.trim()    || "0 lei";
-    const _biNet       = document.getElementById("cf-net")?.innerText?.trim()            || "0 lei";
+    const _biNet       = (document.getElementById("cf-net")?.innerText?.trim()            || "0 lei").replace(/\u2212/g, "-");
+    const _biContributii = document.getElementById("cf-contributii")?.innerText?.trim() || "0 lei";
     const _perioadaS   = document.getElementById("label-start")?.innerText?.trim() || s || "—";
     const _perioadaE   = document.getElementById("label-end")?.innerText?.trim()   || e || "—";
     const _filtru      = { 'toate': 'Toate', 'Neincasat': 'Neîncasate', 'Platit': 'Neplătite' }[ZFlowStore.filtruStatusBI] || 'Toate';
@@ -5811,6 +6119,7 @@ async function exportaExcel() {
         ["INDICATOR",               "VALOARE"],
         ["Total Clienți (facturat)", _biClienti],
         ["Total Furnizori (plăți)",  _biFurnizori],
+        ["Contribuții Buget Stat",   _biContributii],
         ["Diferență Net",            _biNet],
     ]);
     wsSumar["!cols"] = [{ wch: 30 }, { wch: 22 }];
@@ -5825,8 +6134,7 @@ async function exportaExcel() {
             if (!luniGraficMap[d]) luniGraficMap[d] = { incasari: 0, plati: 0 };
             luniGraficMap[d].incasari += Number(f.valoare) || 0;
         });
-        const allFurnIdsGrafic = Array.from(document.querySelectorAll("#container-bi-furnizori-checks input:checked")).map(i => String(i.value));
-        const furnIdsGrafic = allFurnIdsGrafic.length > 0 ? allFurnIdsGrafic : ZFlowStore.dateFurnizori.map(f => String(f.id));
+        const furnIdsGrafic = Array.from(document.querySelectorAll("#container-bi-furnizori-checks input:checked")).map(i => String(i.value));
         const filtrateFPGrafic = _filtreazaFacturiPlatit(xlsxStartDate, xlsxEndDate, furnIdsGrafic, '');
         filtrateFPGrafic.forEach(f => {
             const d = (f.data_emiterii || '').substring(0, 7);
@@ -7078,7 +7386,10 @@ window.executaCorelareMod = executaCorelareMod;
 // Toate funcțiile originale rămân disponibile pentru compatibilitate!
 // ============================================
 
-(function initializeV2Modules() {
+// Rulează DUPĂ ce toate scripturile defer s-au executat (DOMContentLoaded garantează asta).
+// app.js se încarcă înaintea analytics.js / export.js / anaf.js / attachments.js / bulk.js,
+// deci verificarea modulelor trebuie amânată până când întreg DOM-ul + scripturile sunt gata.
+document.addEventListener('DOMContentLoaded', function initializeV2Modules() {
     ZFlowLogger.debug('app', '🚀 Z-FLOW - Inițializare Module Refactorizate');
     
     // Verificăm dacă modulele sunt încărcate
@@ -7120,7 +7431,7 @@ window.executaCorelareMod = executaCorelareMod;
     
     ZFlowLogger.debug('app', '📦 Acces rapid disponibil prin: ZF.Utils, ZF.Auth, ZF.UI, etc.');
     ZFlowLogger.debug('app', '📖 Documentație: js/modules/index.js');
-})();
+});
 
 // ==========================================
 // INDICATOR ONLINE / OFFLINE

@@ -114,8 +114,9 @@
     },
 
     /** Deschide modalul de adăugare/editare contribuție buget stat. */
-    deschideModalContributie: function (arg) {
-      if (typeof deschideModalContributie === 'function') deschideModalContributie(arg || null);
+    deschideModalContributie: function (btn) {
+      const id = btn.dataset.arg || null;
+      if (typeof deschideModalContributie === 'function') deschideModalContributie(id);
     },
 
     /** Salvează contribuția din modal. */

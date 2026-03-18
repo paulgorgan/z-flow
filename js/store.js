@@ -56,6 +56,12 @@ const ZFlowStore = Vue.reactive({
     filtruCategorieFurnizori: '',   // filtrare după categorie în lista furnizori
     _furnizoriFiltrati: [], // Lista curentă filtrată — pentru paginare
 
+    // Paginare Contribuții Buget Stat
+    contributiiPageSize: 15,
+    contributiiCurrentPage: 1,
+    contributiiTipFiltru: '',       // '' = toate | 'TVA' | 'CAS' | etc.
+    contributiiStatusFiltru: 'toate', // toate | neachitate | achitate
+
     // Paginare Depozit
     produsePageSize: 10,
     produseCurrentPage: 1,

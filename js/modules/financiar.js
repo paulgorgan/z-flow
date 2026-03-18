@@ -186,7 +186,7 @@ function renderMain(lista = null) {
             </div>
         </div>
         <div class="text-right flex flex-col items-end">
-            <p class="text-blue-900 font-black text-[20px] leading-none tracking-tighter">${Math.round(f.sold).toLocaleString()} <span class="text-[11px] font-bold">lei</span></p>
+            <p class="text-blue-900 font-black text-[22px] leading-none tracking-tighter">${Math.round(f.sold).toLocaleString()} <span class="text-[11px] font-bold">lei</span></p>
             <p class="text-[9px] font-semibold text-slate-400 mt-1">De încasat</p>
         </div>
     </div>
@@ -276,7 +276,8 @@ const filtreazaListaFirmeDebounced = debounce(function () {
     const filtrate = ZFlowStore.dateLocal.filter(
         (f) =>
             (f.nume_firma || "").toLowerCase().includes(q) ||
-            String(f.cui || "").includes(q)
+            String(f.cui || "").includes(q) ||
+            (f.categorie || "").toLowerCase().includes(q)
     );
     
     // Dacă există căutare activă și nu s-a găsit nimic, afișăm empty state de tip search
@@ -300,14 +301,11 @@ const filtreazaListaFirmeDebounced = debounce(function () {
 function renderFurnizori(lista) {
     // [PERF-FIX] FIX 5 — referință DOM cached; fallback la getElementById dacă cache nu e populat
     const container = window._DOM?.listaFurnizori || document.getElementById("lista-furnizori-global");
-    const sursa = [...(lista || ZFlowStore.dateFurnizori)];
+    let sursa = [...(lista || ZFlowStore.dateFurnizori)];
     if (!container) return;
 
     if (sursa.length === 0) {
         showEmptyState(container, "Niciun furnizor", "Adaugă furnizori pentru a gestiona facturile de plătit", "clients");
-        // Actualizează și totalul
-        const totalEl = document.getElementById("total-general-platit");
-        if (totalEl) totalEl.innerText = "0 lei";
         _renderFurnizoriPagination(0);
         return;
     }
@@ -418,9 +416,7 @@ function renderFurnizori(lista) {
 </div>`;
     }).join("");
 
-    const totalPlatit = ZFlowStore.dateFurnizori.reduce((acc, f) => acc + (Number(f.sold) || 0), 0);
-    const totalEl = document.getElementById("total-general-platit");
-    if (totalEl) totalEl.innerText = `${Math.round(totalPlatit).toLocaleString()} lei`;
+    // total-general-platit este actualizat de updateFurnizoriKPI (include și contribuțiile neachitate)
     _renderFurnizoriPagination(sursa.length);
     if (typeof initInfiniteScrollFurnizori === 'function') requestAnimationFrame(initInfiniteScrollFurnizori);
 
@@ -455,7 +451,10 @@ function renderFurnizori(lista) {
 const filtreazaListaFurnizoriDebounced = debounce(function () {
     const q = document.getElementById("search-furnizori")?.value.toLowerCase().trim() || "";
     const filtrate = ZFlowStore.dateFurnizori.filter(
-        (f) => (f.nume_firma || "").toLowerCase().includes(q) || String(f.cui || "").includes(q)
+        (f) =>
+            (f.nume_firma || "").toLowerCase().includes(q) ||
+            String(f.cui || "").includes(q) ||
+            (f.categorie || "").toLowerCase().includes(q)
     );
     if (q && filtrate.length === 0) {
         const container = document.getElementById("lista-furnizori-global");
@@ -738,7 +737,7 @@ function updateFurnizoriKPI() {
         if (f.status_plata === "Platit") {
             totalPlatit += val;
         } else {
-            // Neplătit = TOATE facturile neachitate (sincronizat cu cardul "FACTURI DE PLĂTIT")
+            // Neplătit = TOATE facturile neachitate (sincronizat cu cardul "PLĂȚI DE EFECTUAT")
             totalRestante += val;
         }
         if (f.data_emiterii) {
@@ -747,7 +746,13 @@ function updateFurnizoriKPI() {
         }
     });
 
+    // Contribuții buget de stat — neachitate, evidențiate separat în cardul roșu
+    const totalContributiiNeachitate = (ZFlowStore.dateContributii || [])
+        .filter(c => !c.achitat)
+        .reduce((sum, c) => sum + (Number(c.suma) || 0), 0);
+
     const fmt = (v) => v >= 1000000 ? (v/1000000).toFixed(1)+"M" : v >= 1000 ? (v/1000).toFixed(0)+"k" : Math.round(v).toString();
+    const fmtLei = (v) => `${Math.round(v).toLocaleString()} lei`;
 
     const kpiPlatit = document.getElementById("kpi-platit");
     const kpiRest = document.getElementById("kpi-restante-furnizori");
@@ -757,6 +762,22 @@ function updateFurnizoriKPI() {
     if (kpiRest) kpiRest.innerText = fmt(totalRestante);
     if (kpiFurn) kpiFurn.innerText = furnizori.length.toString();
     if (kpiLuna) kpiLuna.innerText = fmt(totalLuna);
+
+    // Actualizează total general (facturi + contribuții neachitate)
+    const totalEl = document.getElementById("total-general-platit");
+    if (totalEl) totalEl.innerText = `${Math.round(totalRestante + totalContributiiNeachitate).toLocaleString()} lei`;
+
+    // Evidențiază contribuțiile în cardul roșu
+    const cardCtb = document.getElementById("card-contributii-total");
+    const kpiCtb = document.getElementById("kpi-contributii-total");
+    if (cardCtb && kpiCtb) {
+        if (totalContributiiNeachitate > 0) {
+            cardCtb.classList.remove("hidden");
+            kpiCtb.innerText = fmtLei(totalContributiiNeachitate);
+        } else {
+            cardCtb.classList.add("hidden");
+        }
+    }
 }
 
 /**
@@ -769,7 +790,7 @@ function deschideModalFurnizor(id) {
     const title = document.getElementById("modal-furnizor-title");
 
     document.getElementById("in-furn-id").value = "";
-    ["in-furn-cui","in-furn-nume","in-furn-adresa","in-furn-contact","in-furn-tel","in-furn-email","in-furn-iban","in-furn-oras","in-furn-note"].forEach(el => {
+    ["in-furn-cui","in-furn-nume","in-furn-adresa","in-furn-contact","in-furn-tel","in-furn-email","in-furn-iban","in-furn-oras","in-furn-note","in-furn-eticheta","in-furn-categorie"].forEach(el => {
         const inp = document.getElementById(el);
         if (inp) inp.value = "";
     });
@@ -788,6 +809,10 @@ function deschideModalFurnizor(id) {
             document.getElementById("in-furn-iban").value = f.iban || "";
             document.getElementById("in-furn-oras").value = f.oras || "";
             document.getElementById("in-furn-note").value = f.note || "";
+            const etichetaFurnEl = document.getElementById("in-furn-eticheta");
+            if (etichetaFurnEl) etichetaFurnEl.value = f.eticheta || "";
+            const categorieFurnEl = document.getElementById("in-furn-categorie");
+            if (categorieFurnEl) categorieFurnEl.value = f.categorie || "";
         }
         if (title) title.innerText = "Editare Furnizor";
         if (btnSterge) btnSterge.classList.remove("hidden");
@@ -847,6 +872,8 @@ async function salveazaFurnizor() {
             iban: document.getElementById("in-furn-iban")?.value.trim() || null,
             oras: document.getElementById("in-furn-oras")?.value.trim() || null,
             note: document.getElementById("in-furn-note")?.value.trim() || null,
+            eticheta: document.getElementById("in-furn-eticheta")?.value.trim() || null,
+            categorie: document.getElementById("in-furn-categorie")?.value.trim() || null,
             updated_at: new Date().toISOString()
         };
 
