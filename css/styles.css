@@ -379,7 +379,8 @@ h3 { font-size: 1.1rem !important; }
 
 .export-group {
   margin-bottom: 32px !important;
-  width: 100%;
+  width: fit-content;
+  align-self: flex-start;
 }
 
 /* ============================================

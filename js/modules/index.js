@@ -113,6 +113,21 @@
       if (el && typeof stergeFacturaPlatit === 'function') stergeFacturaPlatit(el.value);
     },
 
+    /** Deschide modalul de adăugare/editare contribuție buget stat. */
+    deschideModalContributie: function (arg) {
+      if (typeof deschideModalContributie === 'function') deschideModalContributie(arg || null);
+    },
+
+    /** Salvează contribuția din modal. */
+    salveazaContributie: function () {
+      if (typeof salveazaContributie === 'function') salveazaContributie();
+    },
+
+    /** Șterge contribuția activă (id citit din #ctb-id). */
+    stergeContributie: function () {
+      if (typeof stergeContributie === 'function') stergeContributie();
+    },
+
     /** Verifică statutul e-Factura ANAF pentru CUI-ul din câmpul #in-furn-cui. */
     verificaEFacturaFurnizor: function () {
       const el = document.getElementById('in-furn-cui');

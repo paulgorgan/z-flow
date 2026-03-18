@@ -133,6 +133,12 @@ function renderMain(lista = null) {
         return (b.sold || 0) - (a.sold || 0);
     });
 
+    // Filtrare după categorie
+    const filtruCat = (ZFlowStore.filtruCategorieClienti || '').trim().toLowerCase();
+    if (filtruCat) {
+        sursa = sursa.filter(c => (c.categorie || '').toLowerCase().includes(filtruCat));
+    }
+
     // Paginare clienți
     ZFlowStore._clientiFiltrati = sursa;
     const pagC = pagineaza(sursa, ZFlowStore.clientiPageSize, ZFlowStore.clientiCurrentPage);
@@ -169,7 +175,11 @@ function renderMain(lista = null) {
     <div class="flex justify-between items-start w-full">
         <div class="max-w-[60%]">
             <h4 class="text-[15px] font-black text-slate-800 leading-tight truncate">${_esc(f.nume_firma || f.cui)}</h4>
-            ${esteSiClientSiFurnizor(f.cui) ? '<span class="inline-block text-[7px] font-black uppercase px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 mt-0.5">Client + Furnizor</span>' : ''}
+            <div class="flex flex-wrap gap-1 mt-0.5">
+            ${esteSiClientSiFurnizor(f.cui) ? '<span class="inline-block text-[7px] font-black uppercase px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700">Client + Furnizor</span>' : ''}
+            ${f.eticheta ? `<span class="inline-block text-[7px] font-bold uppercase px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700">${_esc(f.eticheta)}</span>` : ''}
+            ${f.categorie ? `<span class="inline-block text-[7px] font-bold uppercase px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600">${_esc(f.categorie)}</span>` : ''}
+            </div>
             <div class="flex items-center gap-1.5 mt-1.5">
                 <span class="w-2 h-2 rounded-full ${areRestante ? "bg-red-400" : areIminent ? "bg-amber-400" : "bg-emerald-400"}"></span>
                 <p class="text-[10px] font-semibold text-slate-400">${_esc(f.oras || "—")}</p>
@@ -335,6 +345,12 @@ function renderFurnizori(lista) {
         return (b.sold || 0) - (a.sold || 0);
     });
 
+    // Filtrare după categorie
+    const filtruCatF = (ZFlowStore.filtruCategorieFurnizori || '').trim().toLowerCase();
+    if (filtruCatF) {
+        sursa = sursa.filter(f => (f.categorie || '').toLowerCase().includes(filtruCatF));
+    }
+
     // Paginare furnizori
     ZFlowStore._furnizoriFiltrati = sursa;
     const pagF = pagineaza(sursa, ZFlowStore.furnizoriPageSize, ZFlowStore.furnizoriCurrentPage);
@@ -352,7 +368,11 @@ function renderFurnizori(lista) {
     <div class="flex justify-between items-start w-full">
         <div class="max-w-[60%]">
             <h4 class="text-[15px] font-black text-slate-800 leading-tight truncate">${_esc(f.nume_firma || f.cui)}</h4>
-            ${esteSiClientSiFurnizor(f.cui) ? '<span class="inline-block text-[7px] font-black uppercase px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 mt-0.5">Client + Furnizor</span>' : ''}
+            <div class="flex flex-wrap gap-1 mt-0.5">
+            ${esteSiClientSiFurnizor(f.cui) ? '<span class="inline-block text-[7px] font-black uppercase px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700">Client + Furnizor</span>' : ''}
+            ${f.eticheta ? `<span class="inline-block text-[7px] font-bold uppercase px-1.5 py-0.5 rounded-full bg-red-100 text-red-700">${_esc(f.eticheta)}</span>` : ''}
+            ${f.categorie ? `<span class="inline-block text-[7px] font-bold uppercase px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600">${_esc(f.categorie)}</span>` : ''}
+            </div>
             <div class="flex items-center gap-1.5 mt-1.5">
                 <span class="w-2 h-2 rounded-full ${areRestante ? "bg-red-400" : areIminent ? "bg-amber-400" : "bg-emerald-400"}"></span>
                 <p class="text-[10px] font-semibold text-slate-400">${_esc(f.oras || "—")}</p>
@@ -932,7 +952,7 @@ function populeazaSelectFurnizori(selectedId) {
  * Deschide modalul unificat pentru firmă nouă
  */
 function deschideFirmaNou() {
-    ["fn-cui","fn-nume","fn-adresa","fn-contact","fn-tel","fn-email","fn-iban","fn-oras","fn-note"].forEach(id => {
+    ["fn-cui","fn-nume","fn-adresa","fn-contact","fn-tel","fn-email","fn-iban","fn-oras","fn-note","fn-eticheta","fn-categorie"].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.value = "";
     });
@@ -1013,7 +1033,7 @@ async function salveazaFirmaNou() {
         return;
     }
 
-    const payload = {
+    const payloadBase = {
         cui,
         nume_firma: numeFirma,
         adresa: document.getElementById("fn-adresa").value.trim() || null,
@@ -1022,17 +1042,20 @@ async function salveazaFirmaNou() {
         contact_email: document.getElementById("fn-email").value.trim() || null,
         iban: document.getElementById("fn-iban").value.trim() || null,
         oras: document.getElementById("fn-oras").value.trim() || null,
-        note: document.getElementById("fn-note").value.trim() || null,
-        updated_at: new Date().toISOString()
+        eticheta: document.getElementById("fn-eticheta")?.value.trim() || null,
+        categorie: document.getElementById("fn-categorie")?.value.trim() || null,
     };
+    // tabelul 'clienti' NU are coloana 'note' — doar 'furnizori' o are
+    const payloadClient   = { ...payloadBase };
+    const payloadFurnizor = { ...payloadBase, note: document.getElementById("fn-note")?.value.trim() || null };
 
     setLoader(true);
     try {
         if (tipActiv === "client" || tipActiv === "ambele") {
-            await ZFlowDB.insertClient(payload);
+            await ZFlowDB.insertClient(payloadClient);
         }
         if (tipActiv === "furnizor" || tipActiv === "ambele") {
-            await ZFlowDB.insertFurnizor(payload);
+            await ZFlowDB.insertFurnizor(payloadFurnizor);
         }
         inchideModal("modal-firma-nou");
         const label = tipActiv === "ambele" ? "Client + Furnizor adăugat!" : tipActiv === "client" ? "Client adăugat!" : "Furnizor adăugat!";

@@ -1587,3 +1587,64 @@ window.ZFlowDB = {
     // Session helpers [FIX 4]
     resetLocalSession
 };
+
+// ── Contribuții buget de stat (TVA, CAS, CASS, Impozit) ──────────────────────
+async function fetchContributii() {
+    try {
+        if (_demoOps.isLocal() || _demoOps.isDemo()) return [];
+        const uid = _getCurrentUserId();
+        const { data, error } = await zf.from('contributii_buget').select('*').eq('user_id', uid).order('luna', { ascending: false });
+        if (error) throw error;
+        return data || [];
+    } catch (err) {
+        ZFlowLogger.error('supabase', '[fetchContributii] ' + err.message);
+        return [];
+    }
+}
+async function insertContributie(payload) {
+    try {
+        if (_demoOps.isLocal() || _demoOps.isDemo()) {
+            const id = 'demo_' + Date.now();
+            window.ZFlowStore.dateContributii = [...(window.ZFlowStore.dateContributii || []), { id, ...payload }];
+            return id;
+        }
+        const uid = _getCurrentUserId();
+        const { data, error } = await zf.from('contributii_buget').insert({ ...payload, user_id: uid }).select('id').single();
+        if (error) throw error;
+        return data.id;
+    } catch (err) {
+        ZFlowLogger.error('supabase', '[insertContributie] ' + err.message);
+        throw err;
+    }
+}
+async function updateContributie(id, payload) {
+    try {
+        if (_demoOps.isLocal() || _demoOps.isDemo()) {
+            const idx = (window.ZFlowStore.dateContributii || []).findIndex(x => x.id === id);
+            if (idx >= 0) window.ZFlowStore.dateContributii[idx] = { ...window.ZFlowStore.dateContributii[idx], ...payload };
+            return;
+        }
+        const { error } = await zf.from('contributii_buget').update(payload).eq('id', id);
+        if (error) throw error;
+    } catch (err) {
+        ZFlowLogger.error('supabase', '[updateContributie] ' + err.message);
+        throw err;
+    }
+}
+async function deleteContributie(id) {
+    try {
+        if (_demoOps.isLocal() || _demoOps.isDemo()) {
+            window.ZFlowStore.dateContributii = (window.ZFlowStore.dateContributii || []).filter(x => x.id !== id);
+            return;
+        }
+        const { error } = await zf.from('contributii_buget').delete().eq('id', id);
+        if (error) throw error;
+    } catch (err) {
+        ZFlowLogger.error('supabase', '[deleteContributie] ' + err.message);
+        throw err;
+    }
+}
+window.ZFlowDB.fetchContributii   = fetchContributii;
+window.ZFlowDB.insertContributie  = insertContributie;
+window.ZFlowDB.updateContributie  = updateContributie;
+window.ZFlowDB.deleteContributie  = deleteContributie;

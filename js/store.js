@@ -10,6 +10,7 @@ const ZFlowStore = Vue.reactive({
     dateFacturiBI: [],
     dateFurnizori: [],
     dateFacturiPlatit: [],
+    dateContributii: [],        // Contribuții buget de stat (TVA, CAS, CASS, Impozit)
     selectedFurnizorId: null,
 
     // Depozit — Stoc & Produse
@@ -45,12 +46,14 @@ const ZFlowStore = Vue.reactive({
     // Paginare Listă Clienți
     clientiPageSize: 10,
     clientiCurrentPage: 1,
+    filtruCategorieClienti: '',     // filtrare după categorie în lista clienți
 
     _clientiFiltrati: [],   // Lista curentă filtrată — pentru paginare
     
     // Paginare Listă Furnizori
     furnizoriPageSize: 10,          // Default 10 furnizori/pagina
     furnizoriCurrentPage: 1,
+    filtruCategorieFurnizori: '',   // filtrare după categorie în lista furnizori
     _furnizoriFiltrati: [], // Lista curentă filtrată — pentru paginare
 
     // Paginare Depozit

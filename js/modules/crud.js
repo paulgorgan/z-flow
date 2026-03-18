@@ -29,6 +29,8 @@ async function salveazaClient() {
         telefon: document.getElementById("in-tel").value,
         contact_email: document.getElementById("in-email").value,
         iban: document.getElementById("in-iban").value,
+        eticheta: document.getElementById("in-eticheta")?.value.trim() || null,
+        categorie: document.getElementById("in-categorie")?.value.trim() || null,
     };
 
     // Normalizare CUI: elimina prefix RO/ro și spații
