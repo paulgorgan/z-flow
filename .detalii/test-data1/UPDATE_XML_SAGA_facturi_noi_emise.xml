@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- XML SAGA - facturi NOI emise de firma noastră (FurnizorCIF = RO99887766) -->
+<!-- Testează: sincronizare BI panel + Home KPIs + cashflow după import XML  -->
+<Facturi>
+  <Factura>
+    <FurnizorCIF>RO99887766</FurnizorCIF>
+    <FurnizorNume>FIRMA MEA SRL</FurnizorNume>
+    <ClientCIF>RO10203040</ClientCIF>
+    <ClientNume>CONSTRUCTII PREMIUM SRL</ClientNume>
+    <FacturaNumar>FC-XML-004</FacturaNumar>
+    <FacturaData>2025-05-08</FacturaData>
+    <FacturaScadenta>2025-07-08</FacturaScadenta>
+    <TotalValoare>95000.00</TotalValoare>
+    <StatusPlata>Neincasat</StatusPlata>
+  </Factura>
+  <Factura>
+    <FurnizorCIF>RO99887766</FurnizorCIF>
+    <FurnizorNume>FIRMA MEA SRL</FurnizorNume>
+    <ClientCIF>RO20304050</ClientCIF>
+    <ClientNume>LOGISTICA RAPIDA SRL</ClientNume>
+    <FacturaNumar>FC-XML-005</FacturaNumar>
+    <FacturaData>2025-05-12</FacturaData>
+    <FacturaScadenta>2025-06-12</FacturaScadenta>
+    <TotalValoare>12300.00</TotalValoare>
+    <StatusPlata>Neincasat</StatusPlata>
+  </Factura>
+  <Factura>
+    <FurnizorCIF>RO99887766</FurnizorCIF>
+    <FurnizorNume>FIRMA MEA SRL</FurnizorNume>
+    <ClientCIF>RO90123456</ClientCIF>
+    <ClientNume>MEDICA FARM SRL</ClientNume>
+    <FacturaNumar>FC-XML-006</FacturaNumar>
+    <FacturaData>2025-05-15</FacturaData>
+    <FacturaScadenta>2025-06-15</FacturaScadenta>
+    <TotalValoare>31000.00</TotalValoare>
+    <StatusPlata>Neincasat</StatusPlata>
+  </Factura>
+</Facturi>

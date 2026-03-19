@@ -77,13 +77,21 @@
         deschideModalFurnizor(window.ZFlowStore && window.ZFlowStore.selectedFurnizorId);
     },
 
-    /** Importă facturi clienți SAGA și închide meniul FAB. */
+    /** Import Smart Unificat — detectează automat tipul fișierului (CSV/XLSX/XML).
+     *  Distribuie automat: clienți | furnizori | contribuții.
+     *  Înlocuiește cele 3 butoane separate de import. */
+    importSmartUnificat: function () {
+      if (typeof toggleFAB === 'function') toggleFAB();
+      if (typeof importSmartUnificat === 'function') importSmartUnificat();
+    },
+
+    /** Importă facturi clienți SAGA și închide meniul FAB. (păstrat pentru compatibilitate) */
     importaClientiSaga: function () {
       if (typeof importaDateSaga === 'function') importaDateSaga('clienti');
       if (typeof toggleFAB === 'function') toggleFAB();
     },
 
-    /** Importă facturi furnizori SAGA și închide meniul FAB. */
+    /** Importă facturi furnizori SAGA și închide meniul FAB. (păstrat pentru compatibilitate) */
     importaFurnizoriSaga: function () {
       if (typeof importaDateSaga === 'function') importaDateSaga('furnizori');
       if (typeof toggleFAB === 'function') toggleFAB();

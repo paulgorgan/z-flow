@@ -2155,19 +2155,22 @@ function incarcaDashboard() {
                       <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>
                     </span>
                   </div>
-                  <div class="space-y-1.5">
-                    ${clientiRestanti.length ? `
-                    <div class="flex items-center justify-between bg-red-100/60 rounded-xl px-3 py-1.5">
+                                    <div class="space-y-1.5">
+                                        ${clientiRestanti.length ? `
+                                        <div class="flex items-center justify-between bg-red-100/70 rounded-xl px-3 py-1.5 border border-red-200">
                         <p class="text-[10px] text-red-700 font-bold">${clientiRestanti.length} client${clientiRestanti.length > 1 ? "i cu" : " cu"} scadențe depășite</p>
                         <p style="font-size:0.9375rem!important" class="font-black text-red-700">${Math.round(totalScadenteClientVal).toLocaleString()} lei</p>
                     </div>` : ''}
                     ${furnizoriRestanti.length ? `
-                    <div class="flex items-center justify-between bg-red-100/60 rounded-xl px-3 py-1.5">
+                                        <div class="flex items-center justify-between bg-red-100/70 rounded-xl px-3 py-1.5 border border-red-200">
                         <p class="text-[10px] text-red-700 font-bold">${furnizoriRestanti.length} furnizor${furnizoriRestanti.length > 1 ? "i cu" : " cu"} facturi restante</p>
                         <p style="font-size:0.9375rem!important" class="font-black text-red-700">${Math.round(totalScadenteFurnizorVal).toLocaleString()} lei</p>
                     </div>` : ''}
+                                        ${contributiiScadente.length ? `
+                                        <div class="text-[8px] font-black uppercase tracking-widest text-orange-700 px-1 mt-1">Severitate medie</div>
+                                        ` : ''}
                     ${contributiiScadente.length ? `
-                    <div class="flex items-center justify-between bg-orange-100/80 rounded-xl px-3 py-1.5">
+                                        <div class="flex items-center justify-between bg-orange-100/80 rounded-xl px-3 py-1.5 border border-orange-200">
                         <p class="text-[10px] text-orange-700 font-bold">${contributiiScadente.length} contribuție${contributiiScadente.length > 1 ? 'i buget' : ' buget'} scadent${contributiiScadente.length > 1 ? 'e' : 'ă'} (25 luna)</p>
                         <p style="font-size:0.9375rem!important" class="font-black text-orange-700">${Math.round(totalCtbScadenta).toLocaleString()} lei</p>
                     </div>` : ''}
@@ -2621,8 +2624,28 @@ function renderListaContributii() {
     if (statusFiltru === 'neachitate') filtrate = filtrate.filter(c => !c.achitat);
     if (statusFiltru === 'achitate')   filtrate = filtrate.filter(c => !!c.achitat);
 
-    // Sortare: luna descrescătoare
-    filtrate = [...filtrate].sort((a, b) => (b.luna || '') > (a.luna || '') ? 1 : -1);
+    // Sortare: scadență descrescătoare (scadența legală = 25 din luna următoare lunii raportate)
+    const calcScadenta = (lunaValue) => {
+        if (!lunaValue) return null;
+        const base = String(lunaValue).substring(0, 7).split('-');
+        if (base.length < 2) return null;
+        let an = parseInt(base[0], 10);
+        let luna = parseInt(base[1], 10);
+        if (isNaN(an) || isNaN(luna)) return null;
+        luna += 1;
+        if (luna > 12) { luna = 1; an += 1; }
+        const d = new Date(an, luna - 1, 25);
+        d.setHours(0, 0, 0, 0);
+        return isNaN(d) ? null : d;
+    };
+    filtrate = [...filtrate].sort((a, b) => {
+        const da = calcScadenta(a.luna);
+        const db = calcScadenta(b.luna);
+        const ta = da ? da.getTime() : 0;
+        const tb = db ? db.getTime() : 0;
+        if (tb !== ta) return tb - ta;
+        return String(b.luna || '').localeCompare(String(a.luna || ''));
+    });
 
     if (filtrate.length === 0) {
         container.innerHTML = '<p class="text-[9px] text-slate-400 text-center py-2">Nicio contribuție.</p>';
@@ -2644,6 +2667,11 @@ function renderListaContributii() {
         const d = new Date(s.length >= 10 ? s + 'T00:00:00' : s + '-01T00:00:00');
         if (isNaN(d)) return s.substring(0, 7);
         return d.toLocaleDateString('ro-RO', { month: 'short', year: 'numeric' });
+    };
+    const fmtScadenta = (s) => {
+        const d = calcScadenta(s);
+        if (!d) return '—';
+        return d.toLocaleDateString('ro-RO', { day: '2-digit', month: 'short', year: 'numeric' });
     };
 
     // Sumar total neachitat pentru filtrul curent
@@ -2671,7 +2699,7 @@ function renderListaContributii() {
                     title="${c.achitat ? 'Marchează ca neachitat' : 'Marchează ca achitat'}"
                     onclick="toggleAchitatContributie('${c.id}')">${badgeText}</button>
             <div class="flex-1 min-w-0 cursor-pointer" data-action="deschideModalContributie" data-arg="${c.id}">
-                <span class="text-[9px] font-bold text-slate-700 truncate block">${c.tip} <span class="text-slate-400 font-semibold">· ${fmtLuna(c.luna)}</span></span>
+                <span class="text-[9px] font-bold text-slate-700 truncate block">${c.tip} <span class="text-slate-400 font-semibold">· ${fmtLuna(c.luna)} · Scad. ${fmtScadenta(c.luna)}</span></span>
                 ${c.observatii ? `<span class="text-[8px] text-slate-400 truncate block">${c.observatii}</span>` : ''}
             </div>
             <span class="text-[10px] font-black tabular-nums flex-shrink-0 ${c.achitat ? 'text-slate-400 line-through' : 'text-orange-700'}">${suma} lei</span>
@@ -2682,11 +2710,22 @@ function renderListaContributii() {
     const prevDis = page <= 1 ? 'disabled opacity-40 cursor-default' : 'cursor-pointer hover:bg-slate-200';
     const nextDis = page >= totalPages ? 'disabled opacity-40 cursor-default' : 'cursor-pointer hover:bg-slate-200';
     const paginareHTML = totalPages > 1 ? `
-<div class="flex items-center justify-between mt-2 px-1">
-    <button type="button" class="px-2 py-1 bg-slate-100 rounded-lg text-[8px] font-bold uppercase ${prevDis} transition-all" onclick="contributiiPrevPage()" ${page<=1?'disabled':''}>← Ant.</button>
+<div class="flex items-center justify-between mt-1 px-1">
+    <button type="button" class="px-2 py-1 bg-slate-100 rounded-lg text-[8px] font-bold uppercase ${prevDis} transition-all" onclick="contributiiPrevPage()" ${page<=1?'disabled':''}>‹ Înapoi</button>
     <span class="text-[8px] font-bold text-slate-400">${page}/${totalPages} (${total})</span>
-    <button type="button" class="px-2 py-1 bg-slate-100 rounded-lg text-[8px] font-bold uppercase ${nextDis} transition-all" onclick="contributiiNextPage()" ${page>=totalPages?'disabled':''}>Urm. →</button>
+    <button type="button" class="px-2 py-1 bg-slate-100 rounded-lg text-[8px] font-bold uppercase ${nextDis} transition-all" onclick="contributiiNextPage()" ${page>=totalPages?'disabled':''}>Înainte ›</button>
 </div>` : '';
+
+    // Selector număr rânduri pe pagină: 5 / 10 / 20 / 50 / Toate
+    const _psOpts = [5, 10, 20, 50, 99999];
+    const _psLabels = { 5:'5', 10:'10', 20:'20', 50:'50', 99999:'Toate' };
+    const perPageHTML = `<div class="flex items-center gap-1 mt-2 px-1 flex-wrap">
+        <span class="text-[7px] text-slate-400 font-semibold uppercase">Afișare:</span>
+        ${_psOpts.map(n => {
+            const act = ps === n || (n === 99999 && ps >= 99999);
+            return `<button type="button" onclick="contributiiSetPageSize(${n})" class="px-1.5 py-0.5 rounded-full text-[7px] font-black uppercase transition-all ${act ? 'bg-blue-700 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}">${_psLabels[n]}</button>`;
+        }).join('')}
+    </div>`;
 
     // Sumar
     const sumarHTML = nrNeachitate > 0
@@ -2696,7 +2735,7 @@ function renderListaContributii() {
            </div>`
         : '';
 
-    container.innerHTML = sumarHTML + rows + paginareHTML;
+    container.innerHTML = sumarHTML + rows + paginareHTML + perPageHTML;
 }
 
 /** Avansează pagina contribuțiilor */
@@ -2719,6 +2758,14 @@ function contributiiPrevPage() {
     }
 }
 window.contributiiPrevPage = contributiiPrevPage;
+
+/** Setează numărul de rânduri afișate pe pagină în lista contribuțiilor */
+function contributiiSetPageSize(n) {
+    ZFlowStore.contributiiPageSize = Number(n) > 0 ? Number(n) : 99999;
+    ZFlowStore.contributiiCurrentPage = 1;
+    renderListaContributii();
+}
+window.contributiiSetPageSize = contributiiSetPageSize;
 
 /**
  * Toggle rapid achitat/neachitat pentru o contribuție direct din listă.
@@ -2924,8 +2971,19 @@ async function importaContributiiCSV(input) {
     }
     ZFlowStore.dateContributii = await ZFlowDB.fetchContributii() || [];
     invalidateCashflowCache();
+    // [FIX v71.5] Sincronizare completă UI după import contribuții:
+    // 1. Lista contribuții din view-furnizori
     if (typeof renderListaContributii === 'function') renderListaContributii();
+    // 2. KPI-urile furnizori (Total de plătit, inclusiv contribuții)
     if (typeof updateFurnizoriKPI === 'function') updateFurnizoriKPI();
+    // 3. Cardul Cashflow din view-analiza (#view-analiza .card-flow) + checkbox bi-include-contributii
+    if (typeof calculeazaCashflow === 'function') calculeazaCashflow();
+    // 4. Checkboxuri firme din panoul BI stâng (reconstruiește cu datele curente din store)
+    if (typeof populeazaBridgeUI === 'function') populeazaBridgeUI();
+    // 5. KPI-urile Home (#home grid: Facturat, Neîncasat, Neplătit, Net)
+    if (typeof incarcaDashboard === 'function') incarcaDashboard();
+    // 6. Badge scadențe bell + alerte home
+    if (typeof verificaScadenteNotificari === 'function') verificaScadenteNotificari();
     showNotification(`Import contribuții: ${importate} adăugate${erori > 0 ? `, ${erori} erori` : ''}.`, importate > 0 ? 'success' : 'error');
 }
 window.importaContributiiCSV = importaContributiiCSV;
@@ -2979,12 +3037,25 @@ function filtreazaFirmeInCollapse(q) {
         }
     });
 
-    // Căutare firmă/CUI în Analiză: păstrează doar prima potrivire selectată și recalculează totalurile.
+    const searchInfo = document.getElementById('bi-search-feedback');
+    if (searchInfo) {
+        if (!term) {
+            searchInfo.innerText = 'Afișare completă · fără filtru activ';
+        } else if (matchedInputs.length > 0) {
+            searchInfo.innerText = `${matchedInputs.length} potriviri selectate automat (clienți + furnizori)`;
+        } else {
+            searchInfo.innerText = 'Nicio potrivire pentru filtrul curent';
+        }
+    }
+
+    // [FIX v71.7] Căutare firmă/CUI în Analiză: bifează TOATE potrivirile (client + furnizor simultan).
+    // Anterior bifura doar matchedInputs[0] — lăsa furnizorul nebifat pentru firmele duale.
     if (term && matchedInputs.length > 0) {
         document.querySelectorAll('#container-bi-checks input, #container-bi-furnizori-checks input').forEach(c => {
             c.checked = false;
         });
-        matchedInputs[0].checked = true;
+        matchedInputs.forEach(inp => { inp.checked = true; });
+        updateBISelectionFeedback();
         genereazaBI();
         return;
     }
@@ -2996,7 +3067,24 @@ function filtreazaFirmeInCollapse(q) {
             if (c.checked) changed = true;
             c.checked = false;
         });
+        updateBISelectionFeedback();
         if (changed) genereazaBI();
+    }
+
+    if (term && matchedInputs.length === 0) {
+        updateBISelectionFeedback();
+    }
+}
+
+function updateBISelectionFeedback() {
+    const selectedClienti = document.querySelectorAll('#container-bi-checks input:checked').length;
+    const selectedFurnizori = document.querySelectorAll('#container-bi-furnizori-checks input:checked').length;
+    const vizClienti = Array.from(document.querySelectorAll('#container-bi-checks label')).filter(l => l.style.display !== 'none').length;
+    const vizFurnizori = Array.from(document.querySelectorAll('#container-bi-furnizori-checks label')).filter(l => l.style.display !== 'none').length;
+
+    const selectionInfo = document.getElementById('bi-selection-feedback');
+    if (selectionInfo) {
+        selectionInfo.innerText = `Selectate: ${selectedClienti} clienți · ${selectedFurnizori} furnizori · Vizibile: ${vizClienti} / ${vizFurnizori}`;
     }
 }
 
@@ -3534,32 +3622,58 @@ function populeazaBridgeUI() {
     // Checkbox-uri clienți pentru analiză
     const containerBI = document.getElementById("container-bi-checks");
     if (containerBI) {
+        const furnizoriCuiSet = new Set((ZFlowStore.dateFurnizori || [])
+            .map(x => String(x.cui || '').replace(/\D/g, ''))
+            .filter(Boolean));
         containerBI.innerHTML = ZFlowStore.dateLocal
-            .map((f) => `
+            .map((f) => {
+                const cuiNorm = String(f.cui || '').replace(/\D/g, '');
+                const isDual = !!(cuiNorm && furnizoriCuiSet.has(cuiNorm));
+                return `
                 <label data-cui="${escapeHtml(String(f.cui || ''))}" onclick="selectSingleBIFirma('${f.id}', 'client', event)" class="flex justify-between items-center p-4 bg-slate-50 rounded-xl mb-1 text-[10px] font-bold uppercase cursor-pointer hover:bg-slate-100 transition-colors">
-                    <span>${escapeHtml(f.nume_firma || f.cui)}</span>
+                    <span class="flex items-center gap-1.5 min-w-0">
+                        <span class="w-1.5 h-1.5 rounded-full bg-blue-500 flex-shrink-0"></span>
+                        <span class="truncate">${escapeHtml(f.nume_firma || f.cui)}</span>
+                    </span>
+                    <span class="flex items-center gap-1.5 flex-shrink-0">
+                        ${isDual ? '<span class="text-[7px] font-black uppercase px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700">Dual</span>' : ''}
                     <input type="checkbox" value="${f.id}" checked
                            onclick="event.stopPropagation()"
-                           onchange="genereazaBI()"
+                           onchange="genereazaBI(); updateBISelectionFeedback();"
                            class="w-5 h-5 accent-blue-900 bi-checkbox">
+                    </span>
                 </label>
-            `)
+            `;
+            })
             .join("");
     }
 
     // Checkbox-uri furnizori pentru analiză
     const containerBIFurnizori = document.getElementById("container-bi-furnizori-checks");
     if (containerBIFurnizori) {
+        const clientiCuiSet = new Set((ZFlowStore.dateLocal || [])
+            .map(x => String(x.cui || '').replace(/\D/g, ''))
+            .filter(Boolean));
         containerBIFurnizori.innerHTML = ZFlowStore.dateFurnizori
-            .map((f) => `
+            .map((f) => {
+                const cuiNorm = String(f.cui || '').replace(/\D/g, '');
+                const isDual = !!(cuiNorm && clientiCuiSet.has(cuiNorm));
+                return `
                 <label data-cui="${escapeHtml(String(f.cui || ''))}" onclick="selectSingleBIFirma('${f.id}', 'furnizor', event)" class="flex justify-between items-center p-4 bg-red-50 rounded-xl mb-1 text-[10px] font-bold uppercase cursor-pointer hover:bg-red-100 transition-colors">
-                    <span>${escapeHtml(f.nume_firma || f.cui)}</span>
+                    <span class="flex items-center gap-1.5 min-w-0">
+                        <span class="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0"></span>
+                        <span class="truncate">${escapeHtml(f.nume_firma || f.cui)}</span>
+                    </span>
+                    <span class="flex items-center gap-1.5 flex-shrink-0">
+                        ${isDual ? '<span class="text-[7px] font-black uppercase px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700">Dual</span>' : ''}
                     <input type="checkbox" value="${f.id}" checked
                            onclick="event.stopPropagation()"
-                           onchange="genereazaBI()"
+                           onchange="genereazaBI(); updateBISelectionFeedback();"
                            class="w-5 h-5 accent-red-700 bi-furn-checkbox">
+                    </span>
                 </label>
-            `)
+            `;
+            })
             .join("");
     }
 
@@ -3581,6 +3695,7 @@ function populeazaBridgeUI() {
     const includeContrib = document.getElementById('bi-include-contributii');
     if (includeContrib) includeContrib.checked = !!ZFlowStore.includeContributiiInAnaliza;
 
+    updateBISelectionFeedback();
     genereazaBI();
 }
 
@@ -3596,6 +3711,7 @@ function selectSingleBIFirma(id, tip, event) {
         : `#container-bi-checks input[value="${String(id)}"]`;
     const target = document.querySelector(selector);
     if (target) target.checked = true;
+    updateBISelectionFeedback();
     genereazaBI();
 }
 
@@ -3618,6 +3734,7 @@ function toggleToateBI(status) {
     if (furnizoriSection && !furnizoriSection.classList.contains("hidden")) {
         furnizoriSection.querySelectorAll("input[type=checkbox]").forEach(c => c.checked = status);
     }
+    updateBISelectionFeedback();
     genereazaBI();
 }
 
@@ -3626,6 +3743,7 @@ function toggleToateBI(status) {
  */
 function toggleFirmeBI(status) {
     document.querySelectorAll("#container-bi-checks input").forEach((c) => (c.checked = status));
+    updateBISelectionFeedback();
     genereazaBI();
 }
 
@@ -4154,11 +4272,11 @@ function _paginareHTML(total, pageSize, currentPage, prefix) {
     <div class="flex items-center gap-2">
         <button onclick="${prefix}PrevPage()"
                 class="px-3 py-2 bg-slate-100 rounded-xl text-[9px] font-bold uppercase hover:bg-slate-200 transition-all disabled:opacity-40 min-h-[32px]"
-                ${currentPage <= 1 ? 'disabled' : ''}>← Ant.</button>
+                ${currentPage <= 1 ? 'disabled' : ''}>‹ Înapoi</button>
         <span class="text-[9px] font-black text-slate-500 whitespace-nowrap">${arataInfo}</span>
         <button onclick="${prefix}NextPage()"
                 class="px-3 py-2 bg-slate-100 rounded-xl text-[9px] font-bold uppercase hover:bg-slate-200 transition-all disabled:opacity-40 min-h-[32px]"
-                ${pageSize === 0 || currentPage >= totalPages ? 'disabled' : ''}>Urm. →</button>
+                ${pageSize === 0 || currentPage >= totalPages ? 'disabled' : ''}>Înainte ›</button>
     </div>
 </div>`;
 }
@@ -4395,6 +4513,279 @@ async function importaDateSagaAuto() {
     await importaDateSaga(tipDetectat);
     window.__sagaAutoText = null; // curăță dacă nu a fost consumat
 }
+
+/**
+ * IMPORT SMART UNIFICAT — un singur buton pentru toate tipurile de fișiere.
+ *
+ * Acceptă: .csv, .xlsx, .xml (SAGA nativ, WinMentor, SmartBill)
+ * Detectează automat: clienti | furnizori | contributii | xml-saga
+ * Distribuie datele în funcțiile corespunzătoare fără intervenție utilizator.
+ *
+ * Logica de detecție (în ordine de prioritate):
+ *  1. Extensie .xml → parser XML SAGA/SmartBill → compară CIF cu userProfile.cui
+ *     → facturi emise (CIF firmei = furnizor în XML) → clienti
+ *     → facturi primite (CIF firmei = client în XML) → furnizori
+ *  2. Extensie .csv/.xlsx + headere contribuții (tip+suma+luna) → contribuții
+ *  3. Extensie .csv/.xlsx + headere furnizori (furnizor/platit/neplatit) → furnizori
+ *  4. Default → clienti
+ *
+ * NU folosește confirm() — afișează doar un toast cu tipul detectat.
+ * NU deschide al doilea file picker — reutilizează textul deja citit.
+ */
+async function importSmartUnificat() {
+    if (!hasPermission('canImport')) {
+        showNotification('Nu ai permisiunea de a importa date', 'error');
+        return;
+    }
+
+    // ── Pas 1: un singur file picker ────────────────────────────────────────
+    const file = await new Promise(resolve => {
+        const inp = document.createElement('input');
+        inp.type = 'file';
+        inp.accept = '.csv,.xlsx,.xls,.xml';
+        inp.style.display = 'none';
+        document.body.appendChild(inp);
+        inp.addEventListener('change', e => {
+            document.body.removeChild(inp);
+            resolve(e.target.files[0] || null);
+        }, { once: true });
+        inp.click();
+    });
+    if (!file) return;
+
+    setLoader(true);
+    try {
+        const ext = (file.name || '').split('.').pop().toLowerCase();
+
+        // ── Pas 2a: fișier XML — parser SAGA/SmartBill/e-Factura ────────────
+        if (ext === 'xml') {
+            await _importSmartXML(file);
+            return;
+        }
+
+        // ── Pas 2b: fișier CSV / XLSX — detecție din headere ────────────────
+        const rawText = await file.text();
+        const text = rawText.replace(/^\uFEFF/, ''); // strip BOM
+
+        const delimiter = typeof ZFlowImport !== 'undefined'
+            ? ZFlowImport.detectDelimiter(text)
+            : (text.split('\n')[0].includes(';') ? ';' : ',');
+        const firstLine = text.split('\n')[0] || '';
+        const headers = firstLine
+            .split(delimiter)
+            .map(h => h.trim().replace(/^"|"$/g, '').replace(/^'|'$/g, '').toLowerCase().replace(/_/g, ' '));
+
+        ZFlowLogger.debug('app', '[SmartImport] Extensie:', ext, '| Headere:', headers);
+
+        // ── Detecție contribuții: coloanele „tip", „suma", „luna" prezente ──
+        const hasCtbHeaders = headers.includes('tip') && headers.includes('suma') && headers.includes('luna');
+        // Suplimentar: verifică PRIMA COLOANA din primele rânduri de date (exact match).
+        // NU verifica întregul rând — evită false positive: 'cas' ⊂ 'neincasat', 'tva' ⊂ altele.
+        const _ctbTipuri = ['tva', 'cas', 'cass', 'impozit', 'altele'];
+        let _ctbFromData = false;
+        if (!hasCtbHeaders) {
+            const dataLines = text.split('\n').filter(l => l.trim()).slice(1, 6);
+            _ctbFromData = dataLines.some(l => {
+                const firstCol = l.split(delimiter)[0].trim().toLowerCase().replace(/['"]/g, '');
+                return _ctbTipuri.includes(firstCol);
+            });
+        }
+        const isContributii = hasCtbHeaders || _ctbFromData;
+
+        // ── Detecție furnizori: cuvinte cheie în headere ─────────────────────
+        const isFurnizori = !isContributii && headers.some(h =>
+            h.includes('furnizor') ||
+            h === 'platit' || h === 'neplatit' ||
+            (h.includes('plat') && !headers.some(h2 =>
+                h2.includes('client') || h2.includes('incasat')))
+        );
+
+        const tipDetectat = isContributii ? 'contributii' : (isFurnizori ? 'furnizori' : 'clienti');
+        const tipLabel = {
+            contributii: '📋 Contribuții Buget Stat',
+            furnizori:   '🔴 Facturi Furnizori',
+            clienti:     '🟢 Facturi Clienți'
+        }[tipDetectat];
+
+        showNotification(`Import detectat: ${tipLabel}`, 'info', 2500);
+        ZFlowLogger.debug('app', '[SmartImport] Tip detectat:', tipDetectat);
+
+        if (isContributii) {
+            // ── Contribuții: injectează text ca fake-input ───────────────────
+            const fakeFile = new File([text], file.name, { type: 'text/csv' });
+            const fakeInput = { files: [fakeFile] };
+            await importaContributiiCSV(fakeInput);
+        } else {
+            // ── Clienti / Furnizori: injectează prin mecanismul __sagaAutoText
+            window.__sagaAutoText = text;
+            await importaDateSaga(tipDetectat);
+            window.__sagaAutoText = null;
+        }
+
+    } catch (err) {
+        ZFlowLogger.error('app', '[SmartImport] Eroare:', err);
+        showNotification('Eroare import: ' + (err.message || err), 'error');
+    } finally {
+        setLoader(false);
+    }
+}
+
+/**
+ * Parser XML pentru fișierele SAGA / SmartBill / e-Factura UBL.
+ * Structura detectată:
+ *   <Factura> sau <Invoice> cu subcampuri:
+ *     Furnizor: <FurnizorCIF>, <FurnizorNume>, sau <cbc:RegistrationName> în <cac:AccountingSupplierParty>
+ *     Client:   <ClientCIF>,   <ClientNume>,   sau <cbc:RegistrationName> în <cac:AccountingCustomerParty>
+ *     Factură:  <FacturaNumar>, <FacturaData>, <FacturaScadenta>, <TotalValoare>
+ *
+ * Logica de distribuție:
+ *   CIF din XML === userProfile.cui → firma noastră e furnizor → factură EMISĂ → clienti
+ *   CIF din XML !== userProfile.cui → firma noastră e client  → factură PRIMITĂ → furnizori
+ *   Dacă userProfile.cui lipsește → fallback din numele fișierului
+ */
+async function _importSmartXML(file) {
+    try {
+        const text = await file.text();
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(text, 'application/xml');
+
+        // ── Detectare erori parse ──────────────────────────────────────────
+        const parseErr = xmlDoc.querySelector('parsererror');
+        if (parseErr) {
+            showNotification('Fișier XML invalid sau corupt.', 'error');
+            ZFlowLogger.error('app', '[SmartImport XML] Parse error:', parseErr.textContent);
+            return;
+        }
+
+        // ── Helper: caută valoare după mai mulți selectori posibili ──────────
+        const _xmlGet = (...selectors) => {
+            for (const sel of selectors) {
+                const el = xmlDoc.querySelector(sel);
+                if (el && el.textContent.trim()) return el.textContent.trim();
+            }
+            return '';
+        };
+
+        // ── Extrage CIF-urile din XML ────────────────────────────────────────
+        // Suportă: SAGA (.xml custom), UBL e-Factura, SmartBill XML
+        const cifFurnizor = _xmlGet(
+            'FurnizorCIF', 'FurnizorCui', 'furnizorCIF',
+            'AccountingSupplierParty CompanyID',
+            'AccountingSupplierParty RegistrationName',
+            'SupplierParty CompanyID'
+        ).replace(/^RO/i, '').replace(/\D/g, '');
+
+        const cifClient = _xmlGet(
+            'ClientCIF', 'ClientCui', 'clientCIF',
+            'AccountingCustomerParty CompanyID',
+            'AccountingCustomerParty RegistrationName',
+            'CustomerParty CompanyID'
+        ).replace(/^RO/i, '').replace(/\D/g, '');
+
+        // CUI-ul firmei utilizatorului (din profil)
+        const cuiFirma = (ZFlowStore.userProfile?.cui || '')
+            .replace(/^RO/i, '').replace(/\D/g, '');
+
+        ZFlowLogger.debug('app', '[SmartImport XML] CIF furnizor:', cifFurnizor,
+            '| CIF client:', cifClient, '| CUI firmă:', cuiFirma);
+
+        // ── Determină tipul facturii ─────────────────────────────────────────
+        let tipImport = 'clienti'; // default: presupunem că suntem furnizori (factură emisă)
+
+        if (cuiFirma) {
+            if (cifFurnizor && cifFurnizor === cuiFirma) {
+                tipImport = 'clienti';   // firma noastră e furnizor → am EMIS factura → clienti
+            } else if (cifClient && cifClient === cuiFirma) {
+                tipImport = 'furnizori'; // firma noastră e client → am PRIMIT factura → furnizori
+            } else {
+                // CIF-ul nu se potrivește cu niciuna — fallback la detecție din numele fișierului
+                const fn = file.name.toLowerCase();
+                tipImport = (fn.includes('furnizor') || fn.includes('cumpar') || fn.includes('intrare'))
+                    ? 'furnizori' : 'clienti';
+                ZFlowLogger.warn('app', '[SmartImport XML] CIF firmă nu se potrivește cu XML — fallback din nume fișier:', tipImport);
+            }
+        } else {
+            // Fără profil/CUI → fallback din structura XML sau numele fișierului
+            const fn = file.name.toLowerCase();
+            tipImport = (fn.includes('furnizor') || fn.includes('cumpar') || fn.includes('intrare'))
+                ? 'furnizori' : 'clienti';
+            ZFlowLogger.warn('app', '[SmartImport XML] userProfile.cui lipsă — fallback:', tipImport);
+        }
+
+        const tipLabel = tipImport === 'clienti' ? '🟢 Facturi Clienți (din XML)' : '🔴 Facturi Furnizori (din XML)';
+        showNotification(`Import XML detectat: ${tipLabel}`, 'info', 2500);
+
+        // ── Convertim XML → CSV intern pentru a reutiliza importaDateSaga() ──
+        const facturiNodes = Array.from(
+            xmlDoc.querySelectorAll('Factura, Invoice, factura, invoice')
+        );
+
+        if (facturiNodes.length === 0) {
+            showNotification(
+                'XML recunoscut dar structura facturilor nu a putut fi citită. ' +
+                'Încearcă export CSV/Excel din SAGA.',
+                'warning', 5000
+            );
+            ZFlowLogger.warn('app', '[SmartImport XML] Niciun nod <Factura> sau <Invoice> găsit. Tags disponibile:',
+                Array.from(new Set(Array.from(xmlDoc.querySelectorAll('*')).map(e => e.tagName))).slice(0, 15).join(', '));
+            return;
+        }
+
+        // ── Construiește CSV intern din nodurile XML ─────────────────────────
+        const rows = ['DENUMIRE;CUI;NR. FACTURA;DATA EMITERE;DATA SCADENTA;VALOARE;STATUS'];
+
+        for (const fNode of facturiNodes) {
+            const _get = (...sel) => {
+                for (const s of sel) {
+                    const el = fNode.querySelector(s);
+                    if (el && el.textContent.trim()) return el.textContent.trim();
+                }
+                return '';
+            };
+
+            const partenerNume = tipImport === 'clienti'
+                ? _get('ClientNume', 'ClientDenumire', 'AccountingCustomerParty RegistrationName', 'CustomerName')
+                : _get('FurnizorNume', 'FurnizorDenumire', 'AccountingSupplierParty RegistrationName', 'SupplierName');
+
+            const partenerCUI = tipImport === 'clienti'
+                ? _get('ClientCIF', 'ClientCui', 'AccountingCustomerParty CompanyID')
+                : _get('FurnizorCIF', 'FurnizorCui', 'AccountingSupplierParty CompanyID');
+
+            const nrFactura = _get('FacturaNumar', 'FacturaID', 'ID', 'InvoiceNumber', 'NumarFactura');
+            const dataEmit  = _get('FacturaData', 'IssueDate', 'DataEmitere', 'DataFactura');
+            const dataScad  = _get('FacturaScadenta', 'DueDate', 'DataScadenta', 'Scadenta');
+            const valoare   = _get('TotalValoare', 'TotalCuTVA', 'LegalMonetaryTotal TaxInclusiveAmount',
+                                   'Total', 'Valoare', 'InvoiceTotal');
+            const status    = _get('StatusPlata', 'StatusFactura', 'PaymentStatus') || 'Neincasat';
+
+            if (!partenerNume && !partenerCUI) continue;
+
+            const esc = v => `"${String(v).replace(/"/g, '""')}"`;
+            rows.push([
+                esc(partenerNume), esc(partenerCUI), esc(nrFactura),
+                esc(dataEmit), esc(dataScad), esc(valoare), esc(status)
+            ].join(';'));
+        }
+
+        if (rows.length <= 1) {
+            showNotification('XML procesat dar nu s-au putut extrage date din facturi.', 'warning');
+            return;
+        }
+
+        const csvGenerat = rows.join('\n');
+        ZFlowLogger.debug('app', '[SmartImport XML] CSV generat din XML:', rows.length - 1, 'facturi');
+
+        // ── Injectează CSV generat în importaDateSaga() ──────────────────────
+        window.__sagaAutoText = csvGenerat;
+        await importaDateSaga(tipImport);
+        window.__sagaAutoText = null;
+
+    } catch (xmlErr) {
+        ZFlowLogger.error('app', '[SmartImport XML] Eroare:', xmlErr);
+        showNotification('Eroare la procesarea XML: ' + (xmlErr.message || xmlErr), 'error');
+    }
+}
+window.importSmartUnificat = importSmartUnificat;
 
 function facturiSetPerPage(n) {
     ZFlowStore.facturiPerPage = Number(n) > 0 ? Number(n) : 99999; // 99999 = toate
@@ -4726,7 +5117,7 @@ async function exportaExcelSelectie() {
             client?.nume_firma || "N/A",
             f.numar_factura || "N/A",
             f.valoare || 0,
-            f.status_plata === "Incasat" ? "Încasat" : "Neîncasat",
+            f.status_plata === "Incasat" ? "Încasat client" : "Neîncasat client",
             formateazaDataZFlow(f.data_emiterii),
             formateazaDataZFlow(f.data_scadenta)
         ];
@@ -4746,10 +5137,10 @@ async function exportaExcelSelectie() {
     const wsSumarSelectie = XLSX.utils.aoa_to_sheet([
         ["Z-FLOW — SUMAR BI (SELECȚIE)"],
         [],
-        ["Total Clienți (facturat)", biClienti],
-        ["Total Furnizori (plăți)", biFurnizori],
+        ["Total Intrări Clienți", biClienti],
+        ["Total Ieșiri Furnizori", biFurnizori],
         ["Contribuții Buget Stat", biContributii],
-        ["Diferență Net", biNet],
+        ["Cashflow Net", biNet],
     ]);
     wsSumarSelectie["!cols"] = [{ wch: 30 }, { wch: 22 }];
     XLSX.utils.book_append_sheet(wb, wsSumarSelectie, "Sumar BI");
@@ -5419,9 +5810,21 @@ async function importaDateSaga(tipImport = 'clienti') {
                         if (duale.length > 0) {
                             const numeDuale = duale.slice(0, 3).map(d => d.nume_firma || d.cui).join(', ');
                             const extra = duale.length > 3 ? ` și alte ${duale.length - 3}` : '';
+                            // [FIX v71.6] Mesaj specific: tip facturi + statusuri contorizate
+                            const tipFacturi = isFurnizori
+                                ? 'facturi DE PLĂTIT (furnizori)'
+                                : 'facturi DE ÎNCASAT (clienți)';
+                            const nrNeplatite = csvFacturi.filter(f => {
+                                const s = (f.status_plata || '').trim().toLowerCase();
+                                return !['incasat','platit','achitat','paid','yes','da','1'].includes(s);
+                            }).length;
+                            const nrAchitate = csvFacturi.length - nrNeplatite;
+                            const statusInfo = csvFacturi.length > 0
+                                ? ` (${nrAchitate} achitate, ${nrNeplatite} neachitate)`
+                                : '';
                             showNotification(
-                                `Atenție: ${duale.length} ${duale.length === 1 ? 'firmă este' : 'firme sunt'} atât client cât și furnizor: ${numeDuale}${extra}. Facturile se importă ca ${isFurnizori ? 'furnizori' : 'clienți'}.`,
-                                'warning', 8000
+                                `Atenție: ${duale.length} ${duale.length === 1 ? 'firmă este' : 'firme sunt'} atât client cât și furnizor: ${numeDuale}${extra}. Se importă ca ${tipFacturi}${statusInfo}.`,
+                                'warning', 10000
                             );
                         }
                     }
@@ -5655,6 +6058,11 @@ async function importaDateSaga(tipImport = 'clienti') {
                         if (isFurnizori && typeof updateFurnizoriKPI === 'function') updateFurnizoriKPI();
                         populeazaBridgeUI();   // Actualizează checkboxurile BI cu noile entități importate
                         incarcaDashboard();    // Actualizează KPI-urile Home cu noile date
+                        // [FIX v71.5] Sincronizare completă UI după import CSV/XML clienți/furnizori:
+                        // Cardul Cashflow din #view-analiza + suma contribuții
+                        if (typeof calculeazaCashflow === 'function') calculeazaCashflow();
+                        // Badge scadențe bell + alerte home
+                        if (typeof verificaScadenteNotificari === 'function') verificaScadenteNotificari();
                         ZFlowLogger.debug('app', '[Import] Store reîncărcat:', ZFlowStore.dateLocal.length, 'clienți,', ZFlowStore.dateFacturiBI.length, 'facturi');
                     } catch (refreshErr) {
                         ZFlowLogger.error('app', '[Import] Eroare reîncărcare date:', refreshErr);
@@ -5791,7 +6199,10 @@ async function exportaPDF() {
     const biClienti   = document.getElementById("suma-selectata-bi")?.innerText?.trim() || "0 lei";
     const biFurnizori = document.getElementById("suma-platit-bi")?.innerText?.trim()    || "0 lei";
     const biNet       = document.getElementById("cf-net")?.innerText?.trim()            || "0 lei";
-    const biContributii = document.getElementById("cf-contributii")?.innerText?.trim() || "0 lei";
+    // [FIX v71.7] Contribuții în PDF respectă checkbox-ul "Include contribuții" — același comportament ca Excel
+    const biContributii = ZFlowStore.includeContributiiInAnaliza
+        ? (document.getElementById("cf-contributii")?.innerText?.trim() || "0 lei")
+        : "0 lei";
     const biNetNormalized = biNet.replace(/\u2212/g, '-');
     const cfNetVal    = parseFloat(biNetNormalized.replace(/[^0-9,.-]/g, '').replace(',', '.')) || 0;
 
@@ -5807,10 +6218,10 @@ async function exportaPDF() {
     doc.autoTable({
         startY: 29,
         head: [[
-            curataText("TOTAL CLIENȚI (facturat)"),
-            curataText("TOTAL FURNIZORI (plăți)"),
+            curataText("TOTAL INTRĂRI CLIENȚI"),
+            curataText("TOTAL IEȘIRI FURNIZORI"),
             curataText("CONTRIBUȚII BUGET STAT"),
-            curataText("DIFERENȚĂ NET")
+            curataText("CASHFLOW NET")
         ]],
         body: [[
             curataText(biClienti),
@@ -5839,7 +6250,7 @@ async function exportaPDF() {
             curataText(formateazaDataZFlow(f.data_emiterii)),
             curataText(f.data_scadenta ? formateazaDataZFlow(f.data_scadenta) : '—'),
             curataText(`${Math.round(Number(f.valoare) || 0).toLocaleString()} lei`),
-            curataText(f.status_plata === 'Incasat' ? 'INCASAT' : 'NEINCASAT')
+            curataText(f.status_plata === 'Incasat' ? 'INCASAT CLIENT' : 'NEINCASAT CLIENT')
         ];
     });
 
@@ -5863,7 +6274,7 @@ async function exportaPDF() {
         },
         didParseCell: function (data) {
             if (data.section === "body" && data.column.index === 5) {
-                if (data.cell.raw === "INCASAT") {
+                if (String(data.cell.raw || '').trim() === "INCASAT CLIENT") {
                     data.cell.styles.textColor = [16, 185, 129];
                 } else {
                     data.cell.styles.textColor = [239, 68, 68];
@@ -5889,7 +6300,7 @@ async function exportaPDF() {
                     curataText(formateazaDataZFlow(f.data_emiterii)),
                     curataText(f.data_scadenta ? formateazaDataZFlow(f.data_scadenta) : '—'),
                     curataText(`${Math.round(f.valoare || 0).toLocaleString()} lei`),
-                    curataText(f.status_plata || 'Neplatit')
+                    curataText(f.status_plata === 'Platit' ? 'PLATIT FURNIZOR' : 'NEPLATIT FURNIZOR')
                 ];
             });
 
@@ -5915,53 +6326,102 @@ async function exportaPDF() {
                 },
                 didParseCell: function(data) {
                     if (data.section === 'body' && data.column.index === 5) {
-                        data.cell.styles.textColor = data.cell.raw === 'Platit' ? [16, 185, 129] : [239, 68, 68];
+                        data.cell.styles.textColor = String(data.cell.raw || '').includes('PLATIT') && !String(data.cell.raw || '').includes('NEPLATIT')
+                            ? [16, 185, 129]
+                            : [239, 68, 68];
                     }
                 }
             });
         }
     }
 
-    // ── Grafic evoluție lunară (line chart) ─────────────────────────────────
+    // ── Grafic evoluție lunară (line chart) — analiză extinsă pe toate datele BI selectate ──
     try {
-        // Agreg facturile clienți pe luni
         const luniMap = {};
-        facturiFiltratePDF.forEach(f => {
-            const d = f.data_emiterii ? f.data_emiterii.substring(0, 7) : null;
-            if (!d) return;
-            if (!luniMap[d]) luniMap[d] = { clienti: 0, furnizori: 0 };
-            luniMap[d].clienti += Number(f.valoare) || 0;
-        });
-        // Agreg facturile furnizori pe luni (dacă sunt disponibile)
-        const selFurnIdsChart = Array.from(document.querySelectorAll("#container-bi-furnizori-checks input:checked")).map(i => String(i.value));
-        // Fără fallback — consistent cu selecția activă
-        const filtrateFPChart = _filtreazaFacturiPlatit(pdfStartDate, pdfEndDate, selFurnIdsChart, '');
-        filtrateFPChart.forEach(f => {
-            const d = f.data_emiterii ? f.data_emiterii.substring(0, 7) : null;
-            if (!d) return;
-            if (!luniMap[d]) luniMap[d] = { clienti: 0, furnizori: 0 };
-            luniMap[d].furnizori += Number(f.valoare) || 0;
+        const _markLuna = (key) => {
+            if (!key || key.length !== 7) return;
+            if (!luniMap[key]) luniMap[key] = { clienti: 0, furnizori: 0, contributii: 0, net: 0 };
+        };
+        const _dataInRange = (dateObj) => {
+            if (!dateObj || isNaN(dateObj)) return false;
+            if (pdfStartDate && dateObj < pdfStartDate) return false;
+            if (pdfEndDate && dateObj > pdfEndDate) return false;
+            return true;
+        };
+
+        // 1) Clienți: toate inserturile pentru selecția din analiză (independent de status)
+        (ZFlowStore.dateFacturiBI || []).forEach(f => {
+            if (!pdfIds.includes(String(f.client_id))) return;
+            const raw = f.data_emiterii || '';
+            let d = null;
+            if (raw.includes('/')) {
+                const pts = raw.split('/');
+                if (pts.length === 3) {
+                    let y = parseInt(pts[2], 10);
+                    if (y < 100) y += 2000;
+                    d = new Date(y, parseInt(pts[1], 10) - 1, parseInt(pts[0], 10), 12, 0, 0);
+                }
+            } else {
+                d = raw ? new Date(raw.length === 10 ? raw + 'T12:00:00' : raw) : null;
+            }
+            if (!_dataInRange(d)) return;
+            const luna = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            _markLuna(luna);
+            luniMap[luna].clienti += Number(f.valoare) || 0;
         });
 
+        // 2) Furnizori: toate inserturile pentru selecția din analiză (independent de status)
+        const selFurnIdsChart = Array.from(document.querySelectorAll("#container-bi-furnizori-checks input:checked")).map(i => String(i.value));
+        const filtrateFPChart = _filtreazaFacturiPlatit(pdfStartDate, pdfEndDate, selFurnIdsChart, '');
+        filtrateFPChart.forEach(f => {
+            const d = f.data_emiterii ? new Date(f.data_emiterii.length === 10 ? f.data_emiterii + 'T12:00:00' : f.data_emiterii) : null;
+            if (!d || isNaN(d)) return;
+            const luna = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            _markLuna(luna);
+            luniMap[luna].furnizori += Number(f.valoare) || 0;
+        });
+
+        // 3) Contribuții: pe lună raportată, doar dacă sunt incluse în analiză
+        if (ZFlowStore.includeContributiiInAnaliza) {
+            (ZFlowStore.dateContributii || []).forEach(c => {
+                if (c.achitat) return;
+                const luna = String(c.luna || '').substring(0, 7);
+                if (!/^\d{4}-\d{2}$/.test(luna)) return;
+                const d = new Date(luna + '-01T12:00:00');
+                if (!_dataInRange(d)) return;
+                _markLuna(luna);
+                luniMap[luna].contributii += Number(c.suma) || 0;
+            });
+        }
+
         const luni = Object.keys(luniMap).sort();
+        luni.forEach(l => {
+            luniMap[l].net = (luniMap[l].clienti || 0) - (luniMap[l].furnizori || 0) - (luniMap[l].contributii || 0);
+        });
+
         if (luni.length >= 2) {
-            // Adaugă pagină nouă pentru grafic
             doc.addPage();
             const chartStartY = 20;
-            const chartW = 182; // mm (A4 - margini)
+            const chartW = 182;
             const chartH = 80;
             const marginL = 14;
-            const maxVal = Math.max(...luni.map(l => Math.max(luniMap[l].clienti, luniMap[l].furnizori)), 1);
+            const maxVal = Math.max(
+                ...luni.map(l => Math.max(
+                    Math.abs(luniMap[l].clienti || 0),
+                    Math.abs(luniMap[l].furnizori || 0),
+                    Math.abs(luniMap[l].contributii || 0),
+                    Math.abs(luniMap[l].net || 0)
+                )),
+                1
+            );
             const stepX = luni.length > 1 ? chartW / (luni.length - 1) : chartW;
 
             doc.setFontSize(12);
             doc.setTextColor(30, 58, 138);
             doc.text(curataText('GRAFIC EVOLUTIE LUNARA'), marginL, chartStartY - 4);
 
-            // Axe
             doc.setDrawColor(200, 200, 200);
             doc.setLineWidth(0.3);
-            // Linii orizontale (grid)
             for (let i = 0; i <= 4; i++) {
                 const y = chartStartY + chartH - (i / 4) * chartH;
                 doc.line(marginL, y, marginL + chartW, y);
@@ -5971,69 +6431,73 @@ async function exportaPDF() {
                 doc.text(`${label}k`, marginL - 1, y + 1, { align: 'right' });
             }
 
-            // Puncte + linii pentru clienți/furnizori
-            const clientiPoints = luni.map((luna, i) => {
+            const mkPoints = (key) => luni.map((luna, i) => {
                 const x = marginL + i * stepX;
-                const y = chartStartY + chartH - ((luniMap[luna].clienti / maxVal) * chartH);
+                const y = chartStartY + chartH - (((luniMap[luna][key] || 0) / maxVal) * chartH);
                 return { x, y, label: luna };
             });
-            const furnizoriPoints = luni.map((luna, i) => {
-                const x = marginL + i * stepX;
-                const y = chartStartY + chartH - ((luniMap[luna].furnizori / maxVal) * chartH);
-                return { x, y, label: luna };
-            });
+            const clientiPoints = mkPoints('clienti');
+            const furnizoriPoints = mkPoints('furnizori');
+            const contributiiPoints = mkPoints('contributii');
+            const netPoints = mkPoints('net');
 
-            doc.setDrawColor(30, 58, 138);
-            doc.setLineWidth(0.8);
-            for (let i = 1; i < clientiPoints.length; i++) {
-                doc.line(clientiPoints[i - 1].x, clientiPoints[i - 1].y, clientiPoints[i].x, clientiPoints[i].y);
-            }
-            doc.setDrawColor(185, 28, 28);
-            doc.setLineWidth(0.8);
-            for (let i = 1; i < furnizoriPoints.length; i++) {
-                doc.line(furnizoriPoints[i - 1].x, furnizoriPoints[i - 1].y, furnizoriPoints[i].x, furnizoriPoints[i].y);
-            }
+            const drawSeries = (points, color, width) => {
+                doc.setDrawColor(color[0], color[1], color[2]);
+                doc.setLineWidth(width);
+                for (let i = 1; i < points.length; i++) {
+                    doc.line(points[i - 1].x, points[i - 1].y, points[i].x, points[i].y);
+                }
+                points.forEach((p) => {
+                    doc.setFillColor(color[0], color[1], color[2]);
+                    doc.circle(p.x, p.y, 1.1, 'F');
+                });
+            };
 
-            clientiPoints.forEach((p) => {
-                doc.setFillColor(30, 58, 138);
-                doc.circle(p.x, p.y, 1.2, 'F');
-            });
-            furnizoriPoints.forEach((p) => {
-                doc.setFillColor(185, 28, 28);
-                doc.circle(p.x, p.y, 1.2, 'F');
-            });
+            drawSeries(clientiPoints, [30, 58, 138], 0.8);
+            drawSeries(furnizoriPoints, [185, 28, 28], 0.8);
+            drawSeries(contributiiPoints, [217, 119, 6], 0.8);
+            drawSeries(netPoints, [5, 150, 105], 1);
 
-            // Etichete luni pe axa X
             doc.setFontSize(5);
             doc.setTextColor(80, 80, 80);
             luni.forEach((luna, i) => {
                 const x = marginL + i * stepX;
-                const labelLuna = luna.slice(5);
-                doc.text(labelLuna, x, chartStartY + chartH + 4, { align: 'center' });
+                doc.text(luna.slice(5), x, chartStartY + chartH + 4, { align: 'center' });
             });
 
-            // Legendă
             const legY = chartStartY + chartH + 14;
+            doc.setFontSize(6);
+
             doc.setFillColor(30, 58, 138);
             doc.rect(marginL, legY, 6, 3, 'F');
-            doc.setFontSize(6);
             doc.setTextColor(30, 58, 138);
-            doc.text(curataText('Clienți (de încasat)'), marginL + 8, legY + 2.5);
-            doc.setFillColor(185, 28, 28);
-            doc.rect(marginL + 55, legY, 6, 3, 'F');
-            doc.setTextColor(185, 28, 28);
-            doc.text(curataText('Furnizori (de plătit)'), marginL + 63, legY + 2.5);
+            doc.text(curataText('Intrări clienți'), marginL + 8, legY + 2.5);
 
-            // Tabel date lunare sumar
+            doc.setFillColor(185, 28, 28);
+            doc.rect(marginL + 42, legY, 6, 3, 'F');
+            doc.setTextColor(185, 28, 28);
+            doc.text(curataText('Ieșiri furnizori'), marginL + 50, legY + 2.5);
+
+            doc.setFillColor(217, 119, 6);
+            doc.rect(marginL + 88, legY, 6, 3, 'F');
+            doc.setTextColor(217, 119, 6);
+            doc.text(curataText('Contribuții'), marginL + 96, legY + 2.5);
+
+            doc.setFillColor(5, 150, 105);
+            doc.rect(marginL + 124, legY, 6, 3, 'F');
+            doc.setTextColor(5, 150, 105);
+            doc.text(curataText('Cashflow net'), marginL + 132, legY + 2.5);
+
             const rowsGrafic = luni.map(l => [
                 curataText(l),
                 curataText(`${Math.round(luniMap[l].clienti).toLocaleString()} lei`),
                 curataText(`${Math.round(luniMap[l].furnizori).toLocaleString()} lei`),
-                curataText(`${Math.round(luniMap[l].clienti - luniMap[l].furnizori).toLocaleString()} lei`)
+                curataText(`${Math.round(luniMap[l].contributii).toLocaleString()} lei`),
+                curataText(`${Math.round(luniMap[l].net).toLocaleString()} lei`)
             ]);
             doc.autoTable({
                 startY: legY + 12,
-                head: [[curataText('LUNA'), curataText('INCASARI'), curataText('PLATI'), curataText('DIFERENTA')]],
+                head: [[curataText('LUNA'), curataText('INTRĂRI'), curataText('IEȘIRI'), curataText('CONTRIBUȚII'), curataText('CASHFLOW NET')]],
                 body: rowsGrafic,
                 theme: 'grid',
                 tableWidth: 182,
@@ -6184,15 +6648,15 @@ async function exportaExcel() {
         const totalNeplatit = (ZFlowStore.dateFacturiPlatit || []).filter(f => f.status_plata !== 'Platit').reduce((s, f) => s + (Number(f.valoare) || 0), 0);
         const headersCF = ["Indicator", "Valoare (RON)"];
         const rowsCF = [
-            ["Total Facturat Clienți", totalIncasat + totalNeincasat],
+            ["Total Intrări Clienți", totalIncasat + totalNeincasat],
             ["  - Incasat", totalIncasat],
             ["  - Neincasat", totalNeincasat],
             ["", ""],
-            ["Total Facturi Furnizori", totalPlatit + totalNeplatit],
+            ["Total Ieșiri Furnizori", totalPlatit + totalNeplatit],
             ["  - Platit", totalPlatit],
             ["  - Neplatit", totalNeplatit],
             ["", ""],
-            ["Cashflow Net (Incasat - Neplatit)", totalNeincasat - totalNeplatit]
+            ["Cashflow Net (Intrări - Ieșiri)", totalNeincasat - totalNeplatit]
         ];
         const wsCF = XLSX.utils.aoa_to_sheet([headersCF, ...rowsCF]);
         XLSX.utils.book_append_sheet(wb, wsCF, "Cashflow");
@@ -6202,7 +6666,9 @@ async function exportaExcel() {
     const _biClienti   = document.getElementById("suma-selectata-bi")?.innerText?.trim() || "0 lei";
     const _biFurnizori = document.getElementById("suma-platit-bi")?.innerText?.trim()    || "0 lei";
     const _biNet       = (document.getElementById("cf-net")?.innerText?.trim()            || "0 lei").replace(/\u2212/g, "-");
-    const _biContributii = document.getElementById("cf-contributii")?.innerText?.trim() || "0 lei";
+    const _biContributii = ZFlowStore.includeContributiiInAnaliza
+        ? (document.getElementById("cf-contributii")?.innerText?.trim() || "0 lei")
+        : "0 lei";
     const _perioadaS   = document.getElementById("label-start")?.innerText?.trim() || s || "—";
     const _perioadaE   = document.getElementById("label-end")?.innerText?.trim()   || e || "—";
     const _filtru      = { 'toate': 'Toate', 'Neincasat': 'Neîncasate', 'Platit': 'Neplătite' }[ZFlowStore.filtruStatusBI] || 'Toate';
@@ -6215,10 +6681,10 @@ async function exportaExcel() {
         ["Filtru aplicat",        _filtru],
         [],
         ["INDICATOR",               "VALOARE"],
-        ["Total Clienți (facturat)", _biClienti],
-        ["Total Furnizori (plăți)",  _biFurnizori],
+        ["Total Intrări Clienți", _biClienti],
+        ["Total Ieșiri Furnizori", _biFurnizori],
         ["Contribuții Buget Stat",   _biContributii],
-        ["Diferență Net",            _biNet],
+        ["Cashflow Net",             _biNet],
     ]);
     wsSumar["!cols"] = [{ wch: 30 }, { wch: 22 }];
     XLSX.utils.book_append_sheet(wb, wsSumar, "Sumar BI");
@@ -6242,7 +6708,7 @@ async function exportaExcel() {
         });
         const luniSortate = Object.keys(luniGraficMap).sort();
         if (luniSortate.length > 0) {
-            const headersGrafic = ['Luna', 'Incasari (RON)', 'Plati Furnizori (RON)', 'Diferenta (RON)'];
+            const headersGrafic = ['Luna', 'Intrari Clienti (RON)', 'Iesiri Furnizori (RON)', 'Cashflow Net (RON)'];
             const rowsGrafic = luniSortate.map(l => {
                 const { incasari, plati } = luniGraficMap[l];
                 return [l, Math.round(incasari), Math.round(plati), Math.round(incasari - plati)];

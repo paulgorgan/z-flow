@@ -419,7 +419,7 @@
               — lei
             </p>
             <div class="flex items-center gap-1.5 mt-0.5">
-              <p class="text-[7px] font-bold text-slate-400 uppercase tracking-wide">Încasat efectiv</p>
+              <p class="text-[7px] font-bold text-slate-400 uppercase tracking-wide">Suma efectiv încasată</p>
               <span id="home-kpi-neincasat-trend" class="text-[7px] font-black"></span>
             </div>
           </div>
@@ -483,7 +483,7 @@
               </div>
               <span
                 class="text-[8px] font-black text-slate-400 uppercase tracking-wider leading-none"
-                >Cashflow</span
+                >Cashflow Net</span
               >
             </div>
             <p
@@ -803,13 +803,13 @@
                 0
               </p>
               <span class="text-[7px] font-bold text-slate-400 uppercase"
-                >Luna</span
+                >Luna curentă</span
               >
             </div>
           </div>
 
           <!-- Notificări scadențe Clienți -->
-          <div id="fin-alerte-clienti" class="hidden"></div>
+          <div id="fin-alerte-clienti" class="hidden w-full lg:max-w-[760px] lg:mx-auto"></div>
 
           <div
             id="lista-firme-global"
@@ -909,22 +909,26 @@
                 data-action="setFiltruStatusBI" data-arg="Neincasat"
                 class="bi-status-btn py-2 px-1 text-[9px] font-black uppercase rounded-lg text-slate-500 hover:text-red-600 transition-all flex items-center justify-center gap-1"
               >
-                <span class="w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0"></span> Restante
+                <span class="w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0"></span> Neîncasate
               </button>
               <button type="button"
                 id="bi-btn-incasat"
                 data-action="setFiltruStatusBI" data-arg="Incasat"
                 class="bi-status-btn py-2 px-1 text-[9px] font-black uppercase rounded-lg text-slate-500 hover:text-emerald-600 transition-all flex items-center justify-center gap-1"
               >
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0"></span> Încasate
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0"></span> Încasate clienți
               </button>
               <button type="button"
                 id="bi-btn-platit"
                 data-action="setFiltruStatusBI" data-arg="Platit"
                 class="bi-status-btn py-2 px-1 text-[9px] font-black uppercase rounded-lg text-slate-500 hover:text-red-700 transition-all flex items-center justify-center gap-1"
               >
-                <span class="w-1.5 h-1.5 rounded-full bg-red-600 flex-shrink-0"></span> Neplătite
+                <span class="w-1.5 h-1.5 rounded-full bg-red-600 flex-shrink-0"></span> Neplătite furnizori
               </button>
+            </div>
+
+            <div class="flex items-center justify-between px-1 mb-2">
+              <span class="text-[8px] font-black uppercase tracking-wide text-slate-400">Clienți = albastru · Furnizori = roșu</span>
             </div>
 
             <!-- Totale -->
@@ -935,7 +939,7 @@
               <div id="bi-total-clienti-col" class="flex flex-col items-end">
                 <span
                   class="text-[7px] font-semibold text-blue-700 uppercase tracking-widest"
-                  >Clienți</span
+                  >Intrări clienți</span
                 >
                 <span
                   id="suma-selectata-bi"
@@ -946,7 +950,7 @@
               <div id="bi-total-furnizori-col" class="flex flex-col items-end">
                 <span
                   class="text-[7px] font-semibold text-red-700 uppercase tracking-widest"
-                  >Furnizori</span
+                  >Ieșiri furnizori</span
                 >
                 <span
                   id="suma-platit-bi"
@@ -960,7 +964,7 @@
               >
                 <span
                   class="text-[7px] font-semibold text-slate-400 uppercase tracking-widest"
-                  >Diferență</span
+                  >Cashflow net</span
                 >
                 <span
                   id="cf-net"
@@ -971,7 +975,7 @@
             </div>
 
             <label class="flex items-center justify-between gap-2 mb-3 px-1 cursor-pointer select-none">
-              <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Adaugă în analiză contribuții buget</span>
+              <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Include contribuții buget stat în analiză</span>
               <input
                 type="checkbox"
                 id="bi-include-contributii"
@@ -1030,6 +1034,8 @@
                   </button>
                 </div>
               </div>
+              <div id="bi-selection-feedback" class="text-[8px] font-bold text-slate-400 px-0.5">Selectate: 0 clienți · 0 furnizori · Vizibile: 0 / 0</div>
+              <div id="bi-search-feedback" class="text-[8px] font-bold text-blue-500 px-0.5">Afișare completă · fără filtru activ</div>
               <div id="bi-clienti-section">
                 <div class="flex items-center mb-1">
                   <span
@@ -1409,12 +1415,12 @@
                 0
               </p>
               <span class="text-[7px] font-bold text-slate-400 uppercase"
-                >Luna</span
+                >Luna curentă</span
               >
             </div>
           </div>
           <!-- Contribuții buget stat — afisat permanent deasupra alertelor furnizori -->
-          <div id="card-contributii-mobile" class="card-flow p-4">
+          <div id="card-contributii-mobile" class="card-flow p-4 w-full lg:max-w-[760px] lg:mx-auto">
             <!-- Header: click stânga toggle collapse, butoane dreapta independente -->
             <div class="flex flex-col gap-2">
               <div class="flex items-center justify-between gap-2 cursor-pointer min-h-[32px] select-none" onclick="toggleContributiiCollapse()">
@@ -1465,7 +1471,7 @@
           </div>
 
           <!-- Notificări scadențe Furnizori -->
-          <div id="fin-alerte-furnizori" class="hidden"></div>
+          <div id="fin-alerte-furnizori" class="hidden w-full lg:max-w-[760px] lg:mx-auto"></div>
 
           <div
             id="lista-furnizori-global"
@@ -1918,75 +1924,30 @@
         </h3>
 
         <div class="grid grid-cols-1 gap-3">
-          <!-- Import Facturi Clienți -->
+          <!-- ── Import Smart Unificat (SAGA / WinMentor / XML / Contribuții) ── -->
+          <!-- Înlocuiește cele 3 butoane separate: clienți, furnizori, contribuții.  -->
+          <!-- Detectează automat tipul fișierului și distribuie datele corect.        -->
           <button type="button"
-            data-action="importaClientiSaga"
-            class="w-full min-h-[72px] bg-emerald-50 py-4 px-5 rounded-2xl flex items-start gap-4 active:bg-emerald-100 transition-all border border-emerald-200 hover:border-emerald-300 hover:shadow-md"
+            data-action="importSmartUnificat"
+            class="w-full min-h-[72px] bg-blue-50 py-4 px-5 rounded-2xl flex items-start gap-4 active:bg-blue-100 transition-all border border-blue-200 hover:border-blue-300 hover:shadow-md"
           >
-            <div
-              class="w-10 h-10 mt-0.5 bg-emerald-100 rounded-xl flex items-center justify-center flex-shrink-0"
-            >
-              <svg
-                class="w-5 h-5 text-emerald-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                stroke-width="2"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
-                />
+            <div class="w-10 h-10 mt-0.5 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
+              <svg class="w-5 h-5 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
               </svg>
             </div>
             <div class="flex-1 text-left min-w-0">
-              <span class="font-bold text-sm text-emerald-700">Import Facturi Clienți</span>
-              <p class="text-[10px] text-emerald-600 truncate">CSV facturi de încasat (SAGA)</p>
+              <span class="font-bold text-sm text-blue-800">Import SAGA / WinMentor</span>
+              <p class="text-[10px] text-blue-600 leading-tight mt-0.5">CSV, Excel sau XML · Detectare automată tip</p>
+              <div class="flex items-center gap-1 mt-1.5 flex-wrap">
+                <span class="text-[8px] font-black uppercase px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700">Clienți</span>
+                <span class="text-[8px] font-black uppercase px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700">Furnizori</span>
+                <span class="text-[8px] font-black uppercase px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700">Contribuții</span>
+                <span class="text-[8px] font-black uppercase px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700">XML</span>
+              </div>
             </div>
           </button>
-
-          <!-- Import Facturi Furnizori -->
-          <button type="button"
-            data-action="importaFurnizoriSaga"
-            class="w-full min-h-[72px] bg-orange-50 py-4 px-5 rounded-2xl flex items-start gap-4 active:bg-orange-100 transition-all border border-orange-200 hover:border-orange-300 hover:shadow-md"
-          >
-            <div
-              class="w-10 h-10 mt-0.5 bg-orange-100 rounded-xl flex items-center justify-center flex-shrink-0"
-            >
-              <svg
-                class="w-5 h-5 text-orange-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                stroke-width="2"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
-                />
-              </svg>
-            </div>
-            <div class="flex-1 text-left min-w-0">
-              <span class="font-bold text-sm text-orange-700">Import Facturi Furnizori</span>
-              <p class="text-[10px] text-orange-600 truncate">CSV facturi de plătit (SAGA)</p>
-            </div>
-          </button>
-
-          <!-- Import Contribuții Buget Stat -->
-          <label class="w-full min-h-[72px] bg-amber-50 py-4 px-5 rounded-2xl flex items-start gap-4 active:bg-amber-100 transition-all border border-amber-200 hover:border-amber-300 hover:shadow-md cursor-pointer">
-            <div class="w-10 h-10 mt-0.5 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
-              <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-              </svg>
-            </div>
-            <div class="flex-1 text-left min-w-0">
-              <span class="font-bold text-sm text-amber-700">Import Contribuții Stat</span>
-              <p class="text-[10px] text-amber-600 truncate">CSV contribuții buget stat (TVA, CAS, CASS...)</p>
-            </div>
-            <input type="file" accept=".csv" class="hidden" onchange="if(typeof importaContributiiCSV==='function') importaContributiiCSV(this); this.value='';" />
-          </label>
 
           <button type="button"
             data-action="deschideFirmaNouSaga"
