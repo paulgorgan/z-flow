@@ -2360,6 +2360,57 @@ input {
    Activat prin clasa .dark pe <html>
    ============================================ */
 
+:root {
+  --zf-label-size: 9px;
+  --zf-label-weight: 800;
+  --zf-label-track: 0.08em;
+  --zf-search-radius: 14px;
+  --zf-search-border: #e2e8f0;
+}
+
+.zf-category-label {
+  font-size: var(--zf-label-size);
+  font-weight: var(--zf-label-weight);
+  letter-spacing: var(--zf-label-track);
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.zf-search-input {
+  border-radius: var(--zf-search-radius);
+  border: 1px solid var(--zf-search-border);
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.zf-search-input::placeholder {
+  color: #94a3b8;
+  opacity: 1;
+}
+
+.zf-primary-btn,
+button.bg-blue-900.text-white,
+button.bg-blue-700.text-white {
+  border-radius: 14px;
+  min-height: 40px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+}
+
+.zf-module-btn {
+  min-height: 40px !important;
+  padding: 0 16px !important;
+  border-radius: 14px !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.03em !important;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .dark body {
   background-color: #0f172a !important;
   color: #e2e8f0 !important;
@@ -2386,7 +2437,7 @@ input {
 .dark .text-slate-700 { color: #e2e8f0 !important; }
 .dark .text-slate-600 { color: #cbd5e1 !important; }
 .dark .text-slate-500 { color: #94a3b8 !important; }
-.dark .text-slate-400 { color: #64748b !important; }
+.dark .text-slate-400 { color: #94a3b8 !important; }
 .dark .text-blue-900  { color: #93c5fd !important; }
 
 /* Fundal slate */
@@ -2403,7 +2454,7 @@ input {
   color: #e2e8f0 !important;
 }
 .dark input::placeholder,
-.dark textarea::placeholder { color: #4b5563 !important; }
+.dark textarea::placeholder { color: #94a3b8 !important; }
 
 /* Bottom Nav (mobile: border-top; desktop: top-nav with border-bottom) */
 .dark .bottom-nav {
@@ -2411,8 +2462,22 @@ input {
   border-top: 1px solid rgba(255,255,255,0.06) !important;
   border-bottom: 1px solid rgba(255,255,255,0.06) !important;
 }
-.dark .nav-item     { color: #64748b !important; }
+.dark .nav-item     { color: #94a3b8 !important; }
 .dark .nav-item.active { color: #93c5fd !important; background: rgba(147,197,253,0.08) !important; }
+
+.dark .zf-category-label {
+  color: #cbd5e1 !important;
+}
+
+.dark .zf-search-input {
+  background-color: #1e293b !important;
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+
+.dark .zf-search-input::placeholder {
+  color: #94a3b8 !important;
+}
 
 /* Modal / Sheet */
 .dark .modal-sheet .sheet-content {

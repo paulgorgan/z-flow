@@ -696,6 +696,7 @@ window.renderCashflowForecast = renderCashflowForecast;
 
 const ZFlowMultiFirma = {
     _LS_KEY: 'zflow_firmele_mele', // prefix — cheia reală e per-user (vezi _lsKey)
+    _MIGRATED: false,
 
     // [FIX 1] Chei per-utilizator — izolează companiile între utilizatori diferiți pe același browser
     _getUserSuffix() {
@@ -706,7 +707,43 @@ const ZFlowMultiFirma = {
     _lsKey()       { return 'zflow_firmele_mele_'   + this._getUserSuffix(); },
     _lsKeyActiva() { return 'zflow_firma_activa_id_' + this._getUserSuffix(); },
 
+    _migrateLegacyKeys() {
+        if (this._MIGRATED) return;
+        this._MIGRATED = true;
+
+        const suffix = this._getUserSuffix();
+        if (!suffix || suffix === 'anon') return;
+
+        const userKey = this._lsKey();
+        const activeUserKey = this._lsKeyActiva();
+        if (localStorage.getItem(userKey)) return;
+
+        const legacyKeys = [
+            this._LS_KEY,
+            this._LS_KEY + '_anon'
+        ];
+
+        for (const legacyKey of legacyKeys) {
+            try {
+                const raw = localStorage.getItem(legacyKey);
+                if (!raw) continue;
+                const parsed = JSON.parse(raw);
+                if (!Array.isArray(parsed) || parsed.length === 0) continue;
+
+                localStorage.setItem(userKey, JSON.stringify(parsed));
+
+                const legacyActive = localStorage.getItem('zflow_firma_activa_id')
+                    || localStorage.getItem('zflow_firma_activa_id_anon');
+                if (legacyActive && !localStorage.getItem(activeUserKey)) {
+                    localStorage.setItem(activeUserKey, legacyActive);
+                }
+                break;
+            } catch (_) {}
+        }
+    },
+
     getFirme() {
+        this._migrateLegacyKeys();
         try {
             const stored = JSON.parse(localStorage.getItem(this._lsKey()) || '[]');
             // Dacă lista e goală și există un profil activ, populează automat cu firma din profil
@@ -735,10 +772,12 @@ const ZFlowMultiFirma = {
     },
 
     saveFirme(firme) {
+        this._migrateLegacyKeys();
         localStorage.setItem(this._lsKey(), JSON.stringify(firme));
     },
 
     getFirmaActiva() {
+        this._migrateLegacyKeys();
         const id = localStorage.getItem(this._lsKeyActiva());
         const firme = this.getFirme();
         return firme.find(f => f.id === id) || firme[0] || null;

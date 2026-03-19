@@ -873,7 +873,7 @@ async function verificaAuth() {
                     const _zileRamase = Math.ceil((_expDate - _acum) / (1000 * 60 * 60 * 24));
                     if (_zileRamase <= 14) {
                         setTimeout(() => showNotification(
-                            `⚠️ Abonamentul expiră în ${_zileRamase} zile (${_expDate.toLocaleDateString('ro-RO')})`,
+                            `Atenție: abonamentul expiră în ${_zileRamase} zile (${_expDate.toLocaleDateString('ro-RO')})`,
                             'warning'
                         ), 3000);
                     }
@@ -2026,15 +2026,12 @@ function incarcaDashboard() {
     const neincasat = facturiIncasat30.filter(f => f.status_plata === "Incasat").reduce((s, f) => s + (Number(f.valoare) || 0), 0);
     // KPI 3: De PLĂTIT — neplătit furnizori, primit în ultimele 30 zile
     const neplatit = facturiPlatit30.filter(f => f.status_plata !== "Platit").reduce((s, f) => s + (Number(f.valoare) || 0), 0);
-    // KPI 4: Cashflow NET 30 zile = încasat efectiv - plătit efectiv - contribuții neachitate scadente în 30 zile
+    // KPI 4: Cashflow NET 30 zile = încasat efectiv - plătit efectiv - contribuții buget neachitate
     const incasat30Efectiv = facturiIncasat30.filter(f => f.status_plata === "Incasat").reduce((s, f) => s + (Number(f.valoare) || 0), 0);
     const platit30Efectiv  = facturiPlatit30.filter(f => f.status_plata === "Platit").reduce((s, f) => s + (Number(f.valoare) || 0), 0);
-    // Contribuții buget stat neachitate cu luna scadentă în ultimele 30 zile
+    // Contribuții buget stat neachitate (preluate automat în Home, independent de Analiză)
     const contributii30 = (ZFlowStore.dateContributii || []).filter(c => {
-        if (c.achitat) return false;
-        if (!c.luna) return false;
-        const d = new Date(c.luna.length >= 10 ? c.luna + 'T12:00:00' : c.luna + '-01T12:00:00');
-        return !isNaN(d) && d >= acum30 && d <= azi;
+        return !c.achitat;
     }).reduce((s, c) => s + (Number(c.suma) || 0), 0);
     const net = incasat30Efectiv - platit30Efectiv - contributii30;
 
@@ -2053,8 +2050,8 @@ function incarcaDashboard() {
     // [FIX B4] Net 30 breakdown: afișează componentele de incasat și de plătit
     const elNetBreakdown = document.getElementById("home-kpi-net-breakdown");
     if (elNetBreakdown) {
-        if (incasat30Efectiv > 0 || platit30Efectiv > 0) {
-            elNetBreakdown.innerText = `\u2191 ${Math.round(incasat30Efectiv).toLocaleString()} / \u2193 ${Math.round(platit30Efectiv).toLocaleString()} lei`;
+        if (incasat30Efectiv > 0 || platit30Efectiv > 0 || contributii30 > 0) {
+            elNetBreakdown.innerText = `\u2191 ${Math.round(incasat30Efectiv).toLocaleString()} / \u2193 ${Math.round(platit30Efectiv).toLocaleString()} / Buget ${Math.round(contributii30).toLocaleString()} lei`;
         } else {
             elNetBreakdown.innerText = 'Net total';
         }
@@ -2186,7 +2183,7 @@ function incarcaDashboard() {
                     </svg>
                   </div>
                   <div class="text-left">
-                    <p class="text-[11px] font-black text-emerald-800 uppercase">Toate la zi ✓</p>
+                                        <p class="text-[11px] font-black text-emerald-800 uppercase">Toate la zi</p>
                     <p class="text-[9px] font-bold text-emerald-600 mt-0.5">Nicio scadență depășită</p>
                   </div>
                   <svg class="w-3.5 h-3.5 text-emerald-400 flex-shrink-0 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
@@ -2339,7 +2336,7 @@ function _updateHomeMiniDepozit() {
 
     if (elAlerta && elBadge) {
         if (alerteStoc > 0) {
-            elBadge.textContent = '⚠ ' + alerteStoc + ' sub stoc minim';
+            elBadge.innerHTML = `<svg class="w-3 h-3 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86l-7.5 13A2 2 0 004.5 20h15a2 2 0 001.71-3.14l-7.5-13a2 2 0 00-3.42 0z"/></svg><span>${alerteStoc} sub stoc minim</span>`;
             elAlerta.classList.remove('hidden');
         } else {
             elAlerta.classList.add('hidden');
@@ -2386,7 +2383,7 @@ function _updateHomeAlerteSummary(clientiRestanti, furnizoriRestanti, totalCliVa
 
     if (total === 0) {
         // Stare OK — verde
-        elSubtitle.textContent = 'Toate la zi ✓';
+        elSubtitle.textContent = 'Toate la zi';
         elSubtitle.className   = 'text-[9px] font-bold text-emerald-500 mt-0.5';
         if (elIconWrap) elIconWrap.className = 'w-8 h-8 bg-emerald-50 rounded-xl flex items-center justify-center flex-shrink-0';
         if (elIcon)     elIcon.className    = 'w-4 h-4 text-emerald-500';
@@ -2490,7 +2487,8 @@ function _getCashflowHash() {
     const sel  = Array.from(document.querySelectorAll('#container-bi-checks input:checked')).map(i => i.value).join(',');
     const selF = Array.from(document.querySelectorAll('#container-bi-furnizori-checks input:checked')).map(i => i.value).join(',');
     const tip  = ZFlowStore.filtruTipBI || 'ambele';
-    return `${dataStart}|${dataEnd}|${sel}|${selF}|${tip}|${ZFlowStore.dateFacturiBI?.length ?? 0}|${ZFlowStore.dateFacturiPlatit?.length ?? 0}|${ZFlowStore.dateContributii?.length ?? 0}`;
+    const withContrib = ZFlowStore.includeContributiiInAnaliza ? '1' : '0';
+    return `${dataStart}|${dataEnd}|${sel}|${selF}|${tip}|${withContrib}|${ZFlowStore.dateFacturiBI?.length ?? 0}|${ZFlowStore.dateFacturiPlatit?.length ?? 0}|${ZFlowStore.dateContributii?.length ?? 0}`;
 }
 
 /** Invalidează cache-ul cashflow (cheamă când datele sunt modificate) */
@@ -2569,15 +2567,17 @@ function calculeazaCashflow() {
         : 0;
 
     // Contribuții buget de stat (TVA, CAS, CASS, Impozit) — doar NEACHITATE, filtrate pe aceeași perioadă
-    const contributii = (ZFlowStore.dateContributii || []).filter(c => {
-        if (c.achitat) return false; // cf-contributii = total NEACHITAT
-        if (!c.luna) return !start && !end;
-        const d = new Date((c.luna.length === 7 ? c.luna + '-01' : c.luna) + 'T12:00:00');
-        if (isNaN(d)) return true;
-        if (start && d < start) return false;
-        if (end && d > end) return false;
-        return true;
-    }).reduce((sum, c) => sum + (Number(c.suma) || 0), 0);
+    const contributii = ZFlowStore.includeContributiiInAnaliza
+        ? (ZFlowStore.dateContributii || []).filter(c => {
+            if (c.achitat) return false; // cf-contributii = total NEACHITAT
+            if (!c.luna) return !start && !end;
+            const d = new Date((c.luna.length === 7 ? c.luna + '-01' : c.luna) + 'T12:00:00');
+            if (isNaN(d)) return true;
+            if (start && d < start) return false;
+            if (end && d > end) return false;
+            return true;
+        }).reduce((sum, c) => sum + (Number(c.suma) || 0), 0)
+        : 0;
 
     const totalIesiri = iesiri + contributii;
     const net = intrari - totalIesiri;
@@ -2649,12 +2649,21 @@ function renderListaContributii() {
     // Sumar total neachitat pentru filtrul curent
     const totalNeachitat = filtrate.filter(c => !c.achitat).reduce((s, c) => s + (Number(c.suma) || 0), 0);
     const nrNeachitate   = filtrate.filter(c => !c.achitat).length;
+    const totalNeachitatGlobal = (lista || []).filter(c => !c.achitat).reduce((s, c) => s + (Number(c.suma) || 0), 0);
+    const cfContributiiEl = document.getElementById('cf-contributii');
+    if (cfContributiiEl) {
+        cfContributiiEl.innerText = totalNeachitatGlobal > 0
+            ? `${new Intl.NumberFormat('ro-RO').format(Math.round(totalNeachitatGlobal))} lei`
+            : '0 lei';
+    }
 
     const rows = paginate.map(c => {
         const badgeClass = c.achitat
             ? 'bg-emerald-100 text-emerald-700'
             : 'bg-rose-100 text-rose-700';
-        const badgeText = c.achitat ? '✓' : '!';
+        const badgeText = c.achitat
+            ? '<svg class="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.7"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>'
+            : '!';
         const suma = new Intl.NumberFormat('ro-RO', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Number(c.suma) || 0);
         return `<div class="flex items-center gap-2 px-2 py-1.5 rounded-lg border ${c.achitat ? 'bg-white border-slate-100' : 'bg-orange-50 border-orange-100'} hover:shadow-sm transition-all">
             <button type="button"
@@ -2946,18 +2955,49 @@ function toggleFirmeCollapse() {
  */
 function filtreazaFirmeInCollapse(q) {
     const term = (q || "").toLowerCase().trim();
+    const matchedInputs = [];
     // Clienți — caută și după CUI stocat în data-cui
     document.querySelectorAll("#container-bi-checks label").forEach(label => {
         const text = label.textContent.toLowerCase();
         const cui = (label.dataset.cui || "").toLowerCase();
-        label.style.display = !term || text.includes(term) || cui.includes(term) ? "" : "none";
+        const matched = !term || text.includes(term) || cui.includes(term);
+        label.style.display = matched ? "" : "none";
+        if (term && matched) {
+            const input = label.querySelector('input[type="checkbox"]');
+            if (input) matchedInputs.push(input);
+        }
     });
     // Furnizori — idem
     document.querySelectorAll("#container-bi-furnizori-checks label").forEach(label => {
         const text = label.textContent.toLowerCase();
         const cui = (label.dataset.cui || "").toLowerCase();
-        label.style.display = !term || text.includes(term) || cui.includes(term) ? "" : "none";
+        const matched = !term || text.includes(term) || cui.includes(term);
+        label.style.display = matched ? "" : "none";
+        if (term && matched) {
+            const input = label.querySelector('input[type="checkbox"]');
+            if (input) matchedInputs.push(input);
+        }
     });
+
+    // Căutare firmă/CUI în Analiză: păstrează doar prima potrivire selectată și recalculează totalurile.
+    if (term && matchedInputs.length > 0) {
+        document.querySelectorAll('#container-bi-checks input, #container-bi-furnizori-checks input').forEach(c => {
+            c.checked = false;
+        });
+        matchedInputs[0].checked = true;
+        genereazaBI();
+        return;
+    }
+
+    // Când căutarea este goală, resetăm selecția (nicio firmă bifată).
+    if (!term) {
+        let changed = false;
+        document.querySelectorAll('#container-bi-checks input, #container-bi-furnizori-checks input').forEach(c => {
+            if (c.checked) changed = true;
+            c.checked = false;
+        });
+        if (changed) genereazaBI();
+    }
 }
 
 // ==========================================
@@ -3051,7 +3091,7 @@ function genereazaCardFactura(fac, client, azi) {
                         <p class="text-[11px] font-black text-slate-800 uppercase">${serie ? escapeHtml(serie) + ' ' : ''}#${escapeHtml(fac.numar_factura) || '—'}</p>
                         <p class="text-[8px] font-bold text-slate-400 uppercase">Emis: ${formateazaDataZFlow(fac.data_emiterii)}</p>
                         <p class="text-[8px] font-bold ${esteScadenta ? 'text-red-400' : esteIminent ? 'text-amber-400' : 'text-slate-400'} uppercase">Scad: ${fac.data_scadenta ? formateazaDataZFlow(fac.data_scadenta) : '—'}</p>
-                        ${esteScadenta ? '<span class="inline-block mt-0.5 bg-red-100 text-red-600 text-[8px] font-black px-2 py-0.5 rounded-full uppercase animate-pulse">⚠ DEPĂȘIT</span>' : esteIminent ? '<span class="inline-block mt-0.5 bg-amber-100 text-amber-600 text-[8px] font-black px-2 py-0.5 rounded-full uppercase animate-pulse">⚡ IMINENT</span>' : ''}
+                        ${esteScadenta ? '<span class="inline-block mt-0.5 bg-red-100 text-red-600 text-[8px] font-black px-2 py-0.5 rounded-full uppercase animate-pulse">Depășit</span>' : esteIminent ? '<span class="inline-block mt-0.5 bg-amber-100 text-amber-600 text-[8px] font-black px-2 py-0.5 rounded-full uppercase animate-pulse">Iminent</span>' : ''}
                     </div>
                 </div>
                 <div class="text-right">
@@ -3284,16 +3324,16 @@ function arataDetalii(id) {
     containerFacturi.innerHTML = `
         <div class="sticky top-0 bg-[#f1f5f9]/95 backdrop-filter backdrop-blur-md z-30 pb-4 pt-2">
             <div class="relative">
-                <input type="text" id="search-facturi-detaliu" oninput="filtreazaFacturiInDetalii()" placeholder="Caută nr. factură..." class="w-full h-12 pl-12 bg-white rounded-2xl border border-slate-200 text-[13px] font-bold shadow-sm outline-none focus:ring-2 focus:ring-blue-100 transition-all" />
+                <input type="text" id="search-facturi-detaliu" oninput="filtreazaFacturiInDetalii()" placeholder="Caută nr. factură..." class="zf-search-input w-full h-12 pl-12 bg-white rounded-2xl border border-slate-200 text-[13px] font-bold shadow-sm outline-none focus:ring-2 focus:ring-blue-100 transition-all" />
                 <div class="absolute left-4 top-3.5 text-slate-300">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                 </div>
             </div>
         </div>
         <div class="flex items-center justify-between px-1 mb-2 mt-1">
-            <span class="text-[10px] font-extrabold text-blue-900 uppercase tracking-wider">➤ Facturi de Încasat</span>
+            <span class="text-[10px] font-extrabold text-blue-900 uppercase tracking-wider flex items-center gap-1.5"><svg class="w-3 h-3 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.3"><path stroke-linecap="round" stroke-linejoin="round" d="M8 5l8 7-8 7"/></svg>Facturi de Încasat</span>
             <div class="flex items-center gap-2">
-                <span class="text-[9px] font-bold text-slate-400 uppercase">Afișare</span>
+                <span class="zf-category-label">Afișare</span>
                 <select onchange="facturiSetPerPage(this.value)"
                         class="text-[10px] font-black text-slate-700 bg-slate-100 border-none rounded-lg px-2 py-1.5 cursor-pointer outline-none hover:bg-slate-200 transition-all">
                     <option value="10" ${ppFacturi===10?'selected':''}>10</option>
@@ -3496,9 +3536,10 @@ function populeazaBridgeUI() {
     if (containerBI) {
         containerBI.innerHTML = ZFlowStore.dateLocal
             .map((f) => `
-                <label data-cui="${escapeHtml(String(f.cui || ''))}" class="flex justify-between items-center p-4 bg-slate-50 rounded-xl mb-1 text-[10px] font-bold uppercase cursor-pointer hover:bg-slate-100 transition-colors">
+                <label data-cui="${escapeHtml(String(f.cui || ''))}" onclick="selectSingleBIFirma('${f.id}', 'client', event)" class="flex justify-between items-center p-4 bg-slate-50 rounded-xl mb-1 text-[10px] font-bold uppercase cursor-pointer hover:bg-slate-100 transition-colors">
                     <span>${escapeHtml(f.nume_firma || f.cui)}</span>
                     <input type="checkbox" value="${f.id}" checked
+                           onclick="event.stopPropagation()"
                            onchange="genereazaBI()"
                            class="w-5 h-5 accent-blue-900 bi-checkbox">
                 </label>
@@ -3511,9 +3552,10 @@ function populeazaBridgeUI() {
     if (containerBIFurnizori) {
         containerBIFurnizori.innerHTML = ZFlowStore.dateFurnizori
             .map((f) => `
-                <label data-cui="${escapeHtml(String(f.cui || ''))}" class="flex justify-between items-center p-4 bg-red-50 rounded-xl mb-1 text-[10px] font-bold uppercase cursor-pointer hover:bg-red-100 transition-colors">
+                <label data-cui="${escapeHtml(String(f.cui || ''))}" onclick="selectSingleBIFirma('${f.id}', 'furnizor', event)" class="flex justify-between items-center p-4 bg-red-50 rounded-xl mb-1 text-[10px] font-bold uppercase cursor-pointer hover:bg-red-100 transition-colors">
                     <span>${escapeHtml(f.nume_firma || f.cui)}</span>
                     <input type="checkbox" value="${f.id}" checked
+                           onclick="event.stopPropagation()"
                            onchange="genereazaBI()"
                            class="w-5 h-5 accent-red-700 bi-furn-checkbox">
                 </label>
@@ -3536,6 +3578,30 @@ function populeazaBridgeUI() {
     const btnPlatit = document.getElementById("bi-btn-platit");
     if (btnPlatit) btnPlatit.classList.toggle("hidden", ZFlowStore.filtruTipBI === "clienti");
 
+    const includeContrib = document.getElementById('bi-include-contributii');
+    if (includeContrib) includeContrib.checked = !!ZFlowStore.includeContributiiInAnaliza;
+
+    genereazaBI();
+}
+
+/**
+ * Selectează rapid o singură firmă în analiză (fără pasul „Niciuna”).
+ */
+function selectSingleBIFirma(id, tip, event) {
+    if (event?.target?.tagName === 'INPUT') return;
+    const allChecks = document.querySelectorAll('#container-bi-checks input, #container-bi-furnizori-checks input');
+    allChecks.forEach(c => { c.checked = false; });
+    const selector = tip === 'furnizor'
+        ? `#container-bi-furnizori-checks input[value="${String(id)}"]`
+        : `#container-bi-checks input[value="${String(id)}"]`;
+    const target = document.querySelector(selector);
+    if (target) target.checked = true;
+    genereazaBI();
+}
+
+function toggleContributiiInAnaliza(checked) {
+    ZFlowStore.includeContributiiInAnaliza = !!checked;
+    invalidateCashflowCache();
     genereazaBI();
 }
 
@@ -4078,7 +4144,7 @@ function _paginareHTML(total, pageSize, currentPage, prefix) {
     return `
 <div class="flex flex-col items-center gap-1.5 mt-2 mb-4 px-1">
     <div class="flex items-center justify-center gap-2 flex-wrap w-full">
-        <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Afișare</span>
+        <span class="zf-category-label">Afișare</span>
         <select onchange="${prefix}SetPageSize(this.value)"
                 class="text-[11px] font-black text-slate-700 bg-slate-100 border-none rounded-lg px-2 py-1.5 cursor-pointer outline-none hover:bg-slate-200 transition-all min-w-[60px] min-h-[32px]">
             ${optiuni}
@@ -4121,7 +4187,13 @@ function initInfiniteScrollClienti() {
     const sentinel = document.getElementById('clienti-scroll-sentinel');
     if (!sentinel) return;
     if (window._clientiScrollObs) window._clientiScrollObs.disconnect();
+    const _psCheck = ZFlowStore.clientiPageSize;
+    if (_psCheck === 0) return;
+    const _tpCheck = Math.ceil((ZFlowStore._clientiFiltrati||[]).length / _psCheck);
+    if (ZFlowStore.clientiCurrentPage >= _tpCheck) return;
+    let firstFire = true;
     window._clientiScrollObs = new IntersectionObserver(entries => {
+        if (firstFire) { firstFire = false; return; }
         if (!entries[0].isIntersecting) return;
         const ps = ZFlowStore.clientiPageSize;
         if (ps === 0) return;
@@ -4306,7 +4378,7 @@ async function importaDateSagaAuto() {
     const headers = firstLine.split(delimiter).map(h => h.trim().replace(/^"|"$/g, '').toLowerCase().replace(/_/g, ' '));
     ZFlowLogger.debug('app', '[AutoImport] Headere detectate:', headers);
 
-    // Detectare tip: furnizori dacă contține cuvintele cheie furnizor
+    // Detectare tip: furnizori dacă conține cuvintele cheie furnizor
     const isFurnizori = headers.some(h =>
         h.includes('furnizor') || h === 'platit' || h === 'neplatit' ||
         (h.includes('plat') && !headers.some(h2 => h2.includes('client') || h2.includes('incasat')))
@@ -4604,16 +4676,17 @@ async function exportaPDFSelectie() {
         head: headers,
         body: rows,
         theme: "striped",
+        tableWidth: 182,
         margin: { left: 14, right: 14 },
         headStyles: { fillColor: [30, 58, 138], fontSize: 8, halign: "center" },
-        styles: { fontSize: 7, cellPadding: 2, halign: "center", overflow: 'linebreak' },
+        styles: { fontSize: 7, cellPadding: 2, minCellHeight: 6, halign: "center", overflow: 'linebreak' },
         columnStyles: {
-            0: { cellWidth: 38, halign: "center" },
+            0: { cellWidth: 44, halign: "center" },
             1: { cellWidth: 30, halign: "center" },
-            2: { cellWidth: 22, halign: "center" },
-            3: { cellWidth: 22, halign: "center" },
-            4: { cellWidth: 30, halign: "center", fontStyle: "bold" },
-            5: { cellWidth: 22, halign: "center", fontStyle: "bold" },
+            2: { cellWidth: 24, halign: "center" },
+            3: { cellWidth: 24, halign: "center" },
+            4: { cellWidth: 34, halign: "center", fontStyle: "bold" },
+            5: { cellWidth: 26, halign: "center", fontStyle: "bold" },
         },
         didParseCell: function (data) {
             if (data.section === "body" && data.column.index === 5) {
@@ -4666,7 +4739,9 @@ async function exportaExcelSelectie() {
     // Sumar BI vizibil (pentru consistență cu valorile afișate în UI)
     const biClienti = document.getElementById("suma-selectata-bi")?.innerText?.trim() || "0 lei";
     const biFurnizori = document.getElementById("suma-platit-bi")?.innerText?.trim() || "0 lei";
-    const biContributii = document.getElementById("cf-contributii")?.innerText?.trim() || "0 lei";
+    const biContributii = ZFlowStore.includeContributiiInAnaliza
+        ? (document.getElementById("cf-contributii")?.innerText?.trim() || "0 lei")
+        : "0 lei";
     const biNet = (document.getElementById("cf-net")?.innerText?.trim() || "0 lei").replace(/\u2212/g, "-");
     const wsSumarSelectie = XLSX.utils.aoa_to_sheet([
         ["Z-FLOW — SUMAR BI (SELECȚIE)"],
@@ -5345,7 +5420,7 @@ async function importaDateSaga(tipImport = 'clienti') {
                             const numeDuale = duale.slice(0, 3).map(d => d.nume_firma || d.cui).join(', ');
                             const extra = duale.length > 3 ? ` și alte ${duale.length - 3}` : '';
                             showNotification(
-                                `⚠️ ${duale.length} ${duale.length === 1 ? 'firmă este' : 'firme sunt'} atât client cât și furnizor: ${numeDuale}${extra}. Facturile se importă ca ${isFurnizori ? 'furnizori' : 'clienți'}.`,
+                                `Atenție: ${duale.length} ${duale.length === 1 ? 'firmă este' : 'firme sunt'} atât client cât și furnizor: ${numeDuale}${extra}. Facturile se importă ca ${isFurnizori ? 'furnizori' : 'clienți'}.`,
                                 'warning', 8000
                             );
                         }
@@ -5654,12 +5729,12 @@ async function exportaPDF() {
 
     // VERIFICARE BULK SELECTION - dacă există facturi selectate, exportă doar selecția
     if (ZFlowStore.bulkMode && ZFlowStore.bulkSelectedFacturi.length > 0) {
-        ZFlowLogger.debug('app', "📄 Export PDF - MOD SELECȚIE: " + ZFlowStore.bulkSelectedFacturi.length + " facturi");
+        ZFlowLogger.debug('app', "Export PDF - MOD SELECȚIE: " + ZFlowStore.bulkSelectedFacturi.length + " facturi");
         exportaPDFSelectie();
         return;
     }
     
-    ZFlowLogger.debug('app', "📄 Export PDF - MOD COMPLET: toate facturile filtrate");
+    ZFlowLogger.debug('app', "Export PDF - MOD COMPLET: toate facturile filtrate");
     if (!window.jspdf?.jsPDF) {
         showNotification('Biblioteca PDF nu este disponibilă. Reîncarcă pagina și încearcă din nou.', 'error');
         return;
@@ -5744,9 +5819,10 @@ async function exportaPDF() {
             curataText(biNetNormalized)
         ]],
         theme: "grid",
+        tableWidth: 182,
         margin: { left: 14, right: 14 },
         headStyles: { fillColor: [30, 58, 138], fontSize: 6.8, halign: "center", fontStyle: "bold", cellPadding: 2 },
-        styles: { fontSize: 9, halign: "center", fontStyle: "bold", cellPadding: 3, overflow: 'linebreak' },
+        styles: { fontSize: 9, minCellHeight: 6, halign: "center", fontStyle: "bold", cellPadding: 3, overflow: 'linebreak' },
         columnStyles: {
             0: { cellWidth: 45.5, textColor: [30, 58, 138] },
             1: { cellWidth: 45.5, textColor: [185, 28, 28] },
@@ -5773,16 +5849,17 @@ async function exportaPDF() {
         head: [[curataText("CLIENT"), curataText("DOCUMENT"), curataText("EMIS LA"), curataText("SCADENTA"), curataText("SUMA"), curataText("STATUS")]],
         body: rows,
         theme: "striped",
+        tableWidth: 182,
         margin: { left: 14, right: 14 },
         headStyles: { fillColor: [30, 58, 138], fontSize: 8, halign: "center" },
-        styles: { fontSize: 7, cellPadding: 2, halign: "center", overflow: 'linebreak' },
+        styles: { fontSize: 7, cellPadding: 2, minCellHeight: 6, halign: "center", overflow: 'linebreak' },
         columnStyles: {
-            0: { cellWidth: 38, halign: "center" },
+            0: { cellWidth: 44, halign: "center" },
             1: { cellWidth: 30, halign: "center" },
-            2: { cellWidth: 22, halign: "center" },
-            3: { cellWidth: 22, halign: "center" },
-            4: { cellWidth: 30, halign: "center", fontStyle: "bold" },
-            5: { cellWidth: 22, halign: "center", fontStyle: "bold" },
+            2: { cellWidth: 24, halign: "center" },
+            3: { cellWidth: 24, halign: "center" },
+            4: { cellWidth: 34, halign: "center", fontStyle: "bold" },
+            5: { cellWidth: 26, halign: "center", fontStyle: "bold" },
         },
         didParseCell: function (data) {
             if (data.section === "body" && data.column.index === 5) {
@@ -5828,12 +5905,13 @@ async function exportaPDF() {
                 head: [[curataText('FURNIZOR'), curataText('DOCUMENT'), curataText('EMIS LA'), curataText('SCADENTA'), curataText('SUMA'), curataText('STATUS')]],
                 body: rowsFP,
                 theme: 'striped',
+                tableWidth: 182,
                 margin: { left: 14, right: 14 },
                 headStyles: { fillColor: [185, 28, 28], fontSize: 8, halign: 'center' },
-                styles: { fontSize: 7, cellPadding: 2, halign: 'center', overflow: 'linebreak' },
+                styles: { fontSize: 7, cellPadding: 2, minCellHeight: 6, halign: 'center', overflow: 'linebreak' },
                 columnStyles: {
-                    0: { cellWidth: 38 }, 1: { cellWidth: 30 }, 2: { cellWidth: 22 },
-                    3: { cellWidth: 22 }, 4: { cellWidth: 30, fontStyle: 'bold' }, 5: { cellWidth: 22, fontStyle: 'bold' }
+                    0: { cellWidth: 44 }, 1: { cellWidth: 30 }, 2: { cellWidth: 24 },
+                    3: { cellWidth: 24 }, 4: { cellWidth: 34, fontStyle: 'bold' }, 5: { cellWidth: 26, fontStyle: 'bold' }
                 },
                 didParseCell: function(data) {
                     if (data.section === 'body' && data.column.index === 5) {
@@ -5844,7 +5922,7 @@ async function exportaPDF() {
         }
     }
 
-    // ── Grafic evoluție lunară ──────────────────────────────────────────────
+    // ── Grafic evoluție lunară (line chart) ─────────────────────────────────
     try {
         // Agreg facturile clienți pe luni
         const luniMap = {};
@@ -5874,7 +5952,7 @@ async function exportaPDF() {
             const chartH = 80;
             const marginL = 14;
             const maxVal = Math.max(...luni.map(l => Math.max(luniMap[l].clienti, luniMap[l].furnizori)), 1);
-            const stepX = chartW / luni.length;
+            const stepX = luni.length > 1 ? chartW / (luni.length - 1) : chartW;
 
             doc.setFontSize(12);
             doc.setTextColor(30, 58, 138);
@@ -5893,26 +5971,45 @@ async function exportaPDF() {
                 doc.text(`${label}k`, marginL - 1, y + 1, { align: 'right' });
             }
 
-            // Bare clienți (albastru) și furnizori (roșu)
-            doc.setFontSize(5);
-            luni.forEach((luna, i) => {
-                const x = marginL + i * stepX + stepX * 0.1;
-                const barW = stepX * 0.35;
-                const { clienti: vc, furnizori: vf } = luniMap[luna];
-                const hC = (vc / maxVal) * chartH;
-                const hF = (vf / maxVal) * chartH;
+            // Puncte + linii pentru clienți/furnizori
+            const clientiPoints = luni.map((luna, i) => {
+                const x = marginL + i * stepX;
+                const y = chartStartY + chartH - ((luniMap[luna].clienti / maxVal) * chartH);
+                return { x, y, label: luna };
+            });
+            const furnizoriPoints = luni.map((luna, i) => {
+                const x = marginL + i * stepX;
+                const y = chartStartY + chartH - ((luniMap[luna].furnizori / maxVal) * chartH);
+                return { x, y, label: luna };
+            });
 
-                // Bara clienți
+            doc.setDrawColor(30, 58, 138);
+            doc.setLineWidth(0.8);
+            for (let i = 1; i < clientiPoints.length; i++) {
+                doc.line(clientiPoints[i - 1].x, clientiPoints[i - 1].y, clientiPoints[i].x, clientiPoints[i].y);
+            }
+            doc.setDrawColor(185, 28, 28);
+            doc.setLineWidth(0.8);
+            for (let i = 1; i < furnizoriPoints.length; i++) {
+                doc.line(furnizoriPoints[i - 1].x, furnizoriPoints[i - 1].y, furnizoriPoints[i].x, furnizoriPoints[i].y);
+            }
+
+            clientiPoints.forEach((p) => {
                 doc.setFillColor(30, 58, 138);
-                doc.rect(x, chartStartY + chartH - hC, barW, hC, 'F');
-                // Bara furnizori
+                doc.circle(p.x, p.y, 1.2, 'F');
+            });
+            furnizoriPoints.forEach((p) => {
                 doc.setFillColor(185, 28, 28);
-                doc.rect(x + barW + 1, chartStartY + chartH - hF, barW, hF, 'F');
+                doc.circle(p.x, p.y, 1.2, 'F');
+            });
 
-                // Etichetă lună
-                doc.setTextColor(80, 80, 80);
-                const labelLuna = luna.slice(5); // MM
-                doc.text(labelLuna, x + barW, chartStartY + chartH + 4, { align: 'center' });
+            // Etichete luni pe axa X
+            doc.setFontSize(5);
+            doc.setTextColor(80, 80, 80);
+            luni.forEach((luna, i) => {
+                const x = marginL + i * stepX;
+                const labelLuna = luna.slice(5);
+                doc.text(labelLuna, x, chartStartY + chartH + 4, { align: 'center' });
             });
 
             // Legendă
@@ -5939,9 +6036,10 @@ async function exportaPDF() {
                 head: [[curataText('LUNA'), curataText('INCASARI'), curataText('PLATI'), curataText('DIFERENTA')]],
                 body: rowsGrafic,
                 theme: 'grid',
+                tableWidth: 182,
                 margin: { left: marginL, right: 14 },
                 headStyles: { fillColor: [30, 58, 138], fontSize: 7, halign: 'center' },
-                styles: { fontSize: 7, cellPadding: 2, halign: 'center' },
+                styles: { fontSize: 7, cellPadding: 2, minCellHeight: 6, halign: 'center' },
             });
         }
     } catch (_chartErr) {
@@ -7170,7 +7268,7 @@ document.addEventListener('DOMContentLoaded', () => {
     ZFlowLogger.debug('app', '%c[FIX] Buton "Editare Profil" client — funcțional acum direct din HTML (onclick inline)', 'color:#16a34a');
     ZFlowLogger.debug('app', '%c[FIX] Home KPIs: toate cele 4 carduri → ultimele 30 zile (facturat, neîncasat, neplătit, net)', 'color:#16a34a');
     ZFlowLogger.debug('app', '%c[FIX] Furnizori: KPI Restante sincronizat cu totalul banneru-ului (updateFurnizoriKPI la fiecare render)', 'color:#16a34a');
-    ZFlowLogger.debug('app', '%c[FIX] Analiza BI furnizori: eliminat butonul de check ✓ (neadecvat în modul analiză)', 'color:#16a34a');
+    ZFlowLogger.debug('app', '%c[FIX] Analiza BI furnizori: eliminat butonul de check (neadecvat în modul analiză)', 'color:#16a34a');
     ZFlowLogger.debug('app', '%c[FIX] Analiza BI: paginare clienți sub lista clienți, paginare furnizori sub lista furnizori', 'color:#16a34a');
     ZFlowLogger.debug('app', '%c[UI]  Depozit sub-nav Stoc/Documente: rezolvat conflict Tailwind hidden+flex', 'color:#64748b');
     ZFlowLogger.debug('app', '%c[FEAT] Badge "Client + Furnizor" pe carduri dacă același CUI apare la ambii', 'color:#9333ea');
@@ -7329,6 +7427,8 @@ window.toggleFirmeBI = toggleFirmeBI;
 window.filtreazaFirmeInBI = filtreazaFirmeInBI;
 window.toggleFirmeCollapse = toggleFirmeCollapse;
 window.toggleToateBI = toggleToateBI;
+window.selectSingleBIFirma = selectSingleBIFirma;
+window.toggleContributiiInAnaliza = toggleContributiiInAnaliza;
 window.deschideModal = deschideModal;
 window.inchideModal = inchideModal;
 window.arataDetalii = arataDetalii; // exportat din app.js (nu din financiar.js — previne ReferenceError)
@@ -7408,7 +7508,7 @@ document.addEventListener('DOMContentLoaded', function initializeV2Modules() {
     }
     
     if (missingModules.length > 0) {
-        ZFlowLogger.warn('app', `⚠️ Module lipsă:`, missingModules.join(', '));
+        ZFlowLogger.warn('app', `Module lipsă:`, missingModules.join(', '));
     }
     
     // Expunem referințe rapide pentru dezvoltatori
@@ -7761,7 +7861,7 @@ function renderAdminUsersList(users) {
         let expireStatus = '';
         if (zile !== null) {
             if (zile < 0) expireStatus = `<span class="text-[8px] font-black text-red-500">EXPIRAT acum ${Math.abs(zile)} zile</span>`;
-            else if (zile <= 14) expireStatus = `<span class="text-[8px] font-black text-orange-500">⚠️ ${zile} zile rămase</span>`;
+            else if (zile <= 14) expireStatus = `<span class="text-[8px] font-black text-orange-500">Atenție: ${zile} zile rămase</span>`;
             else expireStatus = `<span class="text-[8px] text-slate-400">${zile} zile rămase</span>`;
         }
 
@@ -7776,9 +7876,9 @@ function renderAdminUsersList(users) {
             </div>
 
             <div class="flex items-center gap-3 text-[9px] text-slate-500 font-bold">
-                <span>📄 ${u.nr_facturi || 0} facturi</span>
-                <span>👥 ${u.nr_clienti || 0} clienți</span>
-                <span>🚛 ${u.nr_comenzi || 0} comenzi</span>
+                <span class="inline-flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 3.75h7.5A2.25 2.25 0 0117.25 6v12a2.25 2.25 0 01-2.25 2.25h-6A2.25 2.25 0 016.75 18V6A2.25 2.25 0 019 3.75zM9 7.5h6M9 11.25h6M9 15h3"/></svg>${u.nr_facturi || 0} facturi</span>
+                <span class="inline-flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72A8.97 8.97 0 0012 16.5a8.97 8.97 0 00-6 2.22M15 9a3 3 0 11-6 0 3 3 0 016 0z"/></svg>${u.nr_clienti || 0} clienți</span>
+                <span class="inline-flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 100 3 1.5 1.5 0 000-3zm7.5 0a1.5 1.5 0 100 3 1.5 1.5 0 000-3zM3 4.5h2.25l1.5 10.5h10.944a1.5 1.5 0 001.46-1.159l1.096-4.341H6.3"/></svg>${u.nr_comenzi || 0} comenzi</span>
             </div>
 
             <div class="flex items-center justify-between">
@@ -7801,7 +7901,7 @@ function renderAdminUsersList(users) {
                         onclick="adminDeschideStergere('${escapeHtml(u.email)}', '${escapeHtml(u.user_id || '')}')"
                         class="text-[8px] font-black bg-red-50 hover:bg-red-100 text-red-600 px-2 py-1 rounded-lg border border-red-200 transition-all"
                         title="Șterge date utilizator">
-                        ⚠️
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86l-7.5 13A2 2 0 004.5 20h15a2 2 0 001.71-3.14l-7.5-13a2 2 0 00-3.42 0z"/></svg>
                     </button>
                 </div>
             </div>

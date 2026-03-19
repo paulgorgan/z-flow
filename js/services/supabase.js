@@ -1624,7 +1624,8 @@ async function updateContributie(id, payload) {
             if (idx >= 0) window.ZFlowStore.dateContributii[idx] = { ...window.ZFlowStore.dateContributii[idx], ...payload };
             return;
         }
-        const { error } = await zf.from('contributii_buget').update(payload).eq('id', id);
+        const uid = _getCurrentUserId();
+        const { error } = await zf.from('contributii_buget').update(payload).eq('id', id).eq('user_id', uid);
         if (error) throw error;
     } catch (err) {
         ZFlowLogger.error('supabase', '[updateContributie] ' + err.message);
@@ -1637,7 +1638,8 @@ async function deleteContributie(id) {
             window.ZFlowStore.dateContributii = (window.ZFlowStore.dateContributii || []).filter(x => x.id !== id);
             return;
         }
-        const { error } = await zf.from('contributii_buget').delete().eq('id', id);
+        const uid = _getCurrentUserId();
+        const { error } = await zf.from('contributii_buget').delete().eq('id', id).eq('user_id', uid);
         if (error) throw error;
     } catch (err) {
         ZFlowLogger.error('supabase', '[deleteContributie] ' + err.message);

@@ -929,7 +929,7 @@ async function renderHartaVehicule() {
     const acum24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const result = await ZFlowDB._supabase()
         .from('vehicule_pozitii')
-        .select('*, vehicule(nr_inmatriculare, soferi(nume))')
+        .select('*, vehicule(nr_inmatriculare, sofer_id)')
         .eq('user_id', uid)
         .gte('ts', acum24h)
         .order('ts', { ascending: true });
@@ -950,7 +950,10 @@ async function renderHartaVehicule() {
         const poz = entry[1];
         const ultima = poz[poz.length - 1];
         const nrInmatr = (ultima.vehicule && ultima.vehicule.nr_inmatriculare) ? ultima.vehicule.nr_inmatriculare : vehiculId.slice(0, 8);
-        const sofer = (ultima.vehicule && ultima.vehicule.soferi && ultima.vehicule.soferi.nume) ? ultima.vehicule.soferi.nume : 'Nealocat';
+        const soferObj = (ZFlowStore.dateSoferi || []).find(function(s) {
+            return String(s.id) === String(ultima.vehicule?.sofer_id || '');
+        });
+        const sofer = soferObj?.nume || 'Nealocat';
 
         // Icon cu numarul de inmatriculare
         const iconHtml = '<div style="background:' + (ultima.status === 'oprit' ? '#64748b' : '#1e3a8a') + ';color:#fff;font-size:9px;font-weight:900;padding:3px 6px;border-radius:6px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.3);border:2px solid #fff' + (ultima.status === 'oprit' ? ';opacity:0.6' : '') + '">' + nrInmatr + '</div>';

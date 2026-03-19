@@ -440,7 +440,7 @@
                   <path
                     stroke-linecap="round"
                     stroke-linejoin="round"
-                    d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12"
+                    d="M2.25 6.75A2.25 2.25 0 014.5 4.5h15A2.25 2.25 0 0121.75 6.75v10.5A2.25 2.25 0 0119.5 19.5h-15a2.25 2.25 0 01-2.25-2.25V6.75zM2.25 9h19.5M7.5 14.25h3"
                   />
                 </svg>
               </div>
@@ -640,7 +640,7 @@
               id="search-firme"
               oninput="filtreazaListaFirme()"
               placeholder="Căutare client sau categorie..."
-              class="w-full h-14 pl-12 pr-32 bg-white rounded-2xl shadow-sm border-none outline-none text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-blue-100 transition-all"
+              class="zf-search-input w-full h-14 pl-12 pr-32 bg-white rounded-2xl shadow-sm border-none outline-none text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-blue-100 transition-all"
             />
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -682,8 +682,8 @@
                 class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"
               ></span>
               <span class="text-[7px] font-bold text-blue-100 italic cursor-pointer hover:text-white transition-colors"
-                onclick="if(typeof importaDateSagaAuto === 'function') importaDateSagaAuto()"
-                title="Click pentru sincronizare SAGA automată"
+                onclick="showNotification('Sincronizarea SAGA automată nu este disponibilă din acest buton. Folosiți importul dedicat.', 'info')"
+                title="Buton informativ"
                 >Z-FLOW - Business Support</span
               >
             </div>
@@ -970,6 +970,16 @@
               </div>
             </div>
 
+            <label class="flex items-center justify-between gap-2 mb-3 px-1 cursor-pointer select-none">
+              <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Adaugă în analiză contribuții buget</span>
+              <input
+                type="checkbox"
+                id="bi-include-contributii"
+                onchange="toggleContributiiInAnaliza(this.checked)"
+                class="w-4 h-4 accent-orange-600"
+              />
+            </label>
+
             <!-- Toggle pentru filtrare firme -->
             <button type="button"
               data-action="toggleFirmeCollapse"
@@ -998,11 +1008,11 @@
                 id="search-firme-collapse"
                 oninput="filtreazaFirmeInCollapse(this.value)"
                 placeholder="Caută după nume sau CUI..."
-                class="w-full p-2.5 bg-slate-50 rounded-xl text-[10px] italic outline-none border border-transparent focus:border-blue-200 transition-all"
+                class="zf-search-input w-full p-2.5 bg-slate-50 rounded-xl text-[10px] italic outline-none border border-transparent focus:border-blue-200 transition-all"
               />
               <div class="flex justify-between items-center">
                 <span
-                  class="text-[9px] font-black text-slate-400 uppercase tracking-widest"
+                  class="zf-category-label"
                   >Selecție</span
                 >
                 <div class="flex gap-3">
@@ -1023,7 +1033,7 @@
               <div id="bi-clienti-section">
                 <div class="flex items-center mb-1">
                   <span
-                    class="text-[9px] font-black text-blue-700 uppercase tracking-widest"
+                    class="zf-category-label text-blue-700 leading-none"
                     >Clienți</span
                   >
                 </div>
@@ -1037,7 +1047,7 @@
                   class="flex items-center mt-2 mb-1 pt-2 border-t border-red-100"
                 >
                   <span
-                    class="text-[9px] font-black text-red-700 uppercase tracking-widest"
+                    class="zf-category-label text-red-700 leading-none"
                     >Furnizori</span
                   >
                 </div>
@@ -1132,7 +1142,7 @@
               id="search-bi"
               oninput="filtreazaFirmeInBI()"
               placeholder="Caută în lista de facturi..."
-              class="flex-1 p-3 bg-white rounded-xl text-[10px] italic outline-none border border-slate-200 focus:border-blue-200 shadow-sm transition-all"
+              class="zf-search-input flex-1 p-3 bg-white rounded-xl text-[10px] italic outline-none border border-slate-200 focus:border-blue-200 shadow-sm transition-all"
             />
             <button type="button"
               data-action="toggleBulkMode"
@@ -1240,7 +1250,7 @@
               id="search-furnizori"
               oninput="filtreazaListaFurnizori()"
               placeholder="Căutare furnizor sau categorie..."
-              class="w-full h-14 pl-12 pr-32 bg-white rounded-2xl shadow-sm border-none outline-none text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-red-100 transition-all"
+              class="zf-search-input w-full h-14 pl-12 pr-32 bg-white rounded-2xl shadow-sm border-none outline-none text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-red-100 transition-all"
             />
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -1406,16 +1416,18 @@
           <!-- Contribuții buget stat — afisat permanent deasupra alertelor furnizori -->
           <div id="card-contributii-mobile" class="card-flow p-4">
             <!-- Header: click stânga toggle collapse, butoane dreapta independente -->
-            <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div class="flex items-center gap-2 cursor-pointer w-full sm:flex-1 min-w-0 select-none" onclick="toggleContributiiCollapse()">
-                <span class="w-2 h-2 rounded-full bg-orange-400 flex-shrink-0"></span>
-                <span class="text-[10px] font-black text-slate-600 uppercase tracking-wider">Contribuții Buget Stat</span>
-                <span id="cf-contributii" class="text-[0.85rem] font-black tabular-nums text-orange-600">0 lei</span>
-                <svg id="contributii-chevron" class="w-3 h-3 text-slate-400 transition-transform duration-200 ml-auto flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+            <div class="flex flex-col gap-2">
+              <div class="flex items-center justify-between gap-2 cursor-pointer min-h-[32px] select-none" onclick="toggleContributiiCollapse()">
+                <div class="flex items-center gap-2 min-w-0">
+                  <span class="w-2 h-2 rounded-full bg-orange-400 flex-shrink-0"></span>
+                  <span class="text-[0.85rem] font-black text-slate-600 uppercase tracking-wider">Contribuții Buget Stat</span>
+                  <span id="cf-contributii" class="text-[0.85rem] font-black tabular-nums text-orange-600">0 lei</span>
+                </div>
+                <svg id="contributii-chevron" class="w-3 h-3 text-slate-400 transition-transform duration-200 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
                 </svg>
               </div>
-              <div class="w-full sm:w-auto flex items-center justify-end gap-2 flex-wrap sm:flex-nowrap">
+              <div class="flex items-center justify-end gap-2 min-h-[32px]">
                 <button type="button"
                   data-action="deschideModalContributie"
                   class="text-[9px] font-black bg-orange-100 text-orange-700 px-3 py-1.5 rounded-lg hover:bg-orange-200 transition-all uppercase"
@@ -1564,7 +1576,7 @@
             <button type="button" data-action="exportComenziTransportCSV" title="Export CSV comenzi" class="flex-shrink-0 px-3 py-2.5 bg-slate-100 text-slate-600 rounded-2xl text-xs font-black uppercase shadow-sm border border-slate-200 hover:bg-slate-200 transition-all">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
             </button>
-            <button type="button" data-action="deschideModalComandaTransport" data-arg="" class="flex-shrink-0 px-4 py-2.5 bg-blue-900 text-white rounded-2xl text-xs font-black uppercase shadow-md" data-permission="edit">
+            <button type="button" data-action="deschideModalComandaTransport" data-arg="" class="zf-module-btn flex-shrink-0 px-4 py-2 bg-blue-900 text-white rounded-2xl text-xs font-black uppercase shadow-md" data-permission="edit">
               + Comandă
             </button>
           </div>
@@ -1586,13 +1598,13 @@
               <button type="button" data-action="exportSoferiCSV" title="Export CSV Șoferi" class="p-2 bg-slate-100 text-slate-600 rounded-xl border border-slate-200 hover:bg-slate-200 transition-all">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
               </button>
-              <button type="button" data-action="deschideModalSofer" data-arg="" class="px-4 py-2 bg-purple-700 text-white rounded-2xl text-xs font-black uppercase shadow-md" data-permission="edit">
+              <button type="button" data-action="deschideModalSofer" data-arg="" class="zf-module-btn px-4 py-2 bg-purple-700 text-white rounded-2xl text-xs font-black uppercase shadow-md" data-permission="edit">
                 + Șofer
               </button>
             </div>
           </div>
           <div class="relative text-slate-400">
-            <input type="text" id="search-soferi" oninput="filtreazaSoferi(this.value)" placeholder="Caută șofer după nume..." class="w-full h-10 pl-9 pr-4 bg-white rounded-2xl shadow-sm border border-slate-100 outline-none text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-purple-100 transition-all"/>
+            <input type="text" id="search-soferi" oninput="filtreazaSoferi(this.value)" placeholder="Caută șofer după nume..." class="zf-search-input w-full h-10 pl-9 pr-4 bg-white rounded-2xl shadow-sm border border-slate-100 outline-none text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-purple-100 transition-all"/>
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="absolute left-3 top-2.5 w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
           </div>
           <div id="logistic-soferi-list" class="space-y-2"></div>
@@ -1610,13 +1622,13 @@
               <button type="button" data-action="exportVehiculeCSV" title="Export CSV vehicule" class="p-2 bg-slate-100 text-slate-600 rounded-xl border border-slate-200 hover:bg-slate-200 transition-all">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
               </button>
-              <button type="button" data-action="deschideModalVehicul" data-arg="" class="px-4 py-2 bg-slate-800 text-white rounded-2xl text-xs font-black uppercase shadow-md" data-permission="edit">
+              <button type="button" data-action="deschideModalVehicul" data-arg="" class="zf-module-btn px-4 py-2 bg-slate-800 text-white rounded-2xl text-xs font-black uppercase shadow-md" data-permission="edit">
                 + Vehicul
               </button>
             </div>
           </div>
           <div class="relative text-slate-400">
-            <input type="text" id="search-vehicule" oninput="filtreazaVehicule(this.value)" placeholder="Caută după nr. înmatriculare sau marcă..." class="w-full h-10 pl-9 pr-4 bg-white rounded-2xl shadow-sm border border-slate-100 outline-none text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-slate-200 transition-all"/>
+            <input type="text" id="search-vehicule" oninput="filtreazaVehicule(this.value)" placeholder="Caută după nr. înmatriculare sau marcă..." class="zf-search-input w-full h-10 pl-9 pr-4 bg-white rounded-2xl shadow-sm border border-slate-100 outline-none text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-slate-200 transition-all"/>
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="absolute left-3 top-2.5 w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
           </div>
           <div id="logistic-vehicule-list" class="space-y-2"></div>
@@ -1713,7 +1725,7 @@
             <button type="button" data-action="exportProduseCSV" title="Export CSV produse" class="flex-shrink-0 px-3 py-2.5 bg-slate-100 text-slate-600 rounded-2xl text-xs font-black uppercase shadow-sm border border-slate-200 hover:bg-slate-200 transition-all">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
             </button>
-            <button type="button" data-action="deschideModalProdus" data-arg="" class="flex-shrink-0 px-4 py-2.5 bg-blue-900 text-white rounded-2xl text-xs font-black uppercase shadow-md" data-permission="edit">
+            <button type="button" data-action="deschideModalProdus" data-arg="" class="zf-module-btn flex-shrink-0 px-4 py-2 bg-blue-900 text-white rounded-2xl text-xs font-black uppercase shadow-md" data-permission="edit">
               + Produs
             </button>
           </div>
@@ -1725,12 +1737,12 @@
         <div id="depozit-view-miscari" class="hidden space-y-3">
           <div class="flex justify-between items-center">
             <p class="text-xs font-black text-slate-500 uppercase">Mișcări stoc</p>
-            <button type="button" data-action="deschideModalMiscare" data-arg="" class="px-4 py-2 bg-blue-900 text-white rounded-2xl text-xs font-black uppercase shadow-md" data-permission="edit">
+            <button type="button" data-action="deschideModalMiscare" data-arg="" class="zf-module-btn px-4 py-2 bg-blue-900 text-white rounded-2xl text-xs font-black uppercase shadow-md" data-permission="edit">
               + Mișcare
             </button>
           </div>
           <div class="relative text-slate-400">
-            <input type="text" id="search-miscari" oninput="filtreazaMiscari(this.value)" placeholder="Caută produs sau observații..." class="w-full h-10 pl-9 pr-4 bg-white rounded-2xl shadow-sm border border-slate-100 outline-none text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-blue-100 transition-all"/>
+            <input type="text" id="search-miscari" oninput="filtreazaMiscari(this.value)" placeholder="Caută produs sau observații..." class="zf-search-input w-full h-10 pl-9 pr-4 bg-white rounded-2xl shadow-sm border border-slate-100 outline-none text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-blue-100 transition-all"/>
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="absolute left-3 top-2.5 w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
           </div>
           <div id="depozit-lista-miscari" class="space-y-2"></div>
@@ -1745,13 +1757,13 @@
               <button type="button" data-action="exportProduseCSV" title="Export CSV produse" class="p-2 bg-slate-100 text-slate-600 rounded-xl border border-slate-200 hover:bg-slate-200 transition-all">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
               </button>
-              <button type="button" data-action="deschideModalReceptie" class="px-4 py-2 bg-emerald-700 text-white rounded-2xl text-xs font-black uppercase shadow-md" data-permission="edit">
+              <button type="button" data-action="deschideModalReceptie" class="zf-module-btn px-4 py-2 bg-emerald-700 text-white rounded-2xl text-xs font-black uppercase shadow-md" data-permission="edit">
                 + Recepție
               </button>
             </div>
           </div>
           <div class="relative text-slate-400">
-            <input type="text" id="search-receptii" oninput="filtreazaReceptii(this.value)" placeholder="Caută după furnizor..." class="w-full h-10 pl-9 pr-4 bg-white rounded-2xl shadow-sm border border-slate-100 outline-none text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-100 transition-all"/>
+            <input type="text" id="search-receptii" oninput="filtreazaReceptii(this.value)" placeholder="Caută după furnizor..." class="zf-search-input w-full h-10 pl-9 pr-4 bg-white rounded-2xl shadow-sm border border-slate-100 outline-none text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-100 transition-all"/>
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="absolute left-3 top-2.5 w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
           </div>
           <div id="depozit-lista-receptii" class="space-y-2"></div>
@@ -1765,13 +1777,13 @@
               <button type="button" data-action="exportMiscariStocCSV" title="Export CSV mișcări stoc" class="p-2 bg-slate-100 text-slate-600 rounded-xl border border-slate-200 hover:bg-slate-200 transition-all">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
               </button>
-              <button type="button" data-action="deschideModalLivrare" class="px-4 py-2 bg-blue-700 text-white rounded-2xl text-xs font-black uppercase shadow-md" data-permission="edit">
+              <button type="button" data-action="deschideModalLivrare" class="zf-module-btn px-4 py-2 bg-blue-700 text-white rounded-2xl text-xs font-black uppercase shadow-md" data-permission="edit">
                 + Livrare
               </button>
             </div>
           </div>
           <div class="relative text-slate-400">
-            <input type="text" id="search-livrari" oninput="filtreazaLivrari(this.value)" placeholder="Caută după client..." class="w-full h-10 pl-9 pr-4 bg-white rounded-2xl shadow-sm border border-slate-100 outline-none text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-blue-100 transition-all"/>
+            <input type="text" id="search-livrari" oninput="filtreazaLivrari(this.value)" placeholder="Caută după client..." class="zf-search-input w-full h-10 pl-9 pr-4 bg-white rounded-2xl shadow-sm border border-slate-100 outline-none text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-blue-100 transition-all"/>
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="absolute left-3 top-2.5 w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
           </div>
           <div id="depozit-lista-livrari" class="space-y-2"></div>
@@ -3307,11 +3319,11 @@
         </button>
         <button type="button" data-admin-only data-action="resetDateUnificat"
           class="w-full py-2.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-xl text-xs font-black uppercase transition-all">
-          ⚠️ Resetare Completă Date
+          <span class="inline-flex items-center gap-1.5"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86l-7.5 13A2 2 0 004.5 20h15a2 2 0 001.71-3.14l-7.5-13a2 2 0 00-3.42 0z"/></svg>Resetare Completă Date</span>
         </button>
         <button type="button" data-supabase-only data-action="resetDateUnificat"
           class="w-full py-2.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-xl text-xs font-black uppercase transition-all">
-          ⚠️ Resetare Date Cont
+          <span class="inline-flex items-center gap-1.5"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86l-7.5 13A2 2 0 004.5 20h15a2 2 0 001.71-3.14l-7.5-13a2 2 0 00-3.42 0z"/></svg>Resetare Date Cont</span>
         </button>
       </div>
     </div>
@@ -3408,7 +3420,7 @@
 
         <!-- Panel ștergere permanentă (ascuns inițial) -->
         <div id="admin-delete-panel" class="hidden bg-red-50 rounded-2xl border border-red-200 p-3 mb-3 space-y-2">
-          <p class="text-[9px] font-black text-red-700 uppercase">⚠️ Ștergere permanentă date</p>
+          <p class="text-[9px] font-black text-red-700 uppercase inline-flex items-center gap-1.5"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86l-7.5 13A2 2 0 004.5 20h15a2 2 0 001.71-3.14l-7.5-13a2 2 0 00-3.42 0z"/></svg>Ștergere permanentă date</p>
           <input type="email" id="admin-delete-email" readonly
             class="w-full p-2.5 bg-white rounded-lg text-xs font-bold border border-red-200 outline-none text-slate-600" />
           <p class="text-[9px] text-red-500">
