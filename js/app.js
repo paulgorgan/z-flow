@@ -2954,7 +2954,8 @@ async function importaContributiiCSV(input) {
     if (lines.length < 2) { showNotification('Fișier CSV gol sau fără date.', 'error'); return; }
     const headers = lines[0].split(/[,;]/).map(h => h.trim().toLowerCase().replace(/['"]/g, ''));
     const idx = k => headers.indexOf(k);
-    let importate = 0, erori = 0;
+    let importate = 0, actualizate = 0, erori = 0;
+    const contributiiExistente = [...(ZFlowStore.dateContributii || [])];
     for (let i = 1; i < lines.length; i++) {
         const cols = lines[i].split(/[,;]/).map(c => c.trim().replace(/^["']|["']$/g, ''));
         const suma = parseFloat((cols[idx('suma')] || '').replace(',', '.'));
@@ -2967,7 +2968,28 @@ async function importaContributiiCSV(input) {
             achitat:    ['da','true','1','yes'].includes((cols[idx('achitat')] || '').toLowerCase()),
             observatii: cols[idx('observatii')] || null,
         };
-        try { await ZFlowDB.insertContributie(payload); importate++; } catch(e) { erori++; }
+        try {
+            const tipNorm = String(payload.tip || '').trim().toLowerCase();
+            const lunaNorm = String(payload.luna || '').trim();
+            const existent = contributiiExistente.find(c =>
+                String(c.tip || '').trim().toLowerCase() === tipNorm &&
+                String(c.luna || '').trim() === lunaNorm
+            );
+
+            if (existent?.id) {
+                await ZFlowDB.updateContributie(existent.id, payload);
+                Object.assign(existent, payload);
+                actualizate++;
+            } else {
+                const noua = await ZFlowDB.insertContributie(payload);
+                if (noua && typeof noua === 'object') {
+                    contributiiExistente.push({ ...payload, ...noua });
+                } else {
+                    contributiiExistente.push(payload);
+                }
+                importate++;
+            }
+        } catch(e) { erori++; }
     }
     ZFlowStore.dateContributii = await ZFlowDB.fetchContributii() || [];
     invalidateCashflowCache();
@@ -2984,7 +3006,8 @@ async function importaContributiiCSV(input) {
     if (typeof incarcaDashboard === 'function') incarcaDashboard();
     // 6. Badge scadențe bell + alerte home
     if (typeof verificaScadenteNotificari === 'function') verificaScadenteNotificari();
-    showNotification(`Import contribuții: ${importate} adăugate${erori > 0 ? `, ${erori} erori` : ''}.`, importate > 0 ? 'success' : 'error');
+    const msgActualizate = actualizate > 0 ? `, ${actualizate} actualizate` : '';
+    showNotification(`Import contribuții: ${importate} adăugate${msgActualizate}${erori > 0 ? `, ${erori} erori` : ''}.`, (importate > 0 || actualizate > 0) ? 'success' : 'error');
 }
 window.importaContributiiCSV = importaContributiiCSV;
 
@@ -6399,7 +6422,7 @@ async function exportaPDF() {
             luniMap[l].net = (luniMap[l].clienti || 0) - (luniMap[l].furnizori || 0) - (luniMap[l].contributii || 0);
         });
 
-        if (luni.length >= 2) {
+        if (luni.length >= 1) {
             doc.addPage();
             const chartStartY = 20;
             const chartW = 182;
@@ -6444,8 +6467,13 @@ async function exportaPDF() {
             const drawSeries = (points, color, width) => {
                 doc.setDrawColor(color[0], color[1], color[2]);
                 doc.setLineWidth(width);
-                for (let i = 1; i < points.length; i++) {
-                    doc.line(points[i - 1].x, points[i - 1].y, points[i].x, points[i].y);
+                if (points.length === 1) {
+                    const p = points[0];
+                    doc.line(Math.max(marginL, p.x - 4), p.y, Math.min(marginL + chartW, p.x + 4), p.y);
+                } else {
+                    for (let i = 1; i < points.length; i++) {
+                        doc.line(points[i - 1].x, points[i - 1].y, points[i].x, points[i].y);
+                    }
                 }
                 points.forEach((p) => {
                     doc.setFillColor(color[0], color[1], color[2]);

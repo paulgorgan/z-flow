@@ -503,6 +503,8 @@ async function insertFactura(payload, strict = false) {
     } catch(e) {
         if (strict) throw e;
         ZFlowLogger.warn('supabase', '[insertFactura] Supabase failed, fallback local:', e.message);
+        // [UX-FIX P3] Notifică utilizatorul că salvarea în cloud a eșuat
+        if (typeof window.showNotification === 'function') window.showNotification('⚠ Factură salvată temporar local — reconectare necesară pentru sincronizare Supabase.', 'warning', 7000);
         _demoOps.insertFactura(payload);
     }
 }
@@ -561,6 +563,8 @@ async function insertClient(payload, strict = false) {
         }
         if (strict) throw e;
         ZFlowLogger.warn('supabase', '[insertClient] Supabase failed, fallback local:', e.message);
+        // [UX-FIX P3] Notifică utilizatorul că salvarea în cloud a eșuat
+        if (typeof window.showNotification === 'function') window.showNotification('⚠ Client salvat temporar local — reconectare necesară pentru sincronizare Supabase.', 'warning', 7000);
         return _demoOps.insertClient(payload);
     }
 }
@@ -847,6 +851,8 @@ async function insertFurnizor(payload, strict = false) {
         }
         if (strict) throw e;
         ZFlowLogger.warn('supabase', '[insertFurnizor] Supabase failed, fallback local:', e.message);
+        // [UX-FIX P3] Notifică utilizatorul că salvarea în cloud a eșuat
+        if (typeof window.showNotification === 'function') window.showNotification('⚠ Furnizor salvat temporar local — reconectare necesară pentru sincronizare Supabase.', 'warning', 7000);
         return _demoOps.insertFurnizor(payload);
     }
 }
@@ -923,6 +929,8 @@ async function insertFacturaPlatit(payload, strict = false) {
     } catch(e) {
         if (strict) throw e;
         ZFlowLogger.warn('supabase', '[insertFacturaPlatit] Supabase failed, fallback local:', e.message);
+        // [UX-FIX P3] Notifică utilizatorul că salvarea în cloud a eșuat
+        if (typeof window.showNotification === 'function') window.showNotification('⚠ Factură furnizor salvată temporar local — reconectare necesară pentru sincronizare Supabase.', 'warning', 7000);
         return _demoOps.insertFacturaPlatit(payload);
     }
 }
@@ -1624,6 +1632,7 @@ async function updateContributie(id, payload) {
             if (idx >= 0) window.ZFlowStore.dateContributii[idx] = { ...window.ZFlowStore.dateContributii[idx], ...payload };
             return;
         }
+        // [SEC-FIX P2] user_id filter — consistent cu toate celelalte update-uri din aplicație
         const uid = _getCurrentUserId();
         const { error } = await zf.from('contributii_buget').update(payload).eq('id', id).eq('user_id', uid);
         if (error) throw error;
@@ -1638,6 +1647,7 @@ async function deleteContributie(id) {
             window.ZFlowStore.dateContributii = (window.ZFlowStore.dateContributii || []).filter(x => x.id !== id);
             return;
         }
+        // [SEC-FIX P2] user_id filter — consistent cu toate celelalte delete-uri din aplicație
         const uid = _getCurrentUserId();
         const { error } = await zf.from('contributii_buget').delete().eq('id', id).eq('user_id', uid);
         if (error) throw error;
