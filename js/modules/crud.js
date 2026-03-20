@@ -486,6 +486,7 @@ async function salveazaFacturaPlatit() {
             const fpIdx = (ZFlowStore.dateFacturiPlatit || []).findIndex(f => String(f.id) === String(id));
             if (fpIdx !== -1) ZFlowStore.dateFacturiPlatit[fpIdx] = { ...ZFlowStore.dateFacturiPlatit[fpIdx], ...payload };
             showNotification("Factură actualizată!", "success");
+            if (typeof ZFlowMobile !== 'undefined') ZFlowMobile.vibrate(30);
         } else {
             const newId = await ZFlowDB.insertFacturaPlatit(payload);
             ZFlowStore.dateFacturiPlatit = [
@@ -493,6 +494,7 @@ async function salveazaFacturaPlatit() {
                 ...(ZFlowStore.dateFacturiPlatit || [])
             ];
             showNotification("Factură adăugată!", "success");
+            if (typeof ZFlowMobile !== 'undefined') ZFlowMobile.vibrate(30);
         }
 
         inchideModal("modal-factura-platit");

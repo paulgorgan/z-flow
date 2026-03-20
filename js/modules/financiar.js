@@ -883,6 +883,7 @@ async function salveazaFurnizor() {
             const fIdx = ZFlowStore.dateFurnizori.findIndex(f => String(f.id) === String(id));
             if (fIdx !== -1) ZFlowStore.dateFurnizori[fIdx] = { ...ZFlowStore.dateFurnizori[fIdx], ...payload };
             showNotification("Furnizor actualizat!", "success");
+            if (typeof ZFlowMobile !== 'undefined') ZFlowMobile.vibrate(30);
         } else {
             const newId = await ZFlowDB.insertFurnizor(payload);
             // [QUALITY-FIX] FIX 6 — insert optimist în store, fără re-fetch din DB
@@ -891,6 +892,7 @@ async function salveazaFurnizor() {
                 ...ZFlowStore.dateFurnizori
             ];
             showNotification("Furnizor adăugat!", "success");
+            if (typeof ZFlowMobile !== 'undefined') ZFlowMobile.vibrate(30);
         }
 
         inchideModal("modal-furnizor");
@@ -1178,6 +1180,7 @@ async function salveazaFacturaNou() {
                 updated_at: new Date().toISOString()
             });
             showNotification("Factură de încasat adăugată!", "success");
+            if (typeof ZFlowMobile !== 'undefined') ZFlowMobile.vibrate(30);
         } else {
             const furnizorId = document.getElementById("fn-fac-furnizor").value;
             if (!furnizorId) { showNotification("Selectează un furnizor!", "error"); setLoader(false); return; }
@@ -1192,6 +1195,7 @@ async function salveazaFacturaNou() {
                 updated_at: new Date().toISOString()
             });
             showNotification("Factură de plătit adăugată!", "success");
+            if (typeof ZFlowMobile !== 'undefined') ZFlowMobile.vibrate(30);
         }
         inchideModal("modal-factura-nou");
         await init(false);

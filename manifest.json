@@ -2,7 +2,7 @@
   "name": "Z-FLOW Enterprise V2",
   "short_name": "Z-FLOW V2",
   "description": "Enterprise Business Support App - Refactored Modular Version",
-  "version": "8.0.0",
+  "version": "72.7",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f1f5f9",
@@ -64,6 +64,18 @@
           "sizes": "any"
         }
       ]
+    },
+    {
+      "name": "Furnizori",
+      "short_name": "Furnizori",
+      "url": "./index.html#financiar",
+      "icons": [{ "src": "icons/icon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Analiză BI",
+      "short_name": "Analiză",
+      "url": "./index.html#analiza",
+      "icons": [{ "src": "icons/icon.svg", "sizes": "any" }]
     }
   ]
 }

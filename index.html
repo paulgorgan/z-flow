@@ -382,7 +382,6 @@
               — lei
             </p>
             <div class="flex items-center gap-1.5 mt-0.5">
-              <p class="text-[7px] font-bold text-slate-400 uppercase tracking-wide">Ultimele 30 zile</p>
               <span id="home-kpi-facturat-trend" class="text-[7px] font-black"></span>
             </div>
           </div>
@@ -419,7 +418,6 @@
               — lei
             </p>
             <div class="flex items-center gap-1.5 mt-0.5">
-              <p class="text-[7px] font-bold text-slate-400 uppercase tracking-wide">Suma efectiv încasată</p>
               <span id="home-kpi-neincasat-trend" class="text-[7px] font-black"></span>
             </div>
           </div>
@@ -446,7 +444,7 @@
               </div>
               <span
                 class="text-[8px] font-black text-slate-400 uppercase tracking-wider leading-none"
-                >De plătit</span
+                >Furnizori de plătit</span
               >
             </div>
             <p
@@ -456,7 +454,7 @@
               — lei
             </p>
             <div class="flex items-center gap-1.5 mt-0.5">
-              <p class="text-[7px] font-bold text-slate-400 uppercase tracking-wide">Neplătit 30 zile</p>
+              <p class="text-[7px] font-bold text-slate-400 uppercase tracking-wide">Facturi · 30 zile</p>
               <span id="home-kpi-neplatit-trend" class="text-[7px] font-black"></span>
             </div>
           </div>
@@ -483,7 +481,7 @@
               </div>
               <span
                 class="text-[8px] font-black text-slate-400 uppercase tracking-wider leading-none"
-                >Cashflow Net</span
+                >Cashflow 30 zile</span
               >
             </div>
             <p
@@ -508,6 +506,11 @@
             Scadențe
           </p>
           <div id="home-alerte-list" class="space-y-2"></div>
+          <button
+            onclick="schimbaTab('financiar', document.getElementById('nav-btn-fin'))"
+            id="home-alerte-btn-financiar"
+            class="hidden w-full mt-1 text-[9px] font-black text-blue-600 uppercase tracking-widest text-center py-2 hover:text-blue-800 transition-colors"
+          >Vezi toate scadențele →</button>
         </div>
 
 
@@ -1112,7 +1115,7 @@
               type="text"
               id="search-bi"
               oninput="filtreazaFirmeInBI()"
-              placeholder="Caută în lista de facturi..."
+              placeholder="Caută firmă sau nr. factură..."
               class="zf-search-input flex-1 p-3 bg-white rounded-xl text-[10px] italic outline-none border border-slate-200 focus:border-blue-200 shadow-sm transition-all"
             />
             <button type="button"

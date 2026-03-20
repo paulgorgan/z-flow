@@ -841,9 +841,13 @@ async function verificaAuth() {
             try {
                 const _planInfo = JSON.parse(_pendingPlan);
                 await ZFlowDB.upsertProfile(_planInfo);
+                // [FIX v72.7] Şterge pending_plan DOAR dacă upsert a reușit
                 localStorage.removeItem('zflow_pending_plan');
+                ZFlowLogger.debug('app', '[Login] Plan pending aplicat cu succes:', _planInfo.plan_type);
             } catch(_planErr) {
-                ZFlowLogger.warn('app', '[Login] Aplicare plan pending non-fatală:', _planErr.message);
+                // [FIX v72.7] NU șterge pending_plan la eroare — va fi reîncercat la login următor
+                ZFlowLogger.warn('app', '[Login] Aplicare plan pending eșuată — se va reîncerca la login următor:', _planErr.message);
+                showNotification('Planul de abonament va fi activat la următoarea conectare.', 'warning', 5000);
             }
         }
 
@@ -1069,11 +1073,13 @@ async function inregistrareUtilizator() {
 
         // Salvează info plan în localStorage — va fi aplicat la primul login
         // (necesar când email confirmation e activă și PASUL 5 nu are sesiune)
+        // [FIX v72.7] Adaugă onboarding_done:false explicit și timestamp pentru debug
         localStorage.setItem('zflow_pending_plan', JSON.stringify({
             display_name: nume || null,
             plan_type: tokenInfo.plan_type,
             subscription_expires_at: expiresAt.toISOString(),
-            subscription_token: codToken
+            subscription_token: codToken,
+            _savedAt: new Date().toISOString()
         }));
 
         // PASUL 5: Salvează planul în profil
@@ -1351,6 +1357,15 @@ async function deschideProfilFirma() {
                 // Admin local: nu are sesiune Supabase, afișăm emailul din store
                 emailDisplay.textContent = ZFlowStore.userSession?.user?.email || '—';
             }
+        }
+
+        // [FIX v72.7] Reîncarcă profilul din Supabase la fiecare deschidere
+        // — garanteață că datele afișate sunt cele mai recente din DB, nu din cache local
+        try {
+            const _freshProfile = await ZFlowDB.fetchProfile();
+            if (_freshProfile) ZFlowStore.userProfile = _freshProfile;
+        } catch(_fpErr) {
+            ZFlowLogger.warn('app', '[ProfilFirma] fetchProfile la deschidere non-fatal:', _fpErr.message);
         }
 
         const profileToLoad = ZFlowStore.userProfile;
@@ -1741,6 +1756,7 @@ function schimbaTab(id, btn) {
 
     if (id === "home") { _dashboardHash = null; incarcaDashboard(); }
 
+    history.pushState({ zflowView: id }, '', location.pathname);
     ZFlowStore.currentTab = id;
 }
 
@@ -2026,14 +2042,10 @@ function incarcaDashboard() {
     const neincasat = facturiIncasat30.filter(f => f.status_plata === "Incasat").reduce((s, f) => s + (Number(f.valoare) || 0), 0);
     // KPI 3: De PLĂTIT — neplătit furnizori, primit în ultimele 30 zile
     const neplatit = facturiPlatit30.filter(f => f.status_plata !== "Platit").reduce((s, f) => s + (Number(f.valoare) || 0), 0);
-    // KPI 4: Cashflow NET 30 zile = încasat efectiv - plătit efectiv - contribuții buget neachitate
+    // KPI 4: Cashflow NET 30 zile = încasat efectiv - plătit efectiv
     const incasat30Efectiv = facturiIncasat30.filter(f => f.status_plata === "Incasat").reduce((s, f) => s + (Number(f.valoare) || 0), 0);
     const platit30Efectiv  = facturiPlatit30.filter(f => f.status_plata === "Platit").reduce((s, f) => s + (Number(f.valoare) || 0), 0);
-    // Contribuții buget stat neachitate (preluate automat în Home, independent de Analiză)
-    const contributii30 = (ZFlowStore.dateContributii || []).filter(c => {
-        return !c.achitat;
-    }).reduce((s, c) => s + (Number(c.suma) || 0), 0);
-    const net = incasat30Efectiv - platit30Efectiv - contributii30;
+    const net = incasat30Efectiv - platit30Efectiv;
 
     const fmt = (v) => new Intl.NumberFormat("ro-RO", { style: "currency", currency: "RON", maximumFractionDigits: 0 }).format(v);
 
@@ -2050,8 +2062,8 @@ function incarcaDashboard() {
     // [FIX B4] Net 30 breakdown: afișează componentele de incasat și de plătit
     const elNetBreakdown = document.getElementById("home-kpi-net-breakdown");
     if (elNetBreakdown) {
-        if (incasat30Efectiv > 0 || platit30Efectiv > 0 || contributii30 > 0) {
-            elNetBreakdown.innerText = `\u2191 ${Math.round(incasat30Efectiv).toLocaleString()} / \u2193 ${Math.round(platit30Efectiv).toLocaleString()} / Buget ${Math.round(contributii30).toLocaleString()} lei`;
+        if (incasat30Efectiv > 0 || platit30Efectiv > 0) {
+            elNetBreakdown.innerText = `Încasat ${Math.round(incasat30Efectiv).toLocaleString()} · Plătit ${Math.round(platit30Efectiv).toLocaleString()} lei`;
         } else {
             elNetBreakdown.innerText = 'Net total';
         }
@@ -2383,6 +2395,10 @@ function _updateHomeAlerteSummary(clientiRestanti, furnizoriRestanti, totalCliVa
     const nrFurnR = (furnizoriRestanti || []).length;
     const nrCtb  = (contributiiScadente || []).length;
     const total   = nrClR + nrFurnR + nrCtb;
+
+    // [Îmbunătățire v72.7] Afișeață butonul „Vezi scadențele” doar când există alerte
+    const _btnFinanciar = document.getElementById('home-alerte-btn-financiar');
+    if (_btnFinanciar) _btnFinanciar.classList.toggle('hidden', total === 0);
 
     if (total === 0) {
         // Stare OK — verde
@@ -4066,6 +4082,11 @@ function genereazaBI() {
         const client = ZFlowStore.dateLocal.find((c) => String(c.id) === String(f.client_id));
         const isIncasat = f.status_plata === "Incasat";
         const isSelected = ZFlowStore.bulkSelectedFacturi.includes(String(f.id));
+        // [Îmbunătățire v72.7] Badge scadență pentru cardurile clienți — același comportament ca furnizorii
+        const _dScadBI = f.data_scadenta ? new Date(f.data_scadenta + 'T00:00:00') : null;
+        const _aziBI = new Date(); _aziBI.setHours(0,0,0,0);
+        const isDepasitBI = !isIncasat && _dScadBI && _dScadBI < _aziBI;
+        const isIminentBI = !isIncasat && _dScadBI && !isDepasitBI && _dScadBI >= _aziBI && _dScadBI <= new Date(+_aziBI + 5 * 86400000);
         const checkboxHtml = ZFlowStore.bulkMode ? `
             <input type="checkbox" class="bulk-checkbox w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer" 
                    data-factura-id="${f.id}" 
@@ -4075,13 +4096,13 @@ function genereazaBI() {
         const pdfLink = pdfUrls.length > 0 ? `<a href="${pdfUrls[0]}" target="_blank" onclick="event.stopPropagation()" class="text-blue-400 flex-shrink-0"><svg class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path d="M9 2a2 2 0 00-2 2v8a2 2 0 002 2h6a2 2 0 002-2V6.414A2 2 0 0016.414 5L14 2.586A2 2 0 0012.586 2H9z"/></svg></a>` : '';
         return `<div class="flex items-center gap-2 px-3 py-2 rounded-xl mb-1 border ${isIncasat ? 'bg-white border-slate-100' : 'bg-red-50/40 border-red-100'} ${isSelected ? 'ring-2 ring-blue-500' : ''} cursor-pointer hover:shadow-sm transition-all" data-client-id="${f.client_id}" data-factura-id="${f.id}" ${ZFlowStore.bulkMode ? `onclick="toggleBulkSelectFactura('${f.id}')"` : ''}>
             ${checkboxHtml}
-            <span class="w-1.5 h-1.5 rounded-full flex-shrink-0 ${isIncasat ? 'bg-emerald-400' : 'bg-red-400'}"></span>
+            <span class="w-1.5 h-1.5 rounded-full flex-shrink-0 ${isIncasat ? 'bg-emerald-400' : isDepasitBI ? 'bg-red-500 animate-pulse' : isIminentBI ? 'bg-amber-400' : 'bg-red-400'}"></span>
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-1.5">
                 <span class="text-[10px] font-black text-slate-800 uppercase truncate">${escapeHtml(client?.nume_firma || 'Client')}</span>
                 ${pdfLink}
               </div>
-              <span class="text-[8px] text-slate-400 font-semibold">#${escapeHtml(f.numar_factura)} &middot; ${formateazaDataZFlow(f.data_emiterii)}${f.data_scadenta ? ' &middot; S: ' + formateazaDataZFlow(f.data_scadenta) : ''}</span>
+              <span class="text-[8px] font-semibold ${isDepasitBI ? 'text-red-500' : isIminentBI ? 'text-amber-500' : 'text-slate-400'}">#${escapeHtml(f.numar_factura)} &middot; ${formateazaDataZFlow(f.data_emiterii)}${f.data_scadenta ? ' &middot; S: ' + formateazaDataZFlow(f.data_scadenta) : ''}</span>
             </div>
             <b class="text-[0.875rem] font-semibold flex-shrink-0 ${isIncasat ? 'text-blue-900' : 'text-red-600'} tabular-nums">${Math.round(Number(f.valoare) || 0).toLocaleString()} lei</b>
         </div>`;
@@ -7808,7 +7829,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ── PWA Back Button Handler ──────────────────────────────────────────
     // Intrare inițială în history fără hash (URL curat)
-    history.replaceState({ zflowView: 'firme' }, '', location.pathname);
+    history.replaceState({ zflowView: 'home' }, '', location.pathname);
 
     // Variabilă pentru double-back-to-exit
     let _backPressedOnce = false;
@@ -7850,7 +7871,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (tabActiv !== 'home') {
             const homeBtn = document.getElementById('nav-btn-home');
             if (typeof schimbaTab === 'function') schimbaTab('home', homeBtn);
-            history.pushState({ zflowView: 'home' }, '', location.pathname);
             return;
         }
 
@@ -8230,6 +8250,9 @@ document.addEventListener('DOMContentLoaded', () => {
  * Alt+K → caută clienți (focus search)
  * Alt+D → toggle dark mode
  * Alt+E → exportă CSV date curente (clienți)
+ * Alt+H → navigheață la Home
+ * Alt+F → navigheață la Financiar
+ * Alt+A → navigheață la Analiză BI
  */
 document.addEventListener('keydown', function(e) {
     // Ignoră dacă utilizatorul tastează într-un input/textarea/select
@@ -8270,6 +8293,25 @@ document.addEventListener('keydown', function(e) {
                 if (!inInput) {
                     e.preventDefault();
                     exportaCSV('clienti');
+                }
+                break;
+            case 'h': // Alt+H → Navigheață la Home
+                if (!inInput) {
+                    e.preventDefault();
+                    if (typeof schimbaTab === 'function') schimbaTab('home', document.getElementById('nav-btn-home'));
+                }
+                break;
+            case 'f': // Alt+F → Navigheață la Financiar (Furnizori/Clienți)
+                if (!inInput) {
+                    e.preventDefault();
+                    if (typeof schimbaTab === 'function') schimbaTab('financiar', document.getElementById('nav-btn-fin'));
+                }
+                break;
+            case 'a': // Alt+A → Navigheață la Analiză BI
+                if (!inInput) {
+                    e.preventDefault();
+                    if (typeof schimbaTab === 'function') schimbaTab('financiar', document.getElementById('nav-btn-fin'));
+                    if (typeof comutaVedereFin === 'function') comutaVedereFin('analiza');
                 }
                 break;
         }
