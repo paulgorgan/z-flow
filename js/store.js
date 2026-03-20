@@ -338,6 +338,11 @@ function loadTheme() {
 }
 
 /**
+ * @deprecated Versiunea completă (cu actualizare icoană + toast) se află în app.js.
+ * La runtime, versiunea din app.js suprascrie aceasta (app.js se încarcă după store.js).
+ * Această versiune rămâne pentru compatibilitate — nu o șterge.
+ */
+/**
  * Toggle Dark Mode
  */
 function toggleDarkMode() {

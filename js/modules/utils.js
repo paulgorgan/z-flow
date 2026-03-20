@@ -30,6 +30,11 @@ function debounce(func, delay) {
 }
 
 /**
+ * @deprecated Folosiți versiunea din app.js care suportă T12:00:00 (fus orar corect)
+ * și returnează anul cu 4 cifre. Această versiune returnează anul cu 2 cifre (ex: "26").
+ * La runtime, versiunea din app.js suprascrie aceasta (app.js se încarcă după utils.js).
+ */
+/**
  * Formatează data în format ZZ/LL/AA
  * @param {string} dataString - Data în format ISO
  * @returns {string} Data formatată

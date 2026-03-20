@@ -2941,19 +2941,21 @@ window.salveazaContributie = salveazaContributie;
 async function stergeContributie() {
     const id = document.getElementById('ctb-id')?.value?.trim();
     if (!id) return;
-    if (!confirm('Ștergeți această contribuție?')) return;
-    try {
-        await ZFlowDB.deleteContributie(id);
-        ZFlowStore.dateContributii = await ZFlowDB.fetchContributii() || [];
-        invalidateCashflowCache();
-        calculeazaCashflow();
-        if (typeof updateFurnizoriKPI === 'function') updateFurnizoriKPI();
-        inchideModal('modal-contributie');
-        showNotification('Contribuție ștearsă.', 'success');
-    } catch (err) {
-        ZFlowLogger.error('ctb', 'Eroare ștergere contribuție:', err);
-        showNotification('Eroare la ștergere. Verificați consola.', 'error');
-    }
+    // [FIX v72.9] confirm() nativ înlocuit cu showConfirmModal() — non-blocant pe PWA
+    showConfirmModal('Ștergeți această contribuție?', async () => {
+        try {
+            await ZFlowDB.deleteContributie(id);
+            ZFlowStore.dateContributii = await ZFlowDB.fetchContributii() || [];
+            invalidateCashflowCache();
+            calculeazaCashflow();
+            if (typeof updateFurnizoriKPI === 'function') updateFurnizoriKPI();
+            inchideModal('modal-contributie');
+            showNotification('Contribuție ștearsă.', 'success');
+        } catch (err) {
+            ZFlowLogger.error('ctb', 'Eroare ștergere contribuție:', err);
+            showNotification('Eroare la ștergere. Verificați consola.', 'error');
+        }
+    });
 }
 window.stergeContributie = stergeContributie;
 
@@ -5009,48 +5011,49 @@ async function bulkMarkPaid() {
     }
     
     const count = ZFlowStore.bulkSelectedFacturi.length;
-    if (!confirm(`Marchezi ${count} facturi ca ÎNCASATE?`)) return;
-    
-    setLoader(true);
-    let success = 0;
-    let failed = 0;
-    
-    for (const facturaId of ZFlowStore.bulkSelectedFacturi) {
-        try {
-            await ZFlowDB.updateFactura(facturaId, { 
-                status_plata: "Incasat",
-                data_incasarii: new Date().toISOString().split('T')[0]
-            });
-            
-            // Update local — caută în ambele colecții (clienti + furnizori)
-            const facturaClient = ZFlowStore.dateFacturiBI.find(f => String(f.id) === String(facturaId));
-            if (facturaClient) {
-                facturaClient.status_plata = "Incasat";
-                facturaClient.data_incasarii = new Date().toISOString().split('T')[0];
+    // [FIX v72.9] confirm() nativ înlocuit cu showConfirmModal() — non-blocant pe PWA
+    showConfirmModal(`Marchezi ${count} facturi ca ÎNCASATE?`, async () => {
+        setLoader(true);
+        let success = 0;
+        let failed = 0;
+        
+        for (const facturaId of ZFlowStore.bulkSelectedFacturi) {
+            try {
+                await ZFlowDB.updateFactura(facturaId, { 
+                    status_plata: "Incasat",
+                    data_incasarii: new Date().toISOString().split('T')[0]
+                });
+                
+                // Update local — caută în ambele colecții (clienti + furnizori)
+                const facturaClient = ZFlowStore.dateFacturiBI.find(f => String(f.id) === String(facturaId));
+                if (facturaClient) {
+                    facturaClient.status_plata = "Incasat";
+                    facturaClient.data_incasarii = new Date().toISOString().split('T')[0];
+                }
+                const facturaFurnizor = (ZFlowStore.dateFacturiPlatit || []).find(f => String(f.id) === String(facturaId));
+                if (facturaFurnizor) {
+                    facturaFurnizor.status_plata = "Incasat";
+                    facturaFurnizor.data_incasarii = new Date().toISOString().split('T')[0];
+                }
+                success++;
+            } catch (err) {
+                ZFlowLogger.error('app', "Eroare bulk update:", err);
+                failed++;
             }
-            const facturaFurnizor = (ZFlowStore.dateFacturiPlatit || []).find(f => String(f.id) === String(facturaId));
-            if (facturaFurnizor) {
-                facturaFurnizor.status_plata = "Incasat";
-                facturaFurnizor.data_incasarii = new Date().toISOString().split('T')[0];
-            }
-            success++;
-        } catch (err) {
-            ZFlowLogger.error('app', "Eroare bulk update:", err);
-            failed++;
         }
-    }
-    
-    setLoader(false);
-    ZFlowStore.bulkSelectedFacturi = [];
-    toggleBulkMode();
-    genereazaBI();
-    updateDashboardKPI();
-    
-    if (failed === 0) {
-        showNotification(`${success} facturi marcate ca încasate`, "success");
-    } else {
-        showNotification(`${success} reușite, ${failed} eșuate`, "warning");
-    }
+        
+        setLoader(false);
+        ZFlowStore.bulkSelectedFacturi = [];
+        toggleBulkMode();
+        genereazaBI();
+        updateDashboardKPI();
+        
+        if (failed === 0) {
+            showNotification(`${success} facturi marcate ca încasate`, "success");
+        } else {
+            showNotification(`${success} reușite, ${failed} eșuate`, "warning");
+        }
+    });
 }
 
 /**
