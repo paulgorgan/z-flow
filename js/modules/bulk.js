@@ -133,11 +133,9 @@ const ZFlowBulk = {
         const facturi = this.getSelected();
         if (facturi.length === 0) return { success: 0, errors: 0 };
 
-        const confirmed = confirm(
-            `Ștergi definitiv ${facturi.length} factur${facturi.length === 1 ? 'ă' : 'i'}? Acțiunea este ireversibilă.`
-        );
-        if (!confirmed) return { success: 0, errors: 0 };
-
+        showConfirmModal(
+            `Ștergi definitiv ${facturi.length} factur${facturi.length === 1 ? 'ă' : 'i'}? Acțiunea este ireversibilă.`,
+            async () => {
         if (typeof setLoader === 'function') setLoader(true);
 
         const rezultate = await Promise.allSettled(
@@ -172,8 +170,8 @@ const ZFlowBulk = {
                 : `${success} facturi șterse`,
             errors > 0 ? 'warning' : 'success'
         );
-
-        return { success, errors };
+            }
+        );
     },
 
     /**

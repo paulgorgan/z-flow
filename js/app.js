@@ -731,6 +731,8 @@ async function verificaAuth() {
     setLoader(true);
     
     // ADMIN: Acces complet, fără restricții demo
+    // SECURITATE: parola admin este stocată în localStorage doar pentru modul offline (no-backend).
+    // Nu stocați parole sensibile în localStorage în aplicații cu backend real.
     const _adminStoredPass = localStorage.getItem('zflow_ad_admin_password') || '1234';
     if (email === "admin" && pass === _adminStoredPass) {
         // Curăță localStorage-ul rezidual din sesiuni Supabase anterioare
@@ -2214,35 +2216,6 @@ function incarcaDashboard() {
         }
     }
 
-    // ── Trend indicatori KPI ──
-    const lunaPrec = new Date(azi.getFullYear(), azi.getMonth() - 1, 1);
-    const lunaPrec_sfarsit = new Date(azi.getFullYear(), azi.getMonth(), 0);  // ultima zi luna precedenta
-    lunaPrec_sfarsit.setHours(23, 59, 59, 999);
-    const inLunaPrecedenta = (f) => {
-        const d = parseDataFactura(f.data_emiterii);
-        return d && d >= lunaPrec && d <= lunaPrec_sfarsit;
-    };
-    const totalFacturatPrec = facturiIncasat.filter(inLunaPrecedenta).reduce((s, f) => s + (Number(f.valoare) || 0), 0);
-    const trendPct = totalFacturatPrec > 0 ? Math.round(((totalFacturat - totalFacturatPrec) / totalFacturatPrec) * 100) : null;
-
-    const setTrend = (id, pct, pozitivBun = true) => {
-        const el = document.getElementById(id);
-        if (!el) return;
-        if (pct === null) { el.innerText = ''; return; }
-        const up = pct >= 0;
-        const good = pozitivBun ? up : !up;
-        const color = good ? 'text-emerald-600' : 'text-red-500';
-        el.className = `text-[7px] font-black ${color}`;
-        el.innerText = (up ? '↑' : '↓') + ' ' + Math.abs(pct) + '%';
-    };
-    setTrend('home-kpi-facturat-trend', trendPct, true);
-
-    // [R18] Trend: creștere încasări e BUNĂ (pozitivBun = true)
-    const neincasatPrec = facturiIncasat.filter(inLunaPrecedenta).filter(f => f.status_plata === 'Incasat')
-        .reduce((s, f) => s + (Number(f.valoare) || 0), 0);
-    const trendNeincasat = neincasatPrec > 0 ? Math.round(((neincasat - neincasatPrec) / neincasatPrec) * 100) : null;
-    setTrend('home-kpi-neincasat-trend', trendNeincasat, true);
-
     // Cashflow chart — ultimele 30 de zile (rolling window, se actualizează zilnic)
     const labels = [];
     const datriIntrari = [];
@@ -2317,15 +2290,15 @@ function incarcaDashboard() {
         else { el.innerText = '\u2014'; el.className = 'text-[7px] font-black text-slate-400'; }
     };
     _setTrend('home-kpi-facturat-trend',  totalFacturat, prevF);
-    // [R18] prevNI = încasat efectiv din perioada anterioară (nu restanțe)
-    const prevIncasatEfPrec = _fp.filter(f => f.status_plata === 'Incasat').reduce((s, f) => s + (Number(f.valoare)||0), 0);
-    _setTrend('home-kpi-neincasat-trend', neincasat, prevIncasatEfPrec);
+    // [v73.2] Trend încasat: folosim același baseline prevF ca și facturat — vizibil când există facturi în fereastra 30-60 zile
+    _setTrend('home-kpi-neincasat-trend', neincasat, prevF);
     _setTrend('home-kpi-neplatit-trend',  neplatit, prevNP);
     _setTrend('home-kpi-net-trend',       net, prevNet);
 
     // [R19] Widgets secundare Home
     _updateHomeMiniDepozit();
     _updateHomeMiniLogistic();
+    _updateHomeMiniCashflow();
     _updateHomeAlerteSummary(clientiRestanti, furnizoriRestanti, totalScadenteClientVal, totalScadenteFurnizorVal, contributiiScadente, totalCtbScadenta);
 }
 
@@ -2382,6 +2355,29 @@ function _updateHomeMiniLogistic() {
             elActiv.classList.add('hidden');
         }
     }
+}
+
+// [R19-ext] Helper: mini-widget Cashflow proiecție pe Home
+function _updateHomeMiniCashflow() {
+    const elText = document.getElementById('home-mini-cashflow-text');
+    if (!elText) return;
+    if (typeof calculeazaCashflowProiectie !== 'function') return;
+    const incasat = (ZFlowStore.dateFacturiBI || [])
+        .filter(f => f.status_plata === 'Incasat')
+        .reduce((s, f) => s + (Number(f.valoare) || 0), 0);
+    const platit = (ZFlowStore.dateFacturiPlatit || [])
+        .filter(f => f.status_plata === 'Platit')
+        .reduce((s, f) => s + (Number(f.valoare) || 0), 0);
+    const soldInitial = incasat - platit;
+    const proiectie = calculeazaCashflowProiectie(30, soldInitial);
+    if (!proiectie.length) { elText.textContent = '—'; return; }
+    const delta = Math.round(proiectie[proiectie.length - 1].sold_estimat - soldInitial);
+    const prefix = delta >= 0 ? '+' : '';
+    elText.textContent = `${prefix}${delta.toLocaleString('ro-RO')} lei`;
+    elText.className = delta >= 0
+        ? 'text-[9px] font-bold text-emerald-500 mt-0.5'
+        : 'text-[9px] font-bold text-rose-500 mt-0.5';
+    if (typeof verificaAlertaCashflow === 'function') verificaAlertaCashflow(soldInitial);
 }
 
 // [R19] Helper: buton alerte scadențe pe Home (mereu vizibil, stare dinamică)
@@ -2928,6 +2924,7 @@ async function salveazaContributie() {
         if (typeof updateFurnizoriKPI === 'function') updateFurnizoriKPI();
         inchideModal('modal-contributie');
         showNotification('Contribuție salvată.', 'success');
+        if (typeof ZFlowMobile !== 'undefined') ZFlowMobile.vibrate(30);
     } catch (err) {
         ZFlowLogger.error('ctb', 'Eroare salvare contribuție:', err);
         showNotification('Eroare la salvare. Verificați consola.', 'error');
@@ -4197,14 +4194,14 @@ function appendFurnizoriBI(container, startDate, endDate, q) {
     const paginated = filtrate.slice(fbiStart, fbiEnd);
 
     // Separator + furnizori rows (paginate)
-    container.innerHTML += `
+    container.insertAdjacentHTML('beforeend', `
 <div class="w-full flex items-center gap-3 my-4">
   <div class="flex-1 h-px bg-red-100"></div>
   <span class="text-[9px] font-black text-red-600 uppercase tracking-widest px-2 py-1 bg-red-50 rounded-full">Furnizori — Facturi de Plătit (${filtrate.length})</span>
   <div class="flex-1 h-px bg-red-100"></div>
 </div>
 ${_htmlFurnizoriRows(paginated, azi)}
-<div id="bi-pagination-furnizori" class="mt-1"></div>`;
+<div id="bi-pagination-furnizori" class="mt-1"></div>`);
 
     _renderFurnizoriBIPagination(filtrate.length);
 }
@@ -4518,6 +4515,7 @@ function _detectaStatusPlata(csvFact, isFurnizori) {
 
 /**
  * Import facturi din CSV SAGA cu auto-detectare tip (clienți / furnizori)
+ * @deprecated Înlocuită de importSmartUnificat() — nu are buton în UI.
  */
 async function importaDateSagaAuto() {
     if (!hasPermission('canImport')) {
@@ -4551,13 +4549,12 @@ async function importaDateSagaAuto() {
     const tipLabel = isFurnizori ? 'Furnizori (facturi de plătit)' : 'Clienți (facturi de încasat)';
 
     // Pas 3: confirmă cu utilizatorul
-    const confirmed = confirm(`Tip detectat: ${tipLabel}\n\nHeader-e găsite: ${headers.slice(0,6).join(', ')}...\n\nContinui importul?`);
-    if (!confirmed) return;
-
-    // Pas 4: text pre-citit → importaDateSaga îl preia fără al doilea file picker
-    window.__sagaAutoText = text;
-    await importaDateSaga(tipDetectat);
-    window.__sagaAutoText = null; // curăță dacă nu a fost consumat
+    showConfirmModal(`Tip detectat: ${tipLabel}\n\nHeader-e găsite: ${headers.slice(0,6).join(', ')}...\n\nContinui importul?`, async () => {
+        // Pas 4: text pre-citit → importaDateSaga îl preia fără al doilea file picker
+        window.__sagaAutoText = text;
+        await importaDateSaga(tipDetectat);
+        window.__sagaAutoText = null; // curăță dacă nu a fost consumat
+    });
 }
 
 /**
@@ -7203,30 +7200,30 @@ window.salveazaProfilFirma = salveazaProfilFirma;
 function stergeToateDateleAdmin() {
     const isAdmin = window.ZFlowStore?.userSession?.user?.email === 'admin';
     if (!isAdmin) { showNotification('Disponibil doar pentru contul admin', 'error'); return; }
-    if (!confirm('ATENȚIE: Ștergi TOATE datele salvate de contul admin (clienți, facturi, produse, comenzi etc.). Această acțiune este ireversibilă! Continui?')) return;
+    showConfirmModal('ATENȚIE: Ștergi TOATE datele salvate de contul admin (clienți, facturi, produse, comenzi etc.). Această acțiune este ireversibilă! Continui?', () => {
+        // Șterge din localStorage (prefixul zflow_ad_)
+        const keysToRemove = Object.keys(localStorage).filter(k => k.startsWith('zflow_ad_'));
+        keysToRemove.forEach(k => localStorage.removeItem(k));
 
-    // Șterge din localStorage (prefixul zflow_ad_)
-    const keysToRemove = Object.keys(localStorage).filter(k => k.startsWith('zflow_ad_'));
-    keysToRemove.forEach(k => localStorage.removeItem(k));
+        // Resetează store-ul în memorie
+        const storeKeys = ['_demoClienti','_demoFacturi','_demoFurnizori','_demoFacturiPlatit',
+            '_demoProduse','_demoMiscariStoc','_demoReceptii','_demoLivrari',
+            '_demoSoferi','_demoVehicule','_demoComenziTransport',
+            'dateLocal','dateFacturiBI','dateFurnizori','dateFacturiPlatit',
+            'dateProduse','dateMiscariStoc','dateReceptii','dateLivrari',
+            'dateSoferi','dateVehicule','dateComenziTransport'];
+        storeKeys.forEach(k => { delete ZFlowStore[k]; });
+        ['dateLocal','dateFacturiBI','dateFurnizori','dateFacturiPlatit',
+         'dateProduse','dateMiscariStoc','dateReceptii','dateLivrari',
+         'dateSoferi','dateVehicule','dateComenziTransport'].forEach(k => { ZFlowStore[k] = []; });
 
-    // Resetează store-ul în memorie
-    const storeKeys = ['_demoClienti','_demoFacturi','_demoFurnizori','_demoFacturiPlatit',
-        '_demoProduse','_demoMiscariStoc','_demoReceptii','_demoLivrari',
-        '_demoSoferi','_demoVehicule','_demoComenziTransport',
-        'dateLocal','dateFacturiBI','dateFurnizori','dateFacturiPlatit',
-        'dateProduse','dateMiscariStoc','dateReceptii','dateLivrari',
-        'dateSoferi','dateVehicule','dateComenziTransport'];
-    storeKeys.forEach(k => { delete ZFlowStore[k]; });
-    ['dateLocal','dateFacturiBI','dateFurnizori','dateFacturiPlatit',
-     'dateProduse','dateMiscariStoc','dateReceptii','dateLivrari',
-     'dateSoferi','dateVehicule','dateComenziTransport'].forEach(k => { ZFlowStore[k] = []; });
-
-    inchideProfilFirma();
-    showNotification('Toate datele admin au fost șterse', 'success');
-    // Reîncarcă UI-ul
-    if (typeof renderMain === 'function') renderMain();
-    if (typeof renderDepozit === 'function') renderDepozit();
-    if (typeof renderLogistic === 'function') renderLogistic();
+        inchideProfilFirma();
+        showNotification('Toate datele admin au fost șterse', 'success');
+        // Reîncarcă UI-ul
+        if (typeof renderMain === 'function') renderMain();
+        if (typeof renderDepozit === 'function') renderDepozit();
+        if (typeof renderLogistic === 'function') renderLogistic();
+    });
 }
 window.stergeToateDateleAdmin = stergeToateDateleAdmin;
 

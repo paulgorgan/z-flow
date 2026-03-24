@@ -379,23 +379,25 @@ async function salveazaComandaTransport() {
         calculeazaKPILogistic();
         renderComenziTransport();
         showNotification('Comandă salvată!', 'success');
+        if (typeof ZFlowMobile !== 'undefined') ZFlowMobile.vibrate(30);
     } catch (err) {
         showNotification('Eroare: ' + err.message, 'error');
     } finally { setLoader(false); }
 }
 
 async function stergeComandaTransport(id) {
-    if (!confirm('Ștergi comanda de transport?')) return;
-    setLoader(true);
-    try {
-        await ZFlowDB.deleteComandaTransport(id);
-        ZFlowStore.dateComenziTransport = ZFlowStore.dateComenziTransport.filter(x => String(x.id) !== String(id));
-        calculeazaKPILogistic();
-        renderComenziTransport();
-        showNotification('Comandă ștearsă', 'success');
-    } catch (err) {
-        showNotification('Eroare: ' + err.message, 'error');
-    } finally { setLoader(false); }
+    showConfirmModal('Ștergi comanda de transport?', async () => {
+        setLoader(true);
+        try {
+            await ZFlowDB.deleteComandaTransport(id);
+            ZFlowStore.dateComenziTransport = ZFlowStore.dateComenziTransport.filter(x => String(x.id) !== String(id));
+            calculeazaKPILogistic();
+            renderComenziTransport();
+            showNotification('Comandă ștearsă', 'success');
+        } catch (err) {
+            showNotification('Eroare: ' + err.message, 'error');
+        } finally { setLoader(false); }
+    });
 }
 
 // ==========================================
@@ -440,18 +442,20 @@ async function salveazaSofer() {
         }
         inchideModalSofer(); calculeazaKPILogistic(); renderSoferi();
         showNotification('Șofer salvat!', 'success');
+        if (typeof ZFlowMobile !== 'undefined') ZFlowMobile.vibrate(30);
     } catch (err) { showNotification('Eroare: '+err.message,'error'); } finally { setLoader(false); }
 }
 
 async function stergeSofer(id) {
-    if (!confirm('Ștergi șoferul?')) return;
-    setLoader(true);
-    try {
-        await ZFlowDB.deleteSofer(id);
-        ZFlowStore.dateSoferi = ZFlowStore.dateSoferi.filter(x=>String(x.id)!==String(id));
-        calculeazaKPILogistic(); renderSoferi();
-        showNotification('Șofer șters','success');
-    } catch (err) { showNotification('Eroare: '+err.message,'error'); } finally { setLoader(false); }
+    showConfirmModal('Ștergi șoferul?', async () => {
+        setLoader(true);
+        try {
+            await ZFlowDB.deleteSofer(id);
+            ZFlowStore.dateSoferi = ZFlowStore.dateSoferi.filter(x=>String(x.id)!==String(id));
+            calculeazaKPILogistic(); renderSoferi();
+            showNotification('Șofer șters','success');
+        } catch (err) { showNotification('Eroare: '+err.message,'error'); } finally { setLoader(false); }
+    });
 }
 
 // ==========================================
@@ -515,18 +519,20 @@ async function salveazaVehicul() {
         }
         inchideModalVehicul(); calculeazaKPILogistic(); renderVehicule();
         showNotification('Vehicul salvat!', 'success');
+        if (typeof ZFlowMobile !== 'undefined') ZFlowMobile.vibrate(30);
     } catch (err) { showNotification('Eroare: '+err.message,'error'); } finally { setLoader(false); }
 }
 
 async function stergeVehicul(id) {
-    if (!confirm('Ștergi vehiculul?')) return;
-    setLoader(true);
-    try {
-        await ZFlowDB.deleteVehicul(id);
-        ZFlowStore.dateVehicule = ZFlowStore.dateVehicule.filter(x=>String(x.id)!==String(id));
-        calculeazaKPILogistic(); renderVehicule();
-        showNotification('Vehicul șters','success');
-    } catch (err) { showNotification('Eroare: '+err.message,'error'); } finally { setLoader(false); }
+    showConfirmModal('Ștergi vehiculul?', async () => {
+        setLoader(true);
+        try {
+            await ZFlowDB.deleteVehicul(id);
+            ZFlowStore.dateVehicule = ZFlowStore.dateVehicule.filter(x=>String(x.id)!==String(id));
+            calculeazaKPILogistic(); renderVehicule();
+            showNotification('Vehicul șters','success');
+        } catch (err) { showNotification('Eroare: '+err.message,'error'); } finally { setLoader(false); }
+    });
 }
 
 // ==========================================

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Z-FLOW — Prezentare Aplicație</title>
+  <title>Z-FLOW — Prezentare Aplicație v73.0</title>
   <style>
     :root {
       --blue: #1e3a5f;
@@ -120,6 +120,7 @@
     .badge-green { background: rgba(16,185,129,0.2); border: 1px solid rgba(16,185,129,0.4); color: #6ee7b7; }
     .badge-amber { background: rgba(245,158,11,0.2); border: 1px solid rgba(245,158,11,0.4); color: #fcd34d; }
     .badge-purple{ background: rgba(124,58,237,0.2); border: 1px solid rgba(124,58,237,0.4); color: #c4b5fd; }
+    .badge-cyan  { background: rgba(14,165,233,0.2); border: 1px solid rgba(14,165,233,0.4); color: #67e8f9; }
 
     .cover-version {
       font-size: 11px;
@@ -262,6 +263,8 @@
     .tag-analytics { background: #f3e8ff; color: #6d28d9; }
     .tag-new       { background: #fee2e2; color: #991b1b; }
     .tag-pwa       { background: #e0f2fe; color: #0369a1; }
+    .tag-admin     { background: #fef9c3; color: #854d0e; }
+    .tag-security  { background: #f0fdf4; color: #166534; }
 
     .module-desc {
       font-size: 14px;
@@ -382,6 +385,24 @@
       color: #dc2626;
       padding: 3px 8px;
       border-radius: 100px;
+    }
+
+    .nf-card.nf-fix::before {
+      content: 'FIX';
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .nf-card.nf-security::before {
+      content: 'SECURITY';
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .nf-card.nf-ux::before {
+      content: 'UX';
+      background: #ede9fe;
+      color: #6d28d9;
     }
 
     .nf-icon {
@@ -520,6 +541,13 @@
       font-size: 12px;
     }
 
+    /* ── SECURITY BOX ── */
+    .security-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+    }
+
     /* ── PRINT ── */
     @media print {
       .cover { min-height: auto; padding: 40px; }
@@ -550,8 +578,9 @@
     <span class="badge badge-green">Supabase Cloud</span>
     <span class="badge badge-amber">ANAF Integration</span>
     <span class="badge badge-purple">Multi-firmă</span>
+    <span class="badge badge-cyan">Contribuții Buget Stat</span>
   </div>
-  <p class="cover-version">Versiunea 8.0 — Build 2025 &nbsp;·&nbsp; Cache zflow-v45.0</p>
+  <p class="cover-version">Versiunea 73.0 — Build 2026 &nbsp;·&nbsp; Cache zflow-v73.0</p>
 </section>
 
 <!-- ═══════════════════════ OVERVIEW ═══════════════════════ -->
@@ -566,32 +595,42 @@
     <div class="overview-card">
       <div class="icon-box" style="background:#dbeafe">💼</div>
       <div class="card-title">Gestionare Clienți &amp; Furnizori</div>
-      <p class="card-desc">Evidența completă a relațiilor comerciale: sold, facturi restante, profil firmă, autofill ANAF prin CUI.</p>
+      <p class="card-desc">Evidența completă a relațiilor comerciale: sold, facturi restante, profil firmă, autofill ANAF prin CUI, badge dual client+furnizor.</p>
     </div>
     <div class="overview-card">
       <div class="icon-box" style="background:#dcfce7">📊</div>
       <div class="card-title">Analiză BI în Timp Real</div>
-      <p class="card-desc">Tablou de bord cu KPI-uri live, cashflow, proiecții, top clienți/furnizori și export rapoarte PDF/Excel/CSV.</p>
+      <p class="card-desc">Tablou de bord cu KPI-uri live, cashflow net corect (încasat minus plătit), proiecții, badge scadențe pulsant și export rapoarte PDF/Excel/CSV/XML.</p>
     </div>
     <div class="overview-card">
       <div class="icon-box" style="background:#fef3c7">🚚</div>
       <div class="card-title">Logistică &amp; Transport</div>
-      <p class="card-desc">Comenzi transport, gestionare flotă vehicule, evidență șoferi, rapoarte km vs. livrări și tracking cod.</p>
+      <p class="card-desc">Comenzi transport, gestionare flotă vehicule, evidență șoferi, rapoarte km vs. livrări și tracking cod cu hartă GPS.</p>
     </div>
     <div class="overview-card">
       <div class="icon-box" style="background:#f3e8ff">📦</div>
       <div class="card-title">Depozit &amp; Scanner QR</div>
-      <p class="card-desc">Intrări/ieșiri stoc, scanner cod de bare/QR, asociere automată produs sau comandă de transport.</p>
+      <p class="card-desc">Intrări/ieșiri stoc, scanner cod de bare/QR, asociere automată produs sau comandă de transport, recepții și livrări.</p>
     </div>
     <div class="overview-card">
       <div class="icon-box" style="background:#fee2e2">📱</div>
       <div class="card-title">PWA — Funcționează Offline</div>
-      <p class="card-desc">Instalabilă pe telefon și tabletă, funcționează fără internet prin Service Worker + cache inteligent.</p>
+      <p class="card-desc">Instalabilă pe telefon și tabletă, funcționează fără internet prin Service Worker + cache inteligent, back button nativ Android.</p>
+    </div>
+    <div class="overview-card">
+      <div class="icon-box" style="background:#fef9c3">🏛️</div>
+      <div class="card-title">Contribuții Buget Stat</div>
+      <p class="card-desc">Evidența completă a TVA, CAS, CASS, Impozit — cu filtrare tip și status achitat/neachitat, import CSV și integrare în cashflow.</p>
     </div>
     <div class="overview-card">
       <div class="icon-box" style="background:#e0f2fe">🔐</div>
-      <div class="card-title">Securitate &amp; Roluri</div>
-      <p class="card-desc">Autentificare sigură, roluri utilizator (admin/editor/viewer) cu permisiuni granulare per acțiune.</p>
+      <div class="card-title">Securitate &amp; Administrare</div>
+      <p class="card-desc">Autentificare JWT, roluri granulare, token abonament (Trial/Standard/Pro/Enterprise), mod mentenanță admin, dashboard utilizatori.</p>
+    </div>
+    <div class="overview-card">
+      <div class="icon-box" style="background:#f0fdf4">📥</div>
+      <div class="card-title">Import Smart Unificat</div>
+      <p class="card-desc">Un singur buton: CSV, Excel sau XML — detectare automată tip (clienți/furnizori/contribuții/XML ANAF), fără selecție manuală.</p>
     </div>
   </div>
 </section>
@@ -605,19 +644,19 @@
 
   <div class="kpi-bar">
     <div class="kpi-card">
-      <div class="kpi-value" style="color:#2563eb">8</div>
+      <div class="kpi-value" style="color:#2563eb">5</div>
       <div class="kpi-label">Module principale</div>
     </div>
     <div class="kpi-card">
-      <div class="kpi-value" style="color:#10b981">17</div>
-      <div class="kpi-label">Funcționalități noi v8</div>
+      <div class="kpi-value" style="color:#10b981">27</div>
+      <div class="kpi-label">Fișiere JS fără erori</div>
     </div>
     <div class="kpi-card">
       <div class="kpi-value" style="color:#7c3aed">100%</div>
       <div class="kpi-label">Accesibil offline</div>
     </div>
     <div class="kpi-card">
-      <div class="kpi-value" style="color:#f59e0b">3</div>
+      <div class="kpi-value" style="color:#f59e0b">4</div>
       <div class="kpi-label">Formate export</div>
     </div>
     <div class="kpi-card">
@@ -637,7 +676,7 @@
 <section class="section">
   <p class="section-label">Arhitectura aplicației</p>
   <h2 class="section-title">Module principale</h2>
-  <p class="section-desc">Fiecare modul este independent, încărcat asincron, și se sincronizează cu baza de date Supabase în timp real.</p>
+  <p class="section-desc">Fiecare modul este independent, încărcat asincron, și se sincronizează cu baza de date Supabase în timp real. Toate operațiile respectă izolarea datelor per-user prin Row Level Security.</p>
 
   <div class="module-list">
 
@@ -655,6 +694,7 @@
           <li><span class="check">✓</span> Paginare adaptivă (20/50/100/Toate)</li>
           <li><span class="check">✓</span> Căutare instant după nume, CUI, oraș</li>
           <li><span class="check">✓</span> Badge "Client + Furnizor" pentru relații duale</li>
+          <li><span class="check">✓</span> Notificări scadențe vizibile pe Home</li>
         </ul>
       </div>
       <div class="module-visual">
@@ -675,10 +715,11 @@
         <p class="module-desc">Gestionarea completă a furnizorilor și facturilor de plătit. Alerte scadențe depășite, structură similară cu modulul Clienți pentru coerență.</p>
         <ul class="feature-list">
           <li><span class="check">✓</span> Sold de plătit actualizat automat per furnizor</li>
-          <li><span class="check">✓</span> Alerte vizuale restanțe (bandă roșie)</li>
+          <li><span class="check">✓</span> Alerte vizuale restanțe (bullet roșu pulsant)</li>
           <li><span class="check">✓</span> Autofill date firmă din ANAF</li>
           <li><span class="check">✓</span> Import facturi XML ANAF (UBL 2.1)</li>
           <li><span class="check">✓</span> Căutare și paginare completă</li>
+          <li><span class="check">✓</span> KPI "Furnizori de plătit · 30 zile" pe Home</li>
         </ul>
       </div>
       <div class="module-meta">
@@ -697,15 +738,17 @@
         <div class="module-number">03</div>
         <div class="module-name">Analiză BI</div>
         <span class="module-tag tag-analytics">Analytics</span>
-        <p class="module-desc">Tablou de bord business intelligence cu filtrare avansată, selecție multiplă facturi, export inteligent și vizualizare cashflow în timp real.</p>
+        <p class="module-desc">Tablou de bord business intelligence cu filtrare avansată, selecție multiplă facturi, badge scadență pulsant, export inteligent și cashflow net corect în timp real.</p>
         <ul class="feature-list">
           <li><span class="check">✓</span> KPI-uri: Total emis, Încasat, Restant, Plătit</li>
+          <li><span class="check">✓</span> Cashflow Net = Încasat efectiv − Plătit efectiv</li>
+          <li><span class="check">✓</span> Badge scadență pulsant (depășit / iminent ≤5 zile)</li>
           <li><span class="check">✓</span> Filtrare după perioadă, firmă, status</li>
           <li><span class="check">✓</span> Selecție multiplă facturi clienți + furnizori</li>
-          <li><span class="check">✓</span> Marcare bulk ca "Încasat"</li>
-          <li><span class="check">✓</span> Export PDF / Excel / CSV selectiv</li>
-          <li><span class="check">✓</span> Export Bridge XML (SAGA / WinMentor)</li>
-          <li><span class="check">✓</span> Cashflow vizual intrări vs. ieșiri</li>
+          <li><span class="check">✓</span> Marcare bulk ca "Încasat" cu confirmare non-blocantă</li>
+          <li><span class="check">✓</span> Export PDF / Excel / CSV / Bridge XML</li>
+          <li><span class="check">✓</span> Include Contribuții Buget Stat în analiză (checkbox)</li>
+          <li><span class="check">✓</span> Tendință % față de perioada anterioară</li>
           <li><span class="check">✓</span> Layout 2 coloane pe desktop</li>
         </ul>
       </div>
@@ -713,7 +756,7 @@
         <div class="vis-row" style="background:#f0fdf4; border-color:#bbf7d0"><span class="vis-dot" style="background:#10b981"></span>Total emis: 348.200 lei</div>
         <div class="vis-row" style="background:#eff6ff; border-color:#bfdbfe"><span class="vis-dot" style="background:#3b82f6"></span>Încasat: 286.500 lei (82%)</div>
         <div class="vis-row" style="background:#fef2f2; border-color:#fecaca"><span class="vis-dot" style="background:#ef4444"></span>Restant: 61.700 lei (18%)</div>
-        <div class="vis-row" style="background:#fffbeb; border-color:#fde68a"><span class="vis-dot" style="background:#f59e0b"></span>De plătit furnizori: 124.000 lei</div>
+        <div class="vis-row" style="background:#fffbeb; border-color:#fde68a"><span class="vis-dot" style="background:#f59e0b"></span>Furnizori de plătit: 124.000 lei · 30 zile</div>
         <div style="margin-top:auto; padding-top:12px; font-size:11px; color:#94a3b8; text-align:center; font-weight:600;">Date recalculate la fiecare modificare</div>
       </div>
     </div>
@@ -724,12 +767,13 @@
         <div class="module-number">04</div>
         <div class="module-name">Logistică</div>
         <span class="module-tag tag-logistics">Transport</span>
-        <p class="module-desc">Planificarea și urmărirea completă a transporturilor — comenzi, vehicule, șoferi, rapoarte km și integrare opțională SafeFleet/Nexus.</p>
+        <p class="module-desc">Planificarea și urmărirea completă a transporturilor — comenzi, vehicule, șoferi, rapoarte km și integrare opțională SafeFleet/Nexus cu hartă GPS Leaflet.</p>
         <ul class="feature-list">
           <li><span class="check">✓</span> Comenzi transport cu editare și ștergere directă</li>
           <li><span class="check">✓</span> Statusuri: Planificat / În curs / Livrat / Anulat</li>
           <li><span class="check">✓</span> Cod tracking per comandă</li>
           <li><span class="check">✓</span> Gestiune flotă vehicule + șoferi</li>
+          <li><span class="check">✓</span> Hartă GPS live (Leaflet.js) cu vehicule</li>
           <li><span class="check">✓</span> Raport km vs. livrări cu export CSV</li>
           <li><span class="check">✓</span> Webhook SafeFleet / Nexus GPS (opțional)</li>
         </ul>
@@ -756,7 +800,8 @@
           <li><span class="check">✓</span> Asociere automată produs sau comandă transport</li>
           <li><span class="check">✓</span> Acțiuni rapide post-scan (fără tastatură)</li>
           <li><span class="check">✓</span> Intrări/ieșiri stoc cu audit trail</li>
-          <li><span class="check">✓</span> Categorii și filtre avansate</li>
+          <li><span class="check">✓</span> Recepții de la furnizori + Bonuri livrare</li>
+          <li><span class="check">✓</span> Alertă stoc minim vizibilă pe Home</li>
         </ul>
       </div>
       <div class="module-visual">
@@ -772,60 +817,84 @@
 
 <div class="divider"></div>
 
-<!-- ═══════════════════════ NEW FEATURES ═══════════════════════ -->
+<!-- ═══════════════════════ NEW FEATURES v72–73 ═══════════════════════ -->
 <section class="section">
-  <p class="section-label">Versiunea 8.0</p>
-  <h2 class="section-title">Funcționalități noi</h2>
-  <p class="section-desc">Versiunea 8.0 adaugă 8 capabilități majore care extind Z-FLOW spre integrări oficiale românești și automatizare avansată.</p>
+  <p class="section-label">Versiunile 72.x — 73.0</p>
+  <h2 class="section-title">Funcționalități noi &amp; fix-uri majore</h2>
+  <p class="section-desc">Versiunile 72–73 aduc îmbunătățiri substanțiale de UX, securitate, calcule financiare corecte și experiență PWA nativă.</p>
 
   <div class="new-features-grid">
 
     <div class="nf-card">
-      <div class="nf-icon">🏛️</div>
-      <div class="nf-title">Validare e-Factură ANAF</div>
-      <p class="nf-desc">Verificare în timp real dacă un client/furnizor este înscris în sistemul RO e-Factură, direct din profilul firmei. Apel live la ANAF API.</p>
-    </div>
-
-    <div class="nf-card">
-      <div class="nf-icon">🔗</div>
-      <div class="nf-title">Export Bridge XML</div>
-      <p class="nf-desc">Export facturi în format XML compatibil cu softurile contabile SAGA și WinMentor. Selectare tip (clienți/furnizori) și descărcare imediată.</p>
-    </div>
-
-    <div class="nf-card">
-      <div class="nf-icon">📡</div>
-      <div class="nf-title">Integrare SafeFleet / Nexus GPS</div>
-      <p class="nf-desc">Configurare webhook pentru recepția datelor GPS de la flota de vehicule. Suport SafeFleet și Nexus cu autentificare API key.</p>
-    </div>
-
-    <div class="nf-card">
-      <div class="nf-icon">📲</div>
-      <div class="nf-title">Scanner QR End-to-End</div>
-      <p class="nf-desc">Scanare cod de bare sau QR cu camera telefonului, identificare automată produs sau comandă transport, și execuție acțiune imediată fără navigare.</p>
-    </div>
-
-    <div class="nf-card">
-      <div class="nf-icon">🏢</div>
-      <div class="nf-title">Multi-Firmă</div>
-      <p class="nf-desc">Gestionarea mai multor firme din același cont. Comutator rapid în header, sincronizare automată cu profilul activ și populare inițială din datele existente.</p>
-    </div>
-
-    <div class="nf-card">
-      <div class="nf-icon">🛣️</div>
-      <div class="nf-title">Raport km vs. Livrări</div>
-      <p class="nf-desc">Vizualizare eficiență flotă: km parcurși per vehicul raportat la numărul de livrări, cu export CSV și calcul cost per km.</p>
-    </div>
-
-    <div class="nf-card">
       <div class="nf-icon">📥</div>
-      <div class="nf-title">Import XML ANAF (UBL 2.1)</div>
-      <p class="nf-desc">Importul automat al facturilor primite de la ANAF în format UBL 2.1 (e-Factură). Parsing complet: furnizor, linii, TVA, total.</p>
+      <div class="nf-title">Import Smart Unificat</div>
+      <p class="nf-desc">Un singur buton de import acceptă CSV, Excel și XML. Detecție automată tip (clienți/furnizori/contribuții/XML ANAF UBL 2.1) — fără selecție manuală.</p>
+    </div>
+
+    <div class="nf-card nf-fix">
+      <div class="nf-icon">📊</div>
+      <div class="nf-title">Cashflow Net Corect</div>
+      <p class="nf-desc">Formula KPI Home corectată: Net = Încasat efectiv − Plătit efectiv. Contribuțiile neachitate nu mai distorsionează cashflow-ul — sunt obligații viitoare, nu plăți efectuate.</p>
     </div>
 
     <div class="nf-card">
-      <div class="nf-icon">📈</div>
-      <div class="nf-title">Cashflow Forecast</div>
-      <p class="nf-desc">Proiecție automată cashflow pe 30/60/90 zile bazată pe scadențele existente din facturi. Estimare intrări și ieșiri planificate.</p>
+      <div class="nf-icon">🔴</div>
+      <div class="nf-title">Badge Scadență Pulsant BI</div>
+      <p class="nf-desc">Facturile cu scadența depășită au bullet roșu pulsant + text roșu. Scadențele iminente (≤5 zile) au indicatori amber. Identic cu comportamentul de la furnizori.</p>
+    </div>
+
+    <div class="nf-card">
+      <div class="nf-icon">🏛️</div>
+      <div class="nf-title">Contribuții Buget Stat</div>
+      <p class="nf-desc">Modul complet pentru TVA, CAS, CASS, Impozit și Altele. Import CSV, filtrare tip și status, integrare opțională în Analiza BI prin checkbox dedicat.</p>
+    </div>
+
+    <div class="nf-card nf-fix">
+      <div class="nf-icon">📱</div>
+      <div class="nf-title">Back Button PWA Nativ</div>
+      <p class="nf-desc">Butonul Back de pe Android funcționează nativ: fiecare tab adaugă un state în history. Double-back pe Home afișează toast + ieșire din app.</p>
+    </div>
+
+    <div class="nf-card nf-ux">
+      <div class="nf-icon">⌨️</div>
+      <div class="nf-title">Scurtături Tastatură</div>
+      <p class="nf-desc">Alt+H (Home), Alt+F (Financiar), Alt+A (Analiză BI) adăugate alăturat celor existente Alt+N, Alt+K, Alt+D, Alt+E. Navigare rapidă fără mouse.</p>
+    </div>
+
+    <div class="nf-card nf-security">
+      <div class="nf-icon">🔑</div>
+      <div class="nf-title">Token Abonament Robust</div>
+      <p class="nf-desc">Planul (Trial 30 zile / Standard / Pro / Enterprise) se aplică la primul login chiar dacă email-ul necesita confirmare. La eroare de rețea se reîncarcă automat la login următor.</p>
+    </div>
+
+    <div class="nf-card nf-security">
+      <div class="nf-icon">🛡️</div>
+      <div class="nf-title">Securitate Contribuții</div>
+      <p class="nf-desc">updateContributie() și deleteContributie() filtrează acum corect cu .eq('user_id', uid) — consistent cu toate celelalte operații din aplicație.</p>
+    </div>
+
+    <div class="nf-card nf-fix">
+      <div class="nf-icon">🔧</div>
+      <div class="nf-title">Mod Mentenanță Corectat</div>
+      <p class="nf-desc">Când adminul activează mentenanța, utilizatorii Supabase înregistrați (conturi plătite) văd aplicația în continuare fără overlay. Overlay-ul apare doar pentru demo și vizitatori neautentificați.</p>
+    </div>
+
+    <div class="nf-card nf-ux">
+      <div class="nf-icon">🔔</div>
+      <div class="nf-title">Confirmări PWA-Friendly</div>
+      <p class="nf-desc">Dialogurile de confirmare (ștergere contribuție, marcare bulk încasat) folosesc showConfirmModal() în locul confirm() nativ blocant — UX neted pe mobil.</p>
+    </div>
+
+    <div class="nf-card nf-fix">
+      <div class="nf-icon">👤</div>
+      <div class="nf-title">Profil Firmă Actualizat</div>
+      <p class="nf-desc">Modalul de profil firmă reîncarcă datele proaspete din Supabase la fiecare deschidere — elimină situația câmpurilor goale după modificări recente.</p>
+    </div>
+
+    <div class="nf-card nf-ux">
+      <div class="nf-icon">📅</div>
+      <div class="nf-title">Alertă Scadențe pe Home</div>
+      <p class="nf-desc">Butonul "Vezi toate scadențele →" apare sub lista de alerte Home doar când există scadențe depășite — navigare directă la Financiar cu 1 tap.</p>
     </div>
 
   </div>
@@ -843,22 +912,22 @@
     <div class="audience-card">
       <div class="audience-emoji">👔</div>
       <div class="audience-role">Administratori / CEO</div>
-      <p class="audience-desc">Vizualizare KPI globali, cashflow, sold clienți și furnizori, rapoarte executive cu un singur click.</p>
+      <p class="audience-desc">Vizualizare KPI globali, cashflow net 30 zile, sold clienți și furnizori, rapoarte executive cu un singur click.</p>
     </div>
     <div class="audience-card">
       <div class="audience-emoji">📋</div>
       <div class="audience-role">Contabili / Financiari</div>
-      <p class="audience-desc">Urmărire facturi, marcare plăți, export Excel/CSV pentru reconcilieri, import XML ANAF.</p>
+      <p class="audience-desc">Urmărire facturi, marcare plăți, contribuții buget stat, export Excel/CSV/XML pentru reconcilieri, import XML ANAF.</p>
     </div>
     <div class="audience-card">
       <div class="audience-emoji">🚛</div>
       <div class="audience-role">Dispeceri Transport</div>
-      <p class="audience-desc">Creare și urmărire comenzi, alocare șofer și vehicul, rapoarte km și eficiență flotă.</p>
+      <p class="audience-desc">Creare și urmărire comenzi, alocare șofer și vehicul, hartă GPS live, rapoarte km și eficiență flotă.</p>
     </div>
     <div class="audience-card">
       <div class="audience-emoji">📦</div>
       <div class="audience-role">Gestionar Depozit</div>
-      <p class="audience-desc">Scanare rapidă produse cu telefonul, intrări/ieșiri stoc, confirmare livrări pe teren.</p>
+      <p class="audience-desc">Scanare rapidă produse cu telefonul, intrări/ieșiri stoc, recepții de la furnizori, confirmare livrări pe teren.</p>
     </div>
   </div>
 </section>
@@ -883,7 +952,7 @@
       <div class="tech-icon" style="background:#e0f2fe">⚡</div>
       <div>
         <div class="tech-name">Supabase (PostgreSQL)</div>
-        <div class="tech-role">Backend as a Service — auth, DB, realtime sync</div>
+        <div class="tech-role">Backend as a Service — auth, DB, RLS per-user</div>
       </div>
     </div>
     <div class="tech-card">
@@ -904,14 +973,14 @@
       <div class="tech-icon" style="background:#fff7ed">⚙️</div>
       <div>
         <div class="tech-name">Service Worker</div>
-        <div class="tech-role">PWA offline, pre-cache assets, update automat</div>
+        <div class="tech-role">PWA offline, pre-cache assets, update automat SW</div>
       </div>
     </div>
     <div class="tech-card">
       <div class="tech-icon" style="background:#fef2f2">🏛️</div>
       <div>
         <div class="tech-name">ANAF Open API</div>
-        <div class="tech-role">Autofill CUI, validare e-Factură, import XML UBL</div>
+        <div class="tech-role">Autofill CUI, validare e-Factură, import XML UBL 2.1</div>
       </div>
     </div>
     <div class="tech-card">
@@ -922,9 +991,16 @@
       </div>
     </div>
     <div class="tech-card">
-      <div class="tech-icon" style="background:#eff6ff">📸</div>
+      <div class="tech-icon" style="background:#eff6ff">🗺️</div>
       <div>
-        <div class="tech-name">ZXing / BarcodeDetector</div>
+        <div class="tech-name">Leaflet.js</div>
+        <div class="tech-role">Hartă GPS vehicule — SafeFleet / Nexus / Generic</div>
+      </div>
+    </div>
+    <div class="tech-card">
+      <div class="tech-icon" style="background:#fef9c3">📸</div>
+      <div>
+        <div class="tech-name">Html5-QRCode</div>
         <div class="tech-role">Scanare QR și cod de bare via camera device</div>
       </div>
     </div>
@@ -936,25 +1012,33 @@
 <!-- ═══════════════════════ SECURITY ═══════════════════════ -->
 <section class="section">
   <p class="section-label">Securitate &amp; Administrare</p>
-  <h2 class="section-title">Roluri și permisiuni</h2>
-  <p class="section-desc">Sistemul de permisiuni granulare asigură că fiecare utilizator vede și poate acționa doar ce îi este permis.</p>
+  <h2 class="section-title">Roluri, permisiuni &amp; administrare</h2>
+  <p class="section-desc">Sistemul de permisiuni granulare asigură că fiecare utilizator vede și poate acționa doar ce îi este permis. Adminul are unelte complete de gestionare a conturilor.</p>
 
-  <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px,1fr)); gap:24px;">
+  <div class="security-grid">
     <div class="overview-card" style="border-top:4px solid #ef4444">
-      <div class="card-title">🔴 Administrator</div>
-      <p class="card-desc">Acces complet: creare, editare, ștergere date, gestionare utilizatori, export complet, vizualizare rapoarte avansate.</p>
+      <div class="card-title">🔴 Administrator local</div>
+      <p class="card-desc">Acces complet: creare, editare, ștergere date demo, gestionare utilizatori Supabase, generare tokeni abonament, mod mentenanță, dashboard utilizatori cu statistici și extindere abonament.</p>
     </div>
     <div class="overview-card" style="border-top:4px solid #f59e0b">
-      <div class="card-title">🟡 Editor</div>
-      <p class="card-desc">Poate crea și edita facturi, clienți, furnizori, comenzi. Nu poate șterge date sau gestiona utilizatori.</p>
+      <div class="card-title">🟡 Utilizator Supabase înregistrat</div>
+      <p class="card-desc">Poate crea și edita facturi, clienți, furnizori, comenzi, contribuții. Datele sunt izolate complet prin Row Level Security — nu poate vedea datele altor utilizatori.</p>
     </div>
     <div class="overview-card" style="border-top:4px solid #3b82f6">
-      <div class="card-title">🔵 Viewer</div>
-      <p class="card-desc">Acces read-only: vizualizare clienți, facturi, rapoarte. Nu poate modifica niciun dato din sistem.</p>
+      <div class="card-title">🔵 Demo user</div>
+      <p class="card-desc">Acces demo cu date volatile (se pierd la refresh). Util pentru prezentări. Vede overlay de mentenanță când aceasta este activată de admin.</p>
     </div>
     <div class="overview-card" style="border-top:4px solid #10b981">
-      <div class="card-title">🟢 Securitate Date</div>
-      <p class="card-desc">Autentificare JWT prin Supabase Auth. Row Level Security (RLS) în PostgreSQL. Datele fiecarui client izolate complet.</p>
+      <div class="card-title">🟢 Izolare date completă</div>
+      <p class="card-desc">Admin local → localStorage. Utilizatori Supabase → DB cu filtru user_id + RLS activ pe toate tabelele. Zero posibilitate de acces încrucișat între conturi.</p>
+    </div>
+    <div class="overview-card" style="border-top:4px solid #7c3aed">
+      <div class="card-title">🟣 Token abonament</div>
+      <p class="card-desc">Fiecare cont nou necesită cod de activare (Trial 30 zile / Standard 365 / Pro / Enterprise). Planul se aplică automat la confirmare email, robust la erori de rețea.</p>
+    </div>
+    <div class="overview-card" style="border-top:4px solid #0ea5e9">
+      <div class="card-title">🔷 Mod mentenanță</div>
+      <p class="card-desc">Adminul poate activa mentenanța cu sincronizare Supabase. Utilizatorii înregistrați continuă să lucreze fără întrerupere. Overlay-ul apare doar pentru demo și vizitatori.</p>
     </div>
   </div>
 </section>
@@ -968,15 +1052,45 @@
 
   <div class="timeline">
     <div class="tl-item">
-      <div class="tl-version" style="color:#10b981">v8.0</div>
+      <div class="tl-version" style="color:#10b981">v73.0</div>
       <div>
-        <div class="tl-title">Funcționalități majore — Curent</div>
+        <div class="tl-title">Curent — Securitate, UX &amp; Stabilitate</div>
+        <div class="tl-items">
+          <span>✓ Mod mentenanță corectat — utilizatorii înregistrați nu sunt blocați</span>
+          <span>✓ Cashflow Net corect (fără distorsionare contribuții)</span>
+          <span>✓ Badge scadență pulsant în Analiză BI (roșu / amber)</span>
+          <span>✓ Back button PWA nativ Android (double-back-to-exit)</span>
+          <span>✓ Confirmări non-blocante (showConfirmModal pe tot codul)</span>
+          <span>✓ Scurtături tastatură Alt+H / Alt+F / Alt+A</span>
+          <span>✓ Profil firmă cu fetch proaspăt la fiecare deschidere</span>
+          <span>✓ Comentarii @deprecated pe funcții redundante (utils.js / store.js)</span>
+        </div>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-version">v72.x</div>
+      <div>
+        <div class="tl-title">Contribuții, Import Smart &amp; Securitate</div>
+        <div class="tl-items">
+          <span>✓ Modul Contribuții Buget Stat (TVA, CAS, CASS, Impozit)</span>
+          <span>✓ Import Smart Unificat — CSV/Excel/XML cu auto-detectare tip</span>
+          <span>✓ Filtru user_id pe updateContributie / deleteContributie</span>
+          <span>✓ Token abonament robust — retry la login următor dacă rețeaua eșuează</span>
+          <span>✓ KPI Home: "Furnizori de plătit · 30 zile" + "Cashflow 30 zile"</span>
+          <span>✓ Buton "Vezi toate scadențele →" pe Home (apare doar când există alerte)</span>
+          <span>✓ Notificări fallback Supabase — warning când datele nu ajung în cloud</span>
+        </div>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-version">v8.0</div>
+      <div>
+        <div class="tl-title">Integrări oficiale românești</div>
         <div class="tl-items">
           <span>✓ Validare e-Factură ANAF + Export Bridge XML (SAGA/WinMentor)</span>
           <span>✓ Import XML ANAF UBL 2.1 + Multi-firmă cu sync profil</span>
           <span>✓ Scanner QR end-to-end + Raport km vs. Livrări</span>
           <span>✓ Integrare SafeFleet GPS webhook + Selecție multiplă facturi extinse</span>
-          <span>✓ Butoane editare/ștergere comenzi transport + Fixuri desktop grid</span>
         </div>
       </div>
     </div>
@@ -1013,14 +1127,15 @@
       </div>
     </div>
     <div class="tl-item">
-      <div class="tl-version" style="color:#94a3b8">v9.0</div>
+      <div class="tl-version" style="color:#94a3b8">v74+</div>
       <div>
         <div class="tl-title">Roadmap — Planificat</div>
         <div class="tl-items">
-          <span>◦ Notificări push pentru facturi scadente</span>
+          <span>◦ Notificări push pentru facturi scadente (Web Push API)</span>
           <span>◦ Generare automatizată rapoarte lunare pe email</span>
           <span>◦ Integrare bancară (extrase automate)</span>
           <span>◦ Modul CRM cu istoric interacțiuni</span>
+          <span>◦ Export contribuții CSV dedicat</span>
         </div>
       </div>
     </div>
@@ -1062,8 +1177,8 @@
 
 <!-- ═══════════════════════ FOOTER ═══════════════════════ -->
 <footer class="footer">
-  <p>© 2025 Z-FLOW — Sistem Integrat de Management Financiar &amp; Logistică &nbsp;·&nbsp; Versiunea 8.0 &nbsp;·&nbsp; Toate drepturile rezervate</p>
-  <p style="margin-top:6px; font-size:10px; opacity:0.5">Generat automat de Z-FLOW Assistant · Build zflow-v45.0</p>
+  <p>© 2026 Z-FLOW — Sistem Integrat de Management Financiar &amp; Logistică &nbsp;·&nbsp; Versiunea 73.0 &nbsp;·&nbsp; Toate drepturile rezervate</p>
+  <p style="margin-top:6px; font-size:10px; opacity:0.5">Generat automat de Z-FLOW Assistant · Build zflow-v73.0 · Actualizat Martie 2026</p>
 </footer>
 
 </body>

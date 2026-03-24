@@ -43,6 +43,7 @@ const STATIC_ASSETS = [
   './js/modules/crud.js',
   './js/modules/efactura.js',
   './js/modules/bridge.js',
+  './offline.html',
   './manifest.json',
   './icons/icon.svg'
 ];
@@ -132,9 +133,9 @@ self.addEventListener('fetch', event => {
           return response;
         })
         .catch(() => {
-          // Offline: incearca cache exact, apoi fallback la index.html
+          // Offline: incearca cache exact, apoi fallback la offline.html
           return caches.match(event.request)
-            .then(cached => cached || caches.match('./index.html') || caches.match('./'));
+            .then(cached => cached || caches.match('./offline.html') || caches.match('./index.html') || caches.match('./'));
         })
     );
     return;

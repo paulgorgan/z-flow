@@ -472,6 +472,7 @@ async function salveazaProdus() {
         calculeazaKPIDepozit();
         renderProduse();
         showNotification('Produs salvat!', 'success');
+        if (typeof ZFlowMobile !== 'undefined') ZFlowMobile.vibrate(30);
     } catch (err) {
         showNotification('Eroare: ' + err.message, 'error');
     } finally { setLoader(false); }
@@ -540,6 +541,7 @@ async function salveazaMiscare() {
         renderMiscariStoc();
         if (ZFlowStore.depozitView === 'produse') renderProduse();
         showNotification(`Mișcare ${tip} înregistrată!`, 'success');
+        if (typeof ZFlowMobile !== 'undefined') ZFlowMobile.vibrate(30);
     } catch (err) {
         showNotification('Eroare: ' + err.message, 'error');
     } finally { setLoader(false); }
@@ -834,6 +836,7 @@ async function salveazaReceptie() {
         calculeazaKPIDepozit();
         renderReceptiiDepozit();
         showNotification('Recepție salvată!', 'success');
+        if (typeof ZFlowMobile !== 'undefined') ZFlowMobile.vibrate(30);
     } catch(err) {
         showNotification('Eroare: ' + err.message, 'error');
     } finally { setLoader(false); }
@@ -957,6 +960,7 @@ async function salveazaLivrare() {
         calculeazaKPIDepozit();
         renderLivrariDepozit();
         showNotification('Livrare salvată!', 'success');
+        if (typeof ZFlowMobile !== 'undefined') ZFlowMobile.vibrate(30);
     } catch(err) {
         showNotification('Eroare: ' + err.message, 'error');
     } finally { setLoader(false); }

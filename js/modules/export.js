@@ -353,6 +353,26 @@ function exportVehiculeCSV() {
     if (typeof showNotification === 'function') showNotification('Export vehicule finalizat', 'success');
 }
 
+function exportContributiiCSV() {
+    const contributii = window.ZFlowStore?.dateContributii || [];
+    if (!contributii.length) { if (typeof showNotification === 'function') showNotification('Nu există contribuții de exportat', 'error'); return; }
+    const headers = ['Tip', 'Suma (RON)', 'Luna', 'Achitat', 'Observatii'];
+    const rows = contributii.map(c => [
+        `"${(c.tip||'').replace(/"/g,'""')}"`, c.suma||0,
+        c.luna ? c.luna.slice(0,7) : '',
+        c.achitat ? 'Da' : 'Nu',
+        `"${(c.observatii||'').replace(/"/g,'""')}"`
+    ]);
+    const csv  = [headers.join(';'), ...rows.map(r => r.join(';'))].join('\n');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const a    = document.createElement('a');
+    a.href     = URL.createObjectURL(blob);
+    a.download = `contributii_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    if (typeof showNotification === 'function') showNotification('Export contribuții finalizat', 'success');
+}
+
 window.exportComenziTransportCSV = exportComenziTransportCSV;
 window.exportSoferiCSV           = exportSoferiCSV;
 window.exportVehiculeCSV         = exportVehiculeCSV;
+window.exportContributiiCSV      = exportContributiiCSV;

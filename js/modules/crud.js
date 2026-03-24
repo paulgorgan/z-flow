@@ -39,48 +39,62 @@ async function salveazaClient() {
     if (!dateFirma.nume_firma || !cuiNorm) { showNotification('Denumirea și CUI-ul sunt obligatorii!', 'error'); return; }
     if (!cuiRegex.test(cuiNorm)) { showNotification('CUI-ul invalid: doar cifre (2-10 caractere)', 'error'); return; }
     dateFirma.cui = cuiNorm; // salvează fără prefix RO
-    if (typeof validareCUI === 'function' && !validareCUI(cuiNorm)) {
-        if (!confirm("CUI-ul nu trece validarea cifrei de control ANAF. Continuați oricum?")) return;
-    }
     if (dateFirma.iban && typeof validareIBAN === 'function' && !validareIBAN(dateFirma.iban.trim())) {
         showNotification('IBAN invalid (format sau cifră de control incorectă)', 'error'); return;
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (dateFirma.contact_email && !emailRegex.test(dateFirma.contact_email.trim())) {
-        if (!confirm("Email nevalid. Continuați oricum?")) return;
-    }
+    // Salvare efectivă — apelată după toate confirmările opționale
+    const _afterAllChecks = async () => {
+        setLoader(true);
+        try {
+            if (id) {
+                await ZFlowDB.updateClient(id, dateFirma);
+            } else {
+                await ZFlowDB.insertClient(dateFirma);
+            }
+            inchideModal("modal-client");
+            await init(false);
+            if (id) arataDetalii(id);
+        } catch (e) {
+            ZFlowLogger.error('salveazaClient', e);
+            showNotification('Eroare la salvare: ' + e.message, 'error');
+        } finally {
+            setLoader(false);
+        }
+    };
 
     // Verificare duplicat client (doar la inserare, nu la editare)
-    if (!id) {
-        const numeNorm = (dateFirma.nume_firma || '').toLowerCase().trim();
-        const existent = ZFlowStore.dateLocal.find(c =>
-            (cuiNorm && String(c.cui || '').trim() === cuiNorm) ||
-            (numeNorm && (c.nume_firma || '').toLowerCase().trim() === numeNorm)
-        );
-        if (existent) {
-            const continua = confirm(`Clientul "${existent.nume_firma}" (CUI: ${existent.cui || '—'}) există deja!\n\nApăsați OK pentru a adăuga oricum sau Anulați.`);
-            if (!continua) return;
+    const _checkDuplicate = async () => {
+        if (!id) {
+            const numeNorm = (dateFirma.nume_firma || '').toLowerCase().trim();
+            const existent = ZFlowStore.dateLocal.find(c =>
+                (cuiNorm && String(c.cui || '').trim() === cuiNorm) ||
+                (numeNorm && (c.nume_firma || '').toLowerCase().trim() === numeNorm)
+            );
+            if (existent) {
+                showConfirmModal(`Clientul "${existent.nume_firma}" (CUI: ${existent.cui || '—'}) există deja!\n\nApăsați OK pentru a adăuga oricum sau Anulați.`, _afterAllChecks);
+                return;
+            }
         }
-    }
+        await _afterAllChecks();
+    };
 
-    setLoader(true);
-    try {
-        if (id) {
-            await ZFlowDB.updateClient(id, dateFirma);
-        } else {
-            await ZFlowDB.insertClient(dateFirma);
+    // Verificare email
+    const _checkEmail = async () => {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (dateFirma.contact_email && !emailRegex.test(dateFirma.contact_email.trim())) {
+            showConfirmModal('Email nevalid. Continuați oricum?', _checkDuplicate);
+            return;
         }
+        await _checkDuplicate();
+    };
 
-        inchideModal("modal-client");
-        await init(false);
-        if (id) arataDetalii(id);
-    } catch (e) {
-        ZFlowLogger.error('salveazaClient', e);
-        showNotification('Eroare la salvare: ' + e.message, 'error');
-    } finally {
-        setLoader(false);
+    // Verificare CUI
+    if (typeof validareCUI === 'function' && !validareCUI(cuiNorm)) {
+        showConfirmModal('CUI-ul nu trece validarea cifrei de control ANAF. Continuați oricum?', _checkEmail);
+        return;
     }
+    await _checkEmail();
 }
 
 /**
@@ -419,14 +433,16 @@ function printInvoice(id) {
         }
 
         const w = window.open("", "Print");
-        w.document.write("<h1>Z-FLOW Enterprise v7.14</h1>");
+        const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        const buildVer = (typeof window.ZFLOW_BUILD !== 'undefined') ? window.ZFLOW_BUILD : '';
+        w.document.write("<h1>Z-FLOW Enterprise " + esc(buildVer) + "</h1>");
         w.document.write("<hr>");
-        w.document.write("<h2>Factură #" + invoice.numar_factura + "</h2>");
-        w.document.write("<p><strong>Client:</strong> " + client.nume_firma + "</p>");
-        w.document.write("<p><strong>CUI:</strong> " + client.cui + "</p>");
-        w.document.write("<p><strong>Data Emiterii:</strong> " + (invoice.data_emiterii || "-") + "</p>");
-        w.document.write("<p><strong>Data Scadenței:</strong> " + (invoice.data_scadenta || "-") + "</p>");
-        w.document.write("<p><strong>Status Plată:</strong> " + invoice.status_plata + "</p>");
+        w.document.write("<h2>Factură #" + esc(invoice.numar_factura) + "</h2>");
+        w.document.write("<p><strong>Client:</strong> " + esc(client.nume_firma) + "</p>");
+        w.document.write("<p><strong>CUI:</strong> " + esc(client.cui) + "</p>");
+        w.document.write("<p><strong>Data Emiterii:</strong> " + esc(invoice.data_emiterii || "-") + "</p>");
+        w.document.write("<p><strong>Data Scadenței:</strong> " + esc(invoice.data_scadenta || "-") + "</p>");
+        w.document.write("<p><strong>Status Plată:</strong> " + esc(invoice.status_plata) + "</p>");
         w.document.write("<hr>");
         w.document.write("<table border='1' cellpadding='10' style='width:100%;'>");
         w.document.write("<tr><th>Descriere</th><th style='text-align:right;'>Valoare (RON)</th></tr>");

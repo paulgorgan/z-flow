@@ -41,15 +41,30 @@ function getMaintenanceState() {
 }
 
 /**
- * Verifică dacă utilizatorul curent este admin (local sau Supabase).
- * Admin-ul este identificat după email-ul 'admin' în sesiunea ZFlowStore.
+ * Verifică dacă utilizatorul curent poate vedea aplicația în modul mentenanță.
+ * Returnează true pentru:
+ *   - Admin local (email === 'admin')
+ *   - Orice utilizator Supabase înregistrat valid (are UUID, nu este demo)
+ * Returnează false pentru:
+ *   - Utilizatori demo (isDemo === true)
+ *   - Vizitatori neautentificați (userSession null)
  *
- * @returns {boolean} true dacă utilizatorul curent este admin
+ * [FIX v73.0] Extins pentru a include userii Supabase înregistrați —
+ * mentenanța nu trebuie să blocheze conturile legitime, ci doar demo/vizitatori.
+ *
+ * @returns {boolean} true dacă utilizatorul curent poate accesa aplicația
  * @private
  */
 function _isAdminUser() {
     const email = window.ZFlowStore?.userSession?.user?.email;
-    return email === 'admin';
+    // Admin local — are întotdeauna acces
+    if (email === 'admin') return true;
+    // User Supabase înregistrat valid: are UUID și nu este sesiune demo
+    const userId  = window.ZFlowStore?.userSession?.user?.id;
+    const isDemo  = window.ZFlowStore?.userSession?.isDemo === true;
+    if (userId && !isDemo) return true;
+    // Demo sau neautentificat — vede overlay-ul de mentenanță
+    return false;
 }
 
 /**
