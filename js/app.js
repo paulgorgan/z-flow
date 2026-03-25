@@ -163,7 +163,7 @@ function showEmptyState(container, title = "Niciun rezultat", text = "Nicio dat�
 }
 
 /**
- * Skeleton Loader pentru încărcare - #17 TODO
+ * Skeleton Loader pentru încărcare - #17 IMPLEMENTAT
  */
 function showSkeletonLoader(container, count = 5, type = "client") {
     if (!container) return;
@@ -2036,16 +2036,17 @@ function incarcaDashboard() {
 
     // Facturile din ultimele 30 zile
     const facturiIncasat30 = facturiIncasat.filter(f => inUltimele30(f.data_emiterii));
+    const facturiIncasat30Efectiv = facturiIncasat.filter(f => f.status_plata === "Incasat" && inUltimele30(f.data_plata || f.data_emiterii));
     const facturiPlatit30  = facturiPlatit.filter(f => inUltimele30(f.data_emiterii || f.data_plata));
 
     // KPI 1: Total FACTURAT în ultimele 30 zile (clienți — toate statusurile)
     const totalFacturat = facturiIncasat30.reduce((s, f) => s + (Number(f.valoare) || 0), 0);
-    // KPI 2: ÎNCASAT efectiv în ultimele 30 zile (facturi cu status_plata === 'Incasat')
-    const neincasat = facturiIncasat30.filter(f => f.status_plata === "Incasat").reduce((s, f) => s + (Number(f.valoare) || 0), 0);
+    // KPI 2: ÎNCASAT efectiv în ultimele 30 zile (facturi Incasat filtrate după data_plata)
+    const neincasat = facturiIncasat30Efectiv.reduce((s, f) => s + (Number(f.valoare) || 0), 0);
     // KPI 3: De PLĂTIT — neplătit furnizori, primit în ultimele 30 zile
     const neplatit = facturiPlatit30.filter(f => f.status_plata !== "Platit").reduce((s, f) => s + (Number(f.valoare) || 0), 0);
     // KPI 4: Cashflow NET 30 zile = încasat efectiv - plătit efectiv
-    const incasat30Efectiv = facturiIncasat30.filter(f => f.status_plata === "Incasat").reduce((s, f) => s + (Number(f.valoare) || 0), 0);
+    const incasat30Efectiv = neincasat;
     const platit30Efectiv  = facturiPlatit30.filter(f => f.status_plata === "Platit").reduce((s, f) => s + (Number(f.valoare) || 0), 0);
     const net = incasat30Efectiv - platit30Efectiv;
 
@@ -2276,9 +2277,14 @@ function incarcaDashboard() {
     const _fp = facturiIncasat.filter(_inPrev);
     const _fpI = facturiPlatit.filter(_inPrev);
     const prevF  = _fp.reduce((s, f) => s + (Number(f.valoare)||0), 0);
-    const prevNI = _fp.filter(f => f.status_plata !== 'Incasat').reduce((s, f) => s + (Number(f.valoare)||0), 0);
     const prevNP = _fpI.filter(f => f.status_plata !== 'Platit').reduce((s, f) => s + (Number(f.valoare)||0), 0);
-    const prevIncasat30Ef = _fp.filter(f => f.status_plata === 'Incasat').reduce((s, f) => s + (Number(f.valoare)||0), 0);
+    const prevIncasat30Ef = facturiIncasat
+        .filter(f => {
+            if (f.status_plata !== 'Incasat') return false;
+            const d = parseDataFactura(f.data_plata || f.data_emiterii);
+            return d && d >= _acum60 && d <= _acum31;
+        })
+        .reduce((s, f) => s + (Number(f.valoare)||0), 0);
     const prevPlatit30Ef  = _fpI.filter(f => f.status_plata === 'Platit').reduce((s, f) => s + (Number(f.valoare)||0), 0);
     const prevNet = prevIncasat30Ef - prevPlatit30Ef;
     const _setTrend = (id, curr, prev) => {
@@ -2290,8 +2296,10 @@ function incarcaDashboard() {
         else { el.innerText = '\u2014'; el.className = 'text-[7px] font-black text-slate-400'; }
     };
     _setTrend('home-kpi-facturat-trend',  totalFacturat, prevF);
-    // [v73.2] Trend încasat: folosim același baseline prevF ca și facturat — vizibil când există facturi în fereastra 30-60 zile
-    _setTrend('home-kpi-neincasat-trend', neincasat, prevF);
+    // [FIX v73.5] Trend încasat: compara cu încasat efectiv din 30-60 zile (prevIncasat30Ef).
+    // Dacă prevIncasat30Ef === 0 (nicio factură Incasat în fereastra anterioară), cade pe prevF
+    // pentru a păstra vizibilitatea trendului în loc să afișeze blank.
+    _setTrend('home-kpi-neincasat-trend', neincasat, prevIncasat30Ef || prevF);
     _setTrend('home-kpi-neplatit-trend',  neplatit, prevNP);
     _setTrend('home-kpi-net-trend',       net, prevNet);
 
@@ -3222,7 +3230,7 @@ function genereazaCardFactura(fac, client, azi) {
                 </div>
                 <div class="text-right">
                     <b class="text-xs ${isIncasat ? 'text-blue-900' : esteScadenta ? 'text-red-600' : 'text-amber-600'}">${Number(fac.valoare || 0).toLocaleString()} lei</b>
-                    <p class="text-[7px] font-black uppercase ${isIncasat ? 'text-emerald-600' : esteScadenta ? 'text-red-500' : 'text-amber-500'}">${isIncasat ? 'ACHITAT' : esteScadenta ? 'RESTANT' : 'NEACHITAT'}</p>
+                    <p class="text-[7px] font-black uppercase ${isIncasat ? 'text-emerald-600' : esteScadenta ? 'text-red-500' : 'text-amber-500'}">${isIncasat ? 'ÎNCASAT' : esteScadenta ? 'RESTANT' : 'NEÎNCASAT'}</p>
                 </div>
             </div>
 
@@ -3230,7 +3238,7 @@ function genereazaCardFactura(fac, client, azi) {
                 <button onclick="toggleStatusPlata('${fac.id}', '${fac.status_plata}')"
                         ${fac.is_imported ? 'disabled title="Facturat SAGA — status blocat"' : ''}
                         class="w-full ${fac.is_imported ? 'bg-slate-100 text-slate-300 cursor-not-allowed' : isIncasat ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 'bg-blue-900 text-white hover:bg-blue-800'} h-11 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-2 transition-all">
-                    ${fac.is_imported ? '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/></svg> SAGA' : isIncasat ? 'ACHITAT' : 'NEACHITAT'}
+                    ${fac.is_imported ? '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/></svg> SAGA' : isIncasat ? 'ÎNCASAT' : 'NEÎNCASAT'}
                 </button>
                 <div class="grid grid-cols-7 gap-1.5 w-full">
                 <button onclick="deschideModal('modal-factura', '${fac.id}')"
@@ -3338,7 +3346,7 @@ function arataDetalii(id) {
         </div>` : ''}
     `;
 
-    // Generăm secțiunea Istoric Plăți (#21 TODO)
+    // Generăm secțiunea Istoric Plăți (#21 IMPLEMENTAT)
     const istoricPlatiContainer = document.getElementById("istoric-plati-client");
     if (istoricPlatiContainer && f.facturi && f.facturi.length > 0) {
         const facturiIncasate = f.facturi.filter(fac => fac.status_plata === "Incasat");
@@ -3427,7 +3435,7 @@ function arataDetalii(id) {
     // Sortare Facturi — scadența cea mai apropiată de azi prima; achitate ultimele
     const facturiSortate = [...f.facturi].sort((a, b) => _sortFacturiByDueClosest(a, b, azi, 'Incasat'));
 
-    // Generare HTML Facturi - cu Lazy Loading (#6 TODO)
+    // Generare HTML Facturi - cu Lazy Loading (#6 IMPLEMENTAT)
     // Salvăm facturile sortate pentru Load More
     ZFlowStore.facturiSortateClient = facturiSortate;
     ZFlowStore.facturiLoadedCount = Math.min(facturiSortate.length, ZFlowStore.facturiPerPage);
@@ -3537,7 +3545,7 @@ function filtreazaFacturiInDetalii() {
 
 /**
  * Încarcă mai multe facturi pentru clientul curent (Lazy Loading)
- * #6 TODO - Lazy loading facturi
+ * #6 IMPLEMENTAT - Lazy loading facturi
  */
 async function loadMoreFacturiClient() {
     if (!ZFlowStore.facturiSortateClient || !ZFlowStore.hasMoreFacturi) return;
@@ -3838,7 +3846,7 @@ function verificaScadenteNotificari() {
     const maine = new Date(Date.now() + 86400000).toISOString().split('T')[0];
 
     // Include restante (data depasita), scadente azi si scadente maine
-    const scadente = ZFlowStore.dateFacturiBI.filter(f =>
+    const scadente = (ZFlowStore.dateFacturiBI || []).filter(f =>
         f.status_plata === 'Neincasat' &&
         f.data_scadenta &&
         (f.data_scadenta <= maine)
@@ -3977,17 +3985,17 @@ function genereazaBI() {
     if (endDate) endDate.setHours(23, 59, 59, 999);
 
     // Debug log
-    ZFlowLogger.debug('app', "🔍 Filtrare BI - Start:", startVal, "End:", endVal, "Clienți selectați:", ids.length, "Total facturi:", ZFlowStore.dateFacturiBI.length);
+    ZFlowLogger.debug('app', "🔍 Filtrare BI - Start:", startVal, "End:", endVal, "Clienți selectați:", ids.length, "Total facturi:", (ZFlowStore.dateFacturiBI || []).length);
     
     // Log primele 3 facturi pentru debug
-    if (ZFlowStore.dateFacturiBI.length > 0) {
+    if ((ZFlowStore.dateFacturiBI || []).length > 0) {
         ZFlowLogger.debug('app', "📋 Sample facturi (primele 3):");
-        ZFlowStore.dateFacturiBI.slice(0, 3).forEach((f, i) => {
+        (ZFlowStore.dateFacturiBI || []).slice(0, 3).forEach((f, i) => {
             ZFlowLogger.debug('app', `  ${i+1}. data_emiterii: "${f.data_emiterii}", created_at: "${f.created_at}", nr: ${f.numar_factura}`);
         });
     }
 
-    const filtrate = ZFlowStore.dateFacturiBI.filter((f) => {
+    const filtrate = (ZFlowStore.dateFacturiBI || []).filter((f) => {
         // Folosim data_emiterii pentru filtrare, cu fallback la created_at
         const dataFactura = f.data_emiterii || f.created_at || "";
         
@@ -4515,7 +4523,8 @@ function _detectaStatusPlata(csvFact, isFurnizori) {
 
 /**
  * Import facturi din CSV SAGA cu auto-detectare tip (clienți / furnizori)
- * @deprecated Înlocuită de importSmartUnificat() — nu are buton în UI.
+ * @deprecated Înlocuită de importSmartUnificat() — niciun buton din UI nu apelează
+ *   această funcție. Exportată pe window pentru compatibilitate. Nu șterge.
  */
 async function importaDateSagaAuto() {
     if (!hasPermission('canImport')) {
@@ -7579,7 +7588,7 @@ window.populeazaBridgeUI = populeazaBridgeUI;
 window.toggleFirmeBI = toggleFirmeBI;
 window.genereazaBI = genereazaBI;
 // ==========================================
-// SWIPE ACTIONS - MOBILE GESTURES (#34 TODO)
+// SWIPE ACTIONS - MOBILE GESTURES (#34 IMPLEMENTAT)
 // ==========================================
 
 /**

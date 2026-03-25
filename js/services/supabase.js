@@ -1394,14 +1394,7 @@ async function deleteComandaTransport(id) {
 
 // [R4-FIX 5] Admin: funcții pentru gestionarea datelor altor utilizatori Supabase
 
-// TODO: Creați RPC-ul în Supabase SQL Editor:
-// CREATE OR REPLACE FUNCTION admin_get_user_by_email(p_email text)
-// RETURNS TABLE(id uuid, email text, display_name text, created_at timestamptz)
-// LANGUAGE plpgsql SECURITY DEFINER AS $$
-// BEGIN
-//   RETURN QUERY SELECT id, email::text, raw_user_meta_data->>'full_name' AS display_name, created_at
-//   FROM auth.users WHERE email = p_email LIMIT 1;
-// END; $$;
+// RPC-ul admin_get_user_by_email este definit deja în SQL/zflow_setup.sql (Secțiunea 5).
 
 async function adminGetUserData(targetEmail) {
     // [R4-FIX 5] Admin: accesează datele unui utilizator Supabase după email

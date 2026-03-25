@@ -87,14 +87,14 @@ const ZFlowStore = Vue.reactive({
     _vehiculeFiltrate: [],
     vehiculeQuery: '',
 
-    // Lazy Loading Facturi (#6 TODO)
+    // Lazy Loading Facturi (#6 IMPLEMENTAT)
     facturiPerPage: 20,
     facturiLoadedCount: 0,
     facturiTotalCount: 0,
     hasMoreFacturi: true,
     facturiSortateClient: [], // Referință la facturile sortate pentru Load More
     
-    // Bulk Actions (#14 TODO)
+    // Bulk Actions (#14 IMPLEMENTAT)
     bulkSelectedFacturi: [], // Array cu ID-urile facturilor selectate
     bulkMode: false, // Mod selecție multiplă activ
     

@@ -181,7 +181,7 @@ self.addEventListener('fetch', event => {
         return cached;
       }
       // Fără cache — așteptăm rețeaua
-      return networkFetch.then(r => r || caches.match('./index.html'));
+      return networkFetch.then(r => r || new Response('Offline asset unavailable', { status: 503, statusText: 'Service Unavailable' }));
     })
   );
 });
