@@ -123,6 +123,7 @@ async function salveazaFacturaOrchestrator() {
     const auto = document.getElementById("in-auto").value;
     const uit = document.getElementById("in-uit")?.value?.trim() || "";
     const note = document.getElementById("in-fac-note")?.value || "";
+    const cotaTvaFac = parseInt(document.getElementById('in-fac-cota-tva')?.value ?? (window.ZFlowStore?.userProfile?.cota_tva_default ?? 21)); // [v75.0]
     const fileInput = document.getElementById("in-fac-file");
 
     if (!cid || !nr || !val) { showNotification('Selectează clientul, seria și suma!', 'error'); return; }
@@ -154,6 +155,7 @@ async function salveazaFacturaOrchestrator() {
             client_id: cid,
             numar_factura: nr,
             valoare: parseFloat(val),
+            cota_tva: cotaTvaFac, // [v75.0]
             data_emiterii: de || new Date().toISOString().split("T")[0],
             data_scadenta: ds,
             numar_auto: auto,
@@ -473,6 +475,7 @@ async function salveazaFacturaPlatit() {
     if (val <= 0) { showNotification("Completează valoarea facturii", "error"); return; }
 
     const nrFurnizor = document.getElementById("in-fp-nr")?.value.trim() || null;
+    const cotaTvaFp = parseInt(document.getElementById('in-fp-cota-tva')?.value ?? (window.ZFlowStore?.userProfile?.cota_tva_default ?? 21)); // [v75.0]
     if (!id && nrFurnizor) {
         const dupFP = ZFlowStore.dateFacturiPlatit.find(f =>
             String(f.furnizor_id) === String(furnizorId) &&
@@ -490,6 +493,7 @@ async function salveazaFacturaPlatit() {
             furnizor_id: furnizorId,
             numar_factura: nrFurnizor,
             valoare: val,
+            cota_tva: cotaTvaFp, // [v75.0]
             data_emiterii: document.getElementById("in-fp-emisie")?.value || null,
             data_scadenta: document.getElementById("in-fp-scad")?.value || null,
             note: document.getElementById("in-fp-note")?.value.trim() || null,

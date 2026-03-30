@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Z-FLOW — Contact, FAQ & Hartă Aplicație</title>
+  <meta name="description" content="Întrebări frecvente, hartă funcționalități și contact Z-FLOW. Totul despre cum funcționează aplicația de management financiar și logistică pentru IMM-uri românești." />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --blue: #1e3a5f;
+      --blue-mid: #2563eb;
+      --accent: #0ea5e9;
+      --green: #10b981;
+      --amber: #f59e0b;
+      --radius: 16px;
+    }
+    * { box-sizing: border-box; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f8fafc; color: #1e293b; line-height: 1.6; }
+
+    /* ── HEADER ── */
+    .site-header {
+      background: linear-gradient(135deg, #0f172a 0%, var(--blue) 100%);
+      color: white;
+      padding: 20px 40px;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 12px;
+    }
+    .logo-text { font-size: 28px; font-weight: 900; letter-spacing: -2px; color: white; text-decoration: none; }
+    .logo-text span { color: var(--accent); }
+    .nav-links { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+    .nav-link { color: rgba(255,255,255,0.7); text-decoration: none; font-size: 13px; font-weight: 600; transition: color 0.2s; }
+    .nav-link:hover { color: white; }
+    .nav-btn { background: var(--blue-mid); color: white; padding: 8px 20px; border-radius: 100px;
+               text-decoration: none; font-size: 12px; font-weight: 800; letter-spacing: 0.5px; transition: background 0.2s; }
+    .nav-btn:hover { background: #1d4ed8; }
+
+    /* ── HERO MINI ── */
+    .hero-mini {
+      background: linear-gradient(135deg, #0f172a 0%, var(--blue) 100%);
+      color: white; text-align: center; padding: 60px 40px 50px;
+    }
+    .hero-mini h1 { font-size: 36px; font-weight: 900; letter-spacing: -1px; margin-bottom: 12px; }
+    .hero-mini p { color: rgba(255,255,255,0.65); font-size: 16px; max-width: 600px; margin: 0 auto; }
+
+    /* ── SECTION ── */
+    .section { max-width: 1100px; margin: 0 auto; padding: 70px 40px; }
+    .section-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 3px; color: var(--blue-mid); margin-bottom: 8px; }
+    .section-title { font-size: 32px; font-weight: 900; color: var(--blue); letter-spacing: -1px; margin-bottom: 12px; }
+    .section-desc { font-size: 15px; color: #64748b; max-width: 640px; margin-bottom: 44px; line-height: 1.7; }
+    .divider { height: 1px; background: linear-gradient(to right, transparent, #e2e8f0, transparent); margin: 0 40px; }
+
+    /* ── APP MAP ── */
+    .map-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+    }
+    .map-module {
+      background: white; border-radius: var(--radius);
+      border: 1px solid #e2e8f0; box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+      overflow: hidden; transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .map-module:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(0,0,0,0.1); }
+    .map-module-header {
+      padding: 20px 24px 14px;
+      display: flex; align-items: center; gap: 14px;
+    }
+    .map-icon { width: 44px; height: 44px; border-radius: 12px;
+                display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+    .map-module-name { font-size: 17px; font-weight: 900; color: #1e293b; }
+    .map-module-tag { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;
+                      padding: 3px 9px; border-radius: 100px; margin-top: 2px; display: inline-block; }
+    .tag-fin { background: #dcfce7; color: #166534; }
+    .tag-log { background: #fef3c7; color: #92400e; }
+    .tag-dep { background: #dbeafe; color: #1d4ed8; }
+    .tag-ana { background: #f3e8ff; color: #6d28d9; }
+    .tag-pwa { background: #e0f2fe; color: #0369a1; }
+    .tag-sec { background: #fef9c3; color: #854d0e; }
+
+    .map-features { padding: 0 24px 20px; }
+    .map-feature { display: flex; align-items: flex-start; gap: 9px;
+                   font-size: 13px; color: #334155; margin-bottom: 7px; line-height: 1.5; }
+    .map-check { color: var(--green); font-weight: 900; flex-shrink: 0; margin-top: 1px; font-size: 12px; }
+    .map-sub { font-size: 11px; color: #94a3b8; font-weight: 600; margin-top: 2px; padding-left: 19px; }
+
+    /* ── FLOW DIAGRAM ── */
+    .flow-row { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; margin-bottom: 40px; }
+    .flow-box {
+      background: white; border: 1px solid #e2e8f0; border-radius: 12px;
+      padding: 14px 20px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+      min-width: 130px;
+    }
+    .flow-icon { font-size: 24px; margin-bottom: 6px; }
+    .flow-name { font-size: 12px; font-weight: 800; color: #1e293b; text-transform: uppercase; letter-spacing: 0.5px; }
+    .flow-arrow { font-size: 20px; color: #94a3b8; font-weight: 900; }
+
+    /* ── FAQ ── */
+    .faq-list { display: flex; flex-direction: column; gap: 12px; }
+    .faq-item {
+      background: white; border-radius: var(--radius);
+      border: 1px solid #e2e8f0; overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+    }
+    .faq-q {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 24px; cursor: pointer; gap: 16px;
+      font-size: 14px; font-weight: 800; color: #1e293b; list-style: none; user-select: none;
+    }
+    .faq-q:hover { background: #f8fafc; }
+    .faq-q::marker, .faq-q::-webkit-details-marker { display: none; }
+    details[open] .faq-q { color: var(--blue-mid); border-bottom: 1px solid #e2e8f0; }
+    .faq-a {
+      padding: 16px 24px; font-size: 13px; color: #475569; line-height: 1.75;
+    }
+    .faq-a strong { color: #1e293b; }
+    .faq-a a { color: var(--blue-mid); text-decoration: none; }
+    .faq-a a:hover { text-decoration: underline; }
+    .faq-tag {
+      font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;
+      padding: 3px 8px; border-radius: 100px; flex-shrink: 0;
+      background: #dbeafe; color: #1d4ed8;
+    }
+    .faq-tag.fin { background: #dcfce7; color: #166534; }
+    .faq-tag.imp { background: #fee2e2; color: #991b1b; }
+    .faq-tag.log { background: #fef3c7; color: #92400e; }
+    .faq-tag.dep { background: #dbeafe; color: #1d4ed8; }
+    .faq-tag.sec { background: #fef9c3; color: #854d0e; }
+    .faq-tag.pwa { background: #e0f2fe; color: #0369a1; }
+
+    /* ── CONTACT ── */
+    .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: start; }
+    @media (max-width: 720px) { .contact-grid { grid-template-columns: 1fr; } }
+    .contact-card {
+      background: white; border-radius: var(--radius);
+      border: 1px solid #e2e8f0; padding: 36px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    }
+    .contact-item { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 24px; }
+    .contact-icon-box { width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
+                        display: flex; align-items: center; justify-content: center; font-size: 20px; }
+    .contact-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: #94a3b8; margin-bottom: 4px; }
+    .contact-value { font-size: 14px; font-weight: 700; color: #1e293b; }
+    .contact-sub { font-size: 12px; color: #64748b; margin-top: 2px; }
+
+    .contact-form-title { font-size: 18px; font-weight: 900; color: var(--blue); margin-bottom: 6px; }
+    .contact-form-desc { font-size: 13px; color: #64748b; margin-bottom: 24px; line-height: 1.6; }
+    .form-group { margin-bottom: 16px; }
+    .form-label { display: block; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #64748b; margin-bottom: 6px; }
+    .form-input {
+      width: 100%; padding: 12px 16px; border: 1px solid #e2e8f0;
+      border-radius: 10px; font-size: 14px; font-family: inherit; color: #1e293b;
+      background: #f8fafc; outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .form-input:focus { border-color: var(--blue-mid); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); background: white; }
+    .form-textarea { resize: vertical; min-height: 120px; }
+    .form-btn {
+      width: 100%; padding: 14px; background: var(--blue); color: white;
+      border: none; border-radius: 12px; font-size: 14px; font-weight: 800;
+      cursor: pointer; letter-spacing: 0.5px; transition: background 0.2s;
+    }
+    .form-btn:hover { background: #1d4ed8; }
+    .form-note { font-size: 11px; color: #94a3b8; text-align: center; margin-top: 12px; }
+
+    /* ── DARK SECTION ── */
+    .dark-section {
+      background: linear-gradient(135deg, #0f172a 0%, var(--blue) 100%);
+      color: white; padding: 60px 40px; text-align: center;
+    }
+    .dark-section h2 { font-size: 28px; font-weight: 900; margin-bottom: 12px; }
+    .dark-section p { color: rgba(255,255,255,0.65); font-size: 15px; margin-bottom: 28px; max-width: 500px; margin-left: auto; margin-right: auto; }
+    .dark-btn { display: inline-block; padding: 14px 36px; background: var(--accent); color: white;
+                border-radius: 100px; font-weight: 900; font-size: 14px; text-decoration: none; transition: opacity 0.2s; }
+    .dark-btn:hover { opacity: 0.9; }
+
+    /* ── FOOTER ── */
+    footer { background: #0f172a; color: rgba(255,255,255,0.4); text-align: center; padding: 28px 40px; font-size: 12px; }
+
+    @media (max-width: 768px) {
+      .site-header { padding: 16px 24px; }
+      .hero-mini { padding: 48px 24px 40px; }
+      .hero-mini h1 { font-size: 28px; }
+      .section { padding: 48px 24px; }
+      .flow-row { gap: 6px; }
+      .flow-box { min-width: 110px; padding: 10px 14px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════ HEADER ═══════════ -->
+<header class="site-header">
+  <a href="landing.html" class="logo-text">Z<span>-</span>FLOW</a>
+  <nav class="nav-links">
+    <a href="landing.html" class="nav-link">Acasă</a>
+    <a href="contact.html#app-map" class="nav-link">Hartă App</a>
+    <a href="contact.html#faq" class="nav-link">FAQ</a>
+    <a href="contact.html#contact" class="nav-link">Contact</a>
+    <a href="index.html" class="nav-btn">Deschide App →</a>
+  </nav>
+</header>
+
+<!-- ═══════════ HERO ═══════════ -->
+<section class="hero-mini">
+  <p style="font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:3px; color:rgba(255,255,255,0.5); margin-bottom:10px;">Ajutor & Documentare</p>
+  <h1>Cum funcționează Z-FLOW?</h1>
+  <p>Hartă completă a aplicației, întrebări frecvente și modalități de contact. Tot ce ai nevoie pentru a folosi Z-FLOW eficient.</p>
+</section>
+
+<!-- ═══════════ APP MAP ═══════════ -->
+<section class="section" id="app-map">
+  <p class="section-label">Arhitectura aplicației</p>
+  <h2 class="section-title">Hartă funcționalități</h2>
+  <p class="section-desc">Z-FLOW este construit din 5 module independente care funcționează împreună. Fiecare modul sincronizează datele automat cu baza de date cloud și poate fi folosit offline.</p>
+
+  <!-- FLOW OVERVIEW -->
+  <div class="flow-row">
+    <div class="flow-box" style="border-color:#bbf7d0; background:#f0fdf4">
+      <div class="flow-icon">📥</div>
+      <div class="flow-name" style="color:#166534">Import SAGA / XML</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box" style="border-color:#bfdbfe; background:#eff6ff">
+      <div class="flow-icon">📊</div>
+      <div class="flow-name" style="color:#1d4ed8">Z-FLOW Dashboard</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box" style="border-color:#fde68a; background:#fffbeb">
+      <div class="flow-icon">📤</div>
+      <div class="flow-name" style="color:#92400e">Export Bridge XML</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box" style="border-color:#fecaca; background:#fef2f2">
+      <div class="flow-icon">🏛️</div>
+      <div class="flow-name" style="color:#991b1b">ANAF / Contabil</div>
+    </div>
+  </div>
+
+  <!-- MODULE CARDS -->
+  <div class="map-grid">
+
+    <!-- HOME / DASHBOARD -->
+    <div class="map-module">
+      <div class="map-module-header">
+        <div class="map-icon" style="background:#dbeafe">🏠</div>
+        <div>
+          <div class="map-module-name">Dashboard Home</div>
+          <span class="map-module-tag tag-ana">Executive View</span>
+        </div>
+      </div>
+      <div class="map-features">
+        <div class="map-feature"><span class="map-check">✓</span> Facturat / Încasat / Furnizori de plătit / Cashflow Net — ultimele 30 zile</div>
+        <div class="map-feature"><span class="map-check">✓</span> Estimare cashflow luna viitoare (proiecție automată)</div>
+        <div class="map-feature"><span class="map-check">✓</span> Alerte scadențe depășite + buton "Vezi toate"</div>
+        <div class="map-feature"><span class="map-check">✓</span> Rezumat Depozit (alerte stoc minim) + Logistic (comenzi active)</div>
+        <div class="map-feature"><span class="map-check">✓</span> Tendință % față de luna anterioară pentru fiecare buton</div>
+      </div>
+    </div>
+
+    <!-- FINANCIAR -->
+    <div class="map-module">
+      <div class="map-module-header">
+        <div class="map-icon" style="background:#dcfce7">💰</div>
+        <div>
+          <div class="map-module-name">Financiar</div>
+          <span class="map-module-tag tag-fin">3 sub-module</span>
+        </div>
+      </div>
+      <div class="map-features">
+        <div class="map-feature"><span class="map-check">✓</span> <strong>Clienți</strong> — sold actualizat, facturi emise, alerte restanțe, autofill CUI din ANAF</div>
+        <div class="map-feature"><span class="map-check">✓</span> <strong>Furnizori</strong> — sold de plătit, facturi primite, scadențe urgente</div>
+        <div class="map-feature"><span class="map-check">✓</span> <strong>Analiză BI</strong> — filtrare avansată, cashflow intrări vs ieșiri, selecție multiplă, export PDF/Excel/CSV/XML</div>
+        <div class="map-feature"><span class="map-check">✓</span> Contribuții Buget Stat — TVA, CAS, CASS, Impozit</div>
+        <div class="map-feature"><span class="map-check">✓</span> <strong>Cotă TVA per factură</strong> — 21% (standard 2026), Redusă 11% · XML UBL 2.1 ANAF</div>
+        <div class="map-sub">Import: CSV/Excel/XML SAGA/WinMentor · Export: Bridge XML pentru contabil</div>
+      </div>
+    </div>
+
+    <!-- LOGISTIC -->
+    <div class="map-module">
+      <div class="map-module-header">
+        <div class="map-icon" style="background:#fef3c7">🚚</div>
+        <div>
+          <div class="map-module-name">Logistică</div>
+          <span class="map-module-tag tag-log">Transport & GPS</span>
+        </div>
+      </div>
+      <div class="map-features">
+        <div class="map-feature"><span class="map-check">✓</span> Comenzi transport — creare, editare, statusuri, cod tracking</div>
+        <div class="map-feature"><span class="map-check">✓</span> Gestiune flotă vehicule + evidență șoferi</div>
+        <div class="map-feature"><span class="map-check">✓</span> Hartă GPS live (Leaflet.js) — vehicule în timp real</div>
+        <div class="map-feature"><span class="map-check">✓</span> Integrare SafeFleet / Nexus via webhook (opțional)</div>
+        <div class="map-feature"><span class="map-check">✓</span> Raport km vs livrări cu export CSV</div>
+      </div>
+    </div>
+
+    <!-- DEPOZIT -->
+    <div class="map-module">
+      <div class="map-module-header">
+        <div class="map-icon" style="background:#dbeafe">📦</div>
+        <div>
+          <div class="map-module-name">Depozit & Scanner</div>
+          <span class="map-module-tag tag-dep">Stoc & QR</span>
+        </div>
+      </div>
+      <div class="map-features">
+        <div class="map-feature"><span class="map-check">✓</span> Gestiune produse — stoc curent, stoc minim, alertă automată</div>
+        <div class="map-feature"><span class="map-check">✓</span> Mișcări stoc cu audit trail complet</div>
+        <div class="map-feature"><span class="map-check">✓</span> Recepții de la furnizori + Bonuri de livrare</div>
+        <div class="map-feature"><span class="map-check">✓</span> Scanner QR / cod de bare — camera telefonului, fără instalare</div>
+        <div class="map-sub">Acțiuni rapide post-scan: recepție, livrare, comandă transport</div>
+      </div>
+    </div>
+
+    <!-- PWA -->
+    <div class="map-module">
+      <div class="map-module-header">
+        <div class="map-icon" style="background:#e0f2fe">📱</div>
+        <div>
+          <div class="map-module-name">PWA & Offline</div>
+          <span class="map-module-tag tag-pwa">Mobile First</span>
+        </div>
+      </div>
+      <div class="map-features">
+        <div class="map-feature"><span class="map-check">✓</span> Instalabil pe telefon/tabletă (iOS & Android) — fără App Store</div>
+        <div class="map-feature"><span class="map-check">✓</span> Funcționează fără internet (Service Worker + cache local)</div>
+        <div class="map-feature"><span class="map-check">✓</span> Sincronizare automată la reconectare</div>
+        <div class="map-feature"><span class="map-check">✓</span> Back button nativ Android (double-back pentru ieșire)</div>
+        <div class="map-feature"><span class="map-check">✓</span> Notificări push pentru scadențe (cu permisiune browser)</div>
+      </div>
+    </div>
+
+    <!-- ADMIN & SECURITATE -->
+    <div class="map-module">
+      <div class="map-module-header">
+        <div class="map-icon" style="background:#fef9c3">🔐</div>
+        <div>
+          <div class="map-module-name">Administrare & Securitate</div>
+          <span class="map-module-tag tag-sec">Multi-user</span>
+        </div>
+      </div>
+      <div class="map-features">
+        <div class="map-feature"><span class="map-check">✓</span> Token abonament — Trial 30 zile / Standard / Pro / Enterprise</div>
+        <div class="map-feature"><span class="map-check">✓</span> Wizard onboarding 2 pași — configurare firmă + TVA la prima autentificare</div>
+        <div class="map-feature"><span class="map-check">✓</span> Dashboard utilizatori — statistici, extindere abonament, notificări</div>
+        <div class="map-feature"><span class="map-check">✓</span> Mod mentenanță — continuitate pentru utilizatorii înregistrați</div>
+        <div class="map-feature"><span class="map-check">✓</span> Izolare date completă (Row Level Security Supabase)</div>
+        <div class="map-sub">Fiecare cont are spațiu propriu de date · Admin local ≠ utilizatori cloud</div>
+      </div>
+    </div>
+
+  </div><!-- /map-grid -->
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════ FAQ ═══════════ -->
+<section class="section" id="faq">
+  <p class="section-label">Întrebări frecvente</p>
+  <h2 class="section-title">FAQ — Răspunsuri rapide</h2>
+  <p class="section-desc">Cele mai comune întrebări despre funcționalitățile Z-FLOW, organizate pe teme. Nu găsești răspunsul? Scrie-ne la <strong>contact@z-flow.ro</strong>.</p>
+
+  <div class="faq-list">
+
+    <!-- GENERAL -->
+    <details class="faq-item">
+      <summary class="faq-q">
+        Ce este Z-FLOW și cu ce diferă față de SmartBill sau Oblio?
+        <span class="faq-tag">General</span>
+      </summary>
+      <div class="faq-a">
+        Z-FLOW este o aplicație de <strong>suport și vizualizare business</strong>, nu un program de facturare. Nu emite facturi în mod direct — <strong>importă datele din SAGA, WinMentor sau XML ANAF</strong> și le afișează într-un dashboard unificat.
+        <br><br>
+        Diferența esențială față de SmartBill/Oblio: Z-FLOW adaugă <strong>modulul de logistică complet</strong> (comenzi transport, șoferi, vehicule, GPS SafeFleet), <strong>scanner QR</strong> și <strong>funcționare offline completă</strong> — funcționalități pe care niciun competitor din România nu le oferă.
+        <br><br>
+        <strong>Utilizare tipică:</strong> folosești SAGA pentru contabilitate + Z-FLOW pentru tabloul de bord zilnic pe telefon.
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary class="faq-q">
+        Z-FLOW funcționează fără internet?
+        <span class="faq-tag pwa">PWA</span>
+      </summary>
+      <div class="faq-a">
+        <strong>Da.</strong> Z-FLOW este o Progressive Web App (PWA) cu Service Worker activ. Toate datele sunt cache-uite local (IndexedDB + localStorage), iar aplicația funcționează complet offline.
+        <br><br>
+        Când reconectezi internetul, datele se sincronizează automat cu baza de date Supabase. Bannerul <em>„Fără conexiune la internet"</em> te anunță vizual când ești offline, dar poți continua să lucrezi.
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary class="faq-q">
+        Cum instalez Z-FLOW pe telefon?
+        <span class="faq-tag pwa">PWA</span>
+      </summary>
+      <div class="faq-a">
+        Nu ai nevoie de App Store sau Play Store. Deschide aplicația în browser (<strong>Chrome pe Android, Safari pe iOS</strong>) și:
+        <br><br>
+        <strong>Android (Chrome):</strong> Meniu (⋮) → <em>„Adaugă pe ecranul principal"</em> → Instalare<br>
+        <strong>iOS (Safari):</strong> Butonul Share (□↑) → <em>„Adaugă pe ecran principal"</em>
+        <br><br>
+        După instalare, Z-FLOW apare ca orice aplicație nativă — fără browser, full-screen, cu back button Android funcțional.
+      </div>
+    </details>
+
+    <!-- FINANCIAR -->
+    <details class="faq-item">
+      <summary class="faq-q">
+        Cum import facturile din SAGA sau WinMentor?
+        <span class="faq-tag fin">Financiar</span>
+      </summary>
+      <div class="faq-a">
+        Folosești butonul <strong>„Import SAGA / WinMentor"</strong> din meniul FAB (butonul albastru din dreapta jos).
+        Z-FLOW acceptă:
+        <br><br>
+        • <strong>CSV</strong> — export din SAGA (clienți sau furnizori)<br>
+        • <strong>Excel (.xlsx)</strong> — export din orice program contabil<br>
+        • <strong>XML ANAF (UBL 2.1)</strong> — e-Facturi primite din SPV
+        <br><br>
+        <strong>Detectare automată tip:</strong> Z-FLOW identifică singur dacă fișierul conține clienți, furnizori sau contribuții — nu trebuie să selectezi manual. Importul adaugă doar facturile noi (duplicatele sunt ignorate automat).
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary class="faq-q">
+        Ce este Cashflow Net și cum se calculează?
+        <span class="faq-tag fin">Financiar</span>
+      </summary>
+      <div class="faq-a">
+        <strong>Cashflow Net 30 zile</strong> = Suma facturilor clienților <em>încasate efectiv</em> în ultimele 30 zile − Suma facturilor furnizorilor <em>plătite efectiv</em> în ultimele 30 zile.
+        <br><br>
+        <strong>Important:</strong> Contribuțiile buget stat (TVA, CAS etc.) <em>nu</em> sunt scăzute din Cashflow Net — ele reprezintă obligații viitoare, nu plăți efectuate. Le găsești separat în cardul <em>„Contribuții Buget Stat"</em>.
+        <br><br>
+        Widgetul <em>„Estimat luna viitoare"</em> de pe Home calculează proiecția pe baza scadențelor existente.
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary class="faq-q">
+        Ce sunt Contribuțiile Buget Stat și cum le gestionez?
+        <span class="faq-tag imp">Fiscal</span>
+      </summary>
+      <div class="faq-a">
+        Modulul Contribuții (din tab-ul Financiar) îți permite să urmărești obligațiile bugetare: <strong>TVA, CAS (pensie), CASS (sănătate), Impozit venit/profit și Altele</strong>.
+        <br><br>
+        Poți adăuga manual fiecare contribuție cu data scadenței (ziua 25 a lunii), suma și statusul (achitat/neachitat). Poți importa și din CSV. Contribuțiile neachitate apar în alertele de pe Home.
+        <br><br>
+        <strong>Atenție 2026:</strong> TVA a crescut la 21% (din august 2025), iar plafonul microîntreprindere scade la 100.000€. Actualizează sumele contribuțiilor lunar.
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary class="faq-q">
+        Care este cota TVA implicită și cum o schimb?
+        <span class="faq-tag fin">Financiar · TVA</span>
+      </summary>
+      <div class="faq-a">
+        <strong>Legea TVA 2025 (Legea nr. 353/2025)</strong> aduce două cote unice:
+        <br><br>
+        • <strong>21%</strong> — Cotă standard — se aplică majorității produselor și serviciilor, inclusiv semnătură electronică. Înflocuiește vechea cotă de 19%.<br>
+        • <strong>11%</strong> — Cotă redusă unificată — înlocuiește fostele 5% și 9%. Se aplică strict: alimente de bază (fără adaosuri de zahăr), produse agricole naturale, medicamente de uz uman, servicii HoReCa, lemn de foc și combustibil solid pentru încălzire, energie termică pentru populație, apă potabilă și canalizare, manuale școlare, cărți, ziare, reviste.<br>
+        • <strong>0%</strong> — Scutit cu drept de deducere / Export
+        <br><br>
+        <strong>Configurează din:</strong> <em>Profil Firmă → Plătitor TVA (ON) → Cotă TVA implicită</em>. Cota se aplică automat la fiecare factură nouă, dar poate fi modificată individual per factură.
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary class="faq-q">
+        Cum trimit facturile la ANAF (e-Factura)?
+        <span class="faq-tag imp">Fiscal · e-Factura</span>
+      </summary>
+      <div class="faq-a">
+        Z-FLOW <strong>nu transmite direct în SPV/ANAF</strong> — aceasta este responsabilitatea programului tău de contabilitate (SAGA, SmartBill etc.).
+        <br><br>
+        Ce face Z-FLOW în relație cu ANAF:
+        <br>
+        • <strong>Import XML UBL 2.1</strong> — importă e-Facturile primite din SPV<br>
+        • <strong>Export Bridge XML</strong> — generează fișier XML compatibil SAGA/WinMentor pentru contabil<br>
+        • <strong>Verificare e-Factura</strong> — validează dacă un CUI este înscris în sistemul RO e-Factura
+        <br><br>
+        Fluxul recomandat: emite în SAGA → exportă CSV → importă în Z-FLOW pentru vizualizare.
+      </div>
+    </details>
+
+    <!-- LOGISTIC -->
+    <details class="faq-item">
+      <summary class="faq-q">
+        Cum conectez SafeFleet sau alt sistem GPS?
+        <span class="faq-tag log">Logistică</span>
+      </summary>
+      <div class="faq-a">
+        Din tab-ul <strong>Logistică → SafeFleet / Nexus → Config</strong>, introduci URL-ul webhook și API Key-ul primit de la furnizorul GPS.
+        <br><br>
+        Z-FLOW suportă:
+        <br>
+        • <strong>SafeFleet</strong> — autentificare API key, preluare locație vehicule<br>
+        • <strong>Nexus</strong> — configurare similară<br>
+        • <strong>GPS Generic</strong> — orice furnizor care poate trimite webhook JSON cu format standard (latitudine, longitudine, ID vehicul)
+        <br><br>
+        Dacă nu ai SafeFleet, harta afișează vehiculele din comenzile active în modul <em>„Simulat"</em>.
+      </div>
+    </details>
+
+    <!-- DEPOZIT -->
+    <details class="faq-item">
+      <summary class="faq-q">
+        Scanner-ul QR funcționează pe orice telefon?
+        <span class="faq-tag dep">Depozit</span>
+      </summary>
+      <div class="faq-a">
+        Scannerul folosește <strong>Html5-QRCode</strong> — o bibliotecă open-source care accesează camera telefonului direct din browser, fără instalare de aplicații.
+        <br><br>
+        Compatibilitate: <strong>Chrome (Android), Safari (iOS 14+), Firefox (Android)</strong>. La prima utilizare, browserul cere permisiunea pentru cameră — acordă accesul.
+        <br><br>
+        Suportă: QR Code, Code 128, EAN-13, EAN-8, Code 39 și alte formate standard.
+        Scannerul se găsește în <em>Depozit → Scanner SKU / QR</em>.
+      </div>
+    </details>
+
+    <!-- SECURITATE -->
+    <details class="faq-item">
+      <summary class="faq-q">
+        Datele mele sunt în siguranță? Pot vedea alți utilizatori datele mele?
+        <span class="faq-tag sec">Securitate</span>
+      </summary>
+      <div class="faq-a">
+        <strong>Nu.</strong> Z-FLOW folosește <strong>Row Level Security (RLS) în PostgreSQL (Supabase)</strong> — fiecare utilizator vede strict datele proprii. Nu există nicio posibilitate tehnică de acces încrucișat între conturi.
+        <br><br>
+        • Autentificare prin <strong>JWT (Supabase Auth)</strong> — token securizat, expiră automat<br>
+        • Fiecare înregistrare din baza de date are câmpul <code>user_id</code> legat de contul tău<br>
+        • Backup automat în infrastructura Supabase (hosted pe AWS)<br>
+        • Header <strong>Content-Security-Policy</strong> activ pentru protecție XSS
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary class="faq-q">
+        Cum funcționează planurile de abonament și token-ul de activare?
+        <span class="faq-tag sec">Cont & Abonament</span>
+      </summary>
+      <div class="faq-a">
+        Contul Z-FLOW necesită un <strong>cod de activare (token)</strong> primit de la echipa Z-FLOW. Planurile disponibile:
+        <br><br>
+        • <strong>Trial — 30 zile</strong>: acces complet, ideal pentru testare<br>
+        • <strong>Standard — 365 zile</strong>: toate funcționalitățile incluse<br>
+        • <strong>Pro — 365 zile</strong>: funcționalități avansate<br>
+        • <strong>Enterprise</strong>: soluție personalizată pentru firme mari
+        <br><br>
+        La înregistrare, introduci emailul, parola și codul token. Planul se activează automat. Contactează-ne la <a href="mailto:contact@z-flow.ro">contact@z-flow.ro</a> pentru a obține un cod.
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary class="faq-q">
+        Cum activez notificările pentru facturi scadente?
+        <span class="faq-tag pwa">Notificări Push</span>
+      </summary>
+      <div class="faq-a">
+        Din <strong>Profilul Firmei → Notificări Scadențe → Activează Push</strong>, browserul îți va cere permisiunea pentru notificări.
+        <br><br>
+        Odată acordată, Z-FLOW îți va trimite notificări browser/PWA pentru:
+        <br>
+        • Facturi clienți cu scadența depășită sau iminentă (≤5 zile)<br>
+        • Contribuții buget stat neachitate cu scadența pe 25 ale lunii<br>
+        • Facturi furnizori cu scadența depășită
+        <br><br>
+        <strong>Notă:</strong> Notificările funcționează chiar și când aplicația este minimizată, dacă Z-FLOW este instalat ca PWA pe dispozitiv.
+      </div>
+    </details>
+
+  </div><!-- /faq-list -->
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════ CONTACT ═══════════ -->
+<section class="section" id="contact">
+  <p class="section-label">Suport & Asistență</p>
+  <h2 class="section-title">Contactează-ne</h2>
+  <p class="section-desc">Echipa Z-FLOW este disponibilă pentru configurare, onboarding și asistență tehnică. Răspundem în cel mult 24 de ore lucrătoare.</p>
+
+  <div class="contact-grid">
+
+    <!-- INFO CONTACT -->
+    <div class="contact-card">
+      <div class="contact-item">
+        <div class="contact-icon-box" style="background:#dbeafe">✉️</div>
+        <div>
+          <div class="contact-label">Email principal</div>
+          <div class="contact-value"><a href="mailto:contact@z-flow.ro" style="color:#2563eb; text-decoration:none;">contact@z-flow.ro</a></div>
+          <div class="contact-sub">Suport tehnic, onboarding, abonamente</div>
+        </div>
+      </div>
+      <div class="contact-item">
+        <div class="contact-icon-box" style="background:#dcfce7">🌐</div>
+        <div>
+          <div class="contact-label">Aplicație web</div>
+          <div class="contact-value"><a href="index.html" style="color:#2563eb; text-decoration:none;">Deschide Z-FLOW</a></div>
+          <div class="contact-sub">Autentifică-te sau înregistrează-te</div>
+        </div>
+      </div>
+      <div class="contact-item">
+        <div class="contact-icon-box" style="background:#fef3c7">🕐</div>
+        <div>
+          <div class="contact-label">Timp de răspuns</div>
+          <div class="contact-value">Max. 24 ore lucrătoare</div>
+          <div class="contact-sub">Luni-Vineri, 09:00 – 18:00</div>
+        </div>
+      </div>
+      <div class="contact-item">
+        <div class="contact-icon-box" style="background:#f3e8ff">📍</div>
+        <div>
+          <div class="contact-label">Locație</div>
+          <div class="contact-value">Zalău, Sălaj, România</div>
+          <div class="contact-sub">Implementare fizică disponibilă în zona Sălaj</div>
+        </div>
+      </div>
+      <div style="padding: 16px 20px; background: #f8fafc; border-radius: 12px; margin-top: 8px;">
+        <p style="font-size: 12px; color: #64748b; line-height: 1.6;">
+          <strong style="color:#1e293b;">Onboarding inclus</strong> — la activarea oricărui plan, oferim o sesiune de configurare inițială pentru import date SAGA/WinMentor, setup SafeFleet și instruire echipă.
+        </p>
+      </div>
+    </div>
+
+    <!-- FORMULAR -->
+    <div class="contact-card">
+      <div class="contact-form-title">Trimite un mesaj</div>
+      <div class="contact-form-desc">Completează formularul și te contactăm noi. Pentru solicitări urgente, scrie direct la <a href="mailto:contact@z-flow.ro">contact@z-flow.ro</a>.</div>
+      <form action="mailto:contact@z-flow.ro" method="GET" enctype="text/plain">
+        <div class="form-group">
+          <label class="form-label" for="cf-name">Nume și Firmă</label>
+          <input class="form-input" type="text" id="cf-name" name="from" placeholder="Ion Popescu — SC Exemplu SRL" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="cf-email">Email</label>
+          <input class="form-input" type="email" id="cf-email" name="reply" placeholder="ion@exemplu.ro" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="cf-subject">Subiect</label>
+          <select class="form-input" id="cf-subject" name="subject">
+            <option value="Solicit cod de activare / Trial">Solicit cod de activare / Trial</option>
+            <option value="Asistenta tehnica">Asistență tehnică</option>
+            <option value="Configurare import SAGA/WinMentor">Configurare import SAGA / WinMentor</option>
+            <option value="Integrare SafeFleet / GPS">Integrare SafeFleet / GPS</option>
+            <option value="Extindere abonament">Extindere abonament</option>
+            <option value="Alta intrebare">Altă întrebare</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="cf-msg">Mesaj</label>
+          <textarea class="form-input form-textarea" id="cf-msg" name="body" placeholder="Descrie ce ai nevoie sau problema întâmpinată..."></textarea>
+        </div>
+        <button type="submit" class="form-btn">Trimite mesajul →</button>
+        <p class="form-note">Formularul deschide clientul tău de email preferat cu datele completate automat.</p>
+      </form>
+    </div>
+
+  </div><!-- /contact-grid -->
+</section>
+
+<!-- ═══════════ CTA ═══════════ -->
+<div class="dark-section">
+  <h2>Gata să începi?</h2>
+  <p>Înregistrează-te cu un cod de activare primit de la echipa Z-FLOW și ai acces imediat la toate modulele.</p>
+  <a href="index.html" class="dark-btn">Deschide Z-FLOW →</a>
+</div>
+
+<!-- ═══════════ FOOTER ═══════════ -->
+<footer>
+  <p>© 2026 Z-FLOW Enterprise — Sistem Integrat de Management Financiar & Logistică &nbsp;·&nbsp; Toate drepturile rezervate</p>
+  <p style="margin-top:6px; font-size:10px; opacity:0.5">
+    <a href="landing.html" style="color:rgba(255,255,255,0.4); text-decoration:none;">Acasă</a>
+    &nbsp;·&nbsp;
+    <a href="contact.html" style="color:rgba(255,255,255,0.4); text-decoration:none;">Contact & FAQ</a>
+    &nbsp;·&nbsp;
+    <a href="index.html" style="color:rgba(255,255,255,0.4); text-decoration:none;">Aplicație</a>
+    &nbsp;·&nbsp; contact@z-flow.ro
+  </p>
+</footer>
+
+</body>
+</html>

@@ -48,6 +48,8 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS plan_type               TEX
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS subscription_expires_at TIMESTAMPTZ;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS subscription_token      TEXT;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS onboarding_done         BOOLEAN DEFAULT FALSE;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS platitor_tva            BOOLEAN DEFAULT FALSE; -- [v74.4] Plătitor de TVA
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS cota_tva_default       INTEGER DEFAULT 21;    -- [v75.0] Cotă TVA implicită (21=standard, 11=redusă, 0=scutit)
 -- Sincronizeaza user_id = id pentru randurile vechi
 UPDATE public.profiles SET user_id = id WHERE user_id IS NULL;
 

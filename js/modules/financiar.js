@@ -1130,6 +1130,12 @@ function deschideFacturaNou() {
     }
 
     comutaTipFacturaNou("incasat");
+    // [P0-B v74.7] Cota TVA implicită: 21% dacă plătitor, 0% dacă neplătitor
+    const _cotaSel = document.getElementById('fn-fac-cota-tva');
+    // [v74.8] Cotă implicită din profil (cota_tva_default) sau fallback 21% pentru plătitori
+    if (_cotaSel) _cotaSel.value = (window.ZFlowStore?.userProfile?.platitor_tva)
+        ? String(window.ZFlowStore?.userProfile?.cota_tva_default ?? 21)
+        : '0';
     document.getElementById("modal-factura-nou").classList.add("active");
 }
 
@@ -1159,6 +1165,7 @@ async function salveazaFacturaNou() {
     const scad = document.getElementById("fn-fac-scad").value || null;
     const note = document.getElementById("fn-fac-note").value.trim() || null;
 
+    const cotaTva = parseInt(document.getElementById('fn-fac-cota-tva')?.value ?? 21); // [P0-B v74.7]
     if (!val || isNaN(val)) {
         showNotification("Valoarea este obligatorie!", "error");
         return;
@@ -1173,6 +1180,7 @@ async function salveazaFacturaNou() {
                 client_id: clientId,
                 numar_factura: nr || null, // [QUALITY-FIX] FIX 7 — eliminat alias deprecat nr_factura
                 valoare: val,
+                cota_tva: cotaTva,         // [P0-B v74.7]
                 data_emiterii: emisie,     // [QUALITY-FIX] FIX 7 — eliminat alias deprecat data_emitere
                 data_scadenta: scad,
                 note,
@@ -1188,6 +1196,7 @@ async function salveazaFacturaNou() {
                 furnizor_id: furnizorId,
                 numar_factura: nr || null, // [QUALITY-FIX] FIX 7 — eliminat alias deprecat nr_factura
                 valoare: val,
+                cota_tva: cotaTva,         // [P0-B v74.7]
                 data_emiterii: emisie,     // [QUALITY-FIX] FIX 7 — eliminat alias deprecat data_emitere
                 data_scadenta: scad,
                 note,

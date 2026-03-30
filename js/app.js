@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Z-FLOW Enterprise V2 (v8.0)
  * App Principal - Vue 3 CDN + Arhitectură Modulară
  * 
@@ -52,6 +52,10 @@ function setLoader(v) {
 /**
  * Afișează notificare toast
  */
+// [v73.9] Istoric alerte — stocat în sesiunea curentă
+const _alertHistory = [];
+const _ALERT_HISTORY_MAX = 50;
+
 function showNotification(message, type = "info", duration = 3500) {
     const id = "notify-" + Date.now();
     const styles = {
@@ -74,7 +78,74 @@ function showNotification(message, type = "info", duration = 3500) {
         notif.style.opacity = '0';
         setTimeout(() => notif?.remove(), 300);
     }, duration);
+    // [v73.9] Push la istoric
+    _alertHistory.unshift({ type, message, ts: Date.now() });
+    if (_alertHistory.length > _ALERT_HISTORY_MAX) _alertHistory.length = _ALERT_HISTORY_MAX;
+    _updateAlertBadge();
 }
+
+// [v73.9] — Funcții istoric alerte ─────────────────────────────────────────
+function _updateAlertBadge() {
+    const badge = document.getElementById('alert-history-badge');
+    if (!badge) return;
+    const n = _alertHistory.length;
+    if (n === 0) { badge.classList.add('hidden'); return; }
+    badge.classList.remove('hidden');
+    badge.textContent = n > 9 ? '9+' : String(n);
+}
+
+function _renderAlertHistory() {
+    const list = document.getElementById('alert-history-list');
+    if (!list) return;
+    const countEl = document.getElementById('alert-history-count');
+    if (countEl) countEl.textContent = _alertHistory.length ? `(${_alertHistory.length})` : '';
+    if (_alertHistory.length === 0) {
+        list.innerHTML = '<p class="text-center text-[11px] text-slate-400 font-semibold py-8">Nicio alertă înregistrată în această sesiune.</p>';
+        return;
+    }
+    const typeStyle = {
+        success: { bg: 'bg-emerald-50 border-emerald-200', dot: 'bg-emerald-500', label: 'Succes' },
+        error:   { bg: 'bg-red-50 border-red-200',         dot: 'bg-red-500',     label: 'Eroare' },
+        warning: { bg: 'bg-amber-50 border-amber-200',     dot: 'bg-amber-500',   label: 'Avertisment' },
+        info:    { bg: 'bg-blue-50 border-blue-200',       dot: 'bg-blue-500',    label: 'Info' }
+    };
+    const now = Date.now();
+    list.innerHTML = _alertHistory.map(a => {
+        const st = typeStyle[a.type] || typeStyle.info;
+        const diff = Math.round((now - a.ts) / 1000);
+        const ago = diff < 60 ? `acum ${diff}s` : diff < 3600 ? `${Math.floor(diff/60)}min` : `${Math.floor(diff/3600)}h`;
+        const clean = a.message.replace(/^[\u{1F000}-\u{1FFFF}\u2600-\u27BF\uD800-\uDFFF\u26A0\u2705\u274C\u2714\u2716\uFE0F\u20E3]+[\s]*/gu, '');
+        return `<div class="flex items-start gap-2.5 px-3 py-2.5 rounded-xl border ${st.bg} text-[11px]">
+          <span class="w-2 h-2 rounded-full ${st.dot} flex-shrink-0 mt-1"></span>
+          <div class="flex-1 min-w-0">
+            <p class="text-slate-700 font-semibold leading-snug">${clean}</p>
+            <p class="text-slate-400 font-bold text-[9px] mt-0.5 uppercase tracking-wide">${st.label} · ${ago}</p>
+          </div>
+        </div>`;
+    }).join('');
+}
+
+function toggleAlertHistory() {
+    const panel = document.getElementById('alert-history-panel');
+    if (!panel) return;
+    const isHidden = panel.classList.contains('hidden');
+    if (isHidden) {
+        _renderAlertHistory();
+        panel.classList.remove('hidden');
+        // Resetăm badge-ul la 0 când panoul e deschis
+        const badge = document.getElementById('alert-history-badge');
+        if (badge) badge.classList.add('hidden');
+    } else {
+        panel.classList.add('hidden');
+    }
+}
+
+function clearAlertHistory() {
+    _alertHistory.length = 0;
+    _renderAlertHistory();
+    _updateAlertBadge();
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 /**
  * Afișează mesaj "niciun rezultat" cu ilustrații SVG contextuale
@@ -405,6 +476,8 @@ async function init(goHome = true) {
             fr = frRes;
             fp = fpRes;
             if (profileRes) ZFlowStore.userProfile = profileRes;
+            // [v74.4] Propagă statusul TVA imediat după încărcarea profilului la login
+            if (typeof _aplicaTvaProfile === 'function') _aplicaTvaProfile(!!profileRes?.platitor_tva);
             ZFlowStore._freshDataLoaded = true; // [SWR] date Supabase au sosit — blochează render stale
             ZFlowStore._facturiTotal  = fcResult.count || 0;
             ZFlowStore._facturiLoaded = fc.length;
@@ -1299,6 +1372,7 @@ async function salveazaProfilOnboarding() {
             persoana_contact: document.getElementById('ob-persoana-contact')?.value.trim() || null,
             email:            document.getElementById('ob-email')?.value.trim()            || null,
             iban:             document.getElementById('ob-iban')?.value.trim()             || null,
+            platitor_tva:     !!document.getElementById('ob-platitor-tva')?.checked, // [v74.9]
             onboarding_done: true
         };
 
@@ -1340,10 +1414,8 @@ async function deschideProfilFirma() {
         // Nu reseta profilul din memorie dacă deja există (evită pierderea datelor la re-deschidere modal)
         if (profile) ZFlowStore.userProfile = profile;
 
-        // Restaurează preferința "Dată implicită = Azi"
-        const prefDataAzi = localStorage.getItem('zflow_pref_data_azi');
-        const prefEl = document.getElementById('pref-data-azi');
-        if (prefEl) prefEl.checked = prefDataAzi !== '0'; // default ON
+        // [v74.6] Data implicită = Azi este întotdeauna activă (preferința UI ănlăturată)
+        localStorage.setItem('zflow_pref_data_azi', '1');
 
         const f = (id) => document.getElementById(id);
 
@@ -1374,6 +1446,9 @@ async function deschideProfilFirma() {
         if (profileToLoad) {
             if (f('pf-cui'))    f('pf-cui').value    = profileToLoad.cui || '';
             if (f('pf-nome'))   f('pf-nome').value   = profileToLoad.nume_firma || '';
+            // [v74.6] Actualizează eticheta butonului "Firma Mea" din header cu numele real
+            const _swLabel = document.getElementById('multifirma-switcher-label');
+            if (_swLabel && profileToLoad.nume_firma) _swLabel.textContent = profileToLoad.nume_firma;
             if (f('pf-adresa')) f('pf-adresa').value = profileToLoad.adresa || '';
             if (f('pf-oras'))   f('pf-oras').value   = profileToLoad.oras || '';
             if (f('pf-judet'))  f('pf-judet').value  = profileToLoad.judet || '';
@@ -1382,6 +1457,11 @@ async function deschideProfilFirma() {
             if (f('pf-banca'))  f('pf-banca').value  = profileToLoad.banca || '';
             if (f('pf-tel'))    f('pf-tel').value    = profileToLoad.telefon || '';
             if (f('pf-email'))  f('pf-email').value  = profileToLoad.email || '';
+            // [v74.4] încarcă statut TVA
+            if (f('pf-platitor-tva')) f('pf-platitor-tva').checked = !!profileToLoad.platitor_tva;
+            // [v74.8] încarcă cotă TVA implicită
+            if (f('pf-cota-tva-default')) f('pf-cota-tva-default').value = profileToLoad.cota_tva_default ?? 21;
+            _aplicaTvaProfile(!!profileToLoad.platitor_tva);
         }
 
         // Afișează secțiunea de acțiuni în funcție de tipul de cont
@@ -1401,11 +1481,9 @@ async function deschideProfilFirma() {
             });
             // Ascunde elemente irelevante în modul admin (tab Financiar/Firme, Profil Firmă)
             aplicaUIAdmin();
-            // Bug #6: Ascunde formularul detalii firmă și Firmele Mele pentru admin
+            // Bug #6: Ascunde formularul detalii firmă pentru admin
             const pfFirmaForm = document.getElementById('pf-firma-form');
-            const pfFirmeMeleSection = document.getElementById('pf-firme-mele-section');
             if (pfFirmaForm) pfFirmaForm.classList.toggle('hidden', isAdminLocal);
-            if (pfFirmeMeleSection) pfFirmeMeleSection.classList.toggle('hidden', isAdminLocal);
             // Elementele [data-supabase-only] sunt vizibile DOAR pentru useri Supabase reali
             adminSection.querySelectorAll('[data-supabase-only]').forEach(el => {
                 el.classList.toggle('hidden', !isSupabaseUser);
@@ -1417,8 +1495,8 @@ async function deschideProfilFirma() {
         }
 
         document.getElementById('modal-profil-firma').classList.add('active');
-        // Populare secțiune Firmele Mele integrată în modal
-        if (window.ZFlowMultiFirma) window.ZFlowMultiFirma.renderPanel('pf-firme-content');
+        // [v74] Actualizează starea butonului Push la deschiderea modalului
+        setTimeout(_updatePushNotifBtn, 60);
     } catch (err) {
         ZFlowLogger.error('app', 'deschideProfilFirma error:', err);
         showNotification('Eroare la încărcarea profilului', 'error');
@@ -1650,16 +1728,22 @@ async function salveazaProfilFirma() {
             banca:      document.getElementById('pf-banca')?.value.trim()  || null,
             telefon:    document.getElementById('pf-tel')?.value.trim()    || null,
             email:      document.getElementById('pf-email')?.value.trim()  || null,
+            platitor_tva: !!document.getElementById('pf-platitor-tva')?.checked, // [v74.4]
+            cota_tva_default: parseInt(document.getElementById('pf-cota-tva-default')?.value ?? 21), // [v74.8]
             onboarding_done: true
         };
 
         await ZFlowDB.upsertProfile(payload);
         ZFlowStore.userProfile = { ...ZFlowStore.userProfile, ...payload };
+        _aplicaTvaProfile(!!payload.platitor_tva); // [v74.4] propagate imediat
 
         // Actualizează header-ul firmei din home imediat
         const _setH = (id, v) => { const el = document.getElementById(id); if (el) el.innerText = v; };
         const _p = ZFlowStore.userProfile;
         if (_p) { _setH("home-firma-nume", _p.nume_firma || "—"); _setH("home-firma-cui", _p.cui ? "CUI: " + _p.cui : ""); _setH("home-firma-oras", _p.oras || ""); _setH("home-firma-initiale", (_p.nume_firma||"ZF").split(" ").slice(0,2).map(w=>w[0]).join("").toUpperCase()); }
+        // [v74.6] Actualizează live eticheta "Firma Mea" din header
+        const _sw = document.getElementById('multifirma-switcher-label');
+        if (_sw && _p?.nume_firma) _sw.textContent = _p.nume_firma;
 
         inchideProfilFirma();
         showNotification('Profil actualizat cu succes!', 'success');
@@ -1757,6 +1841,15 @@ function schimbaTab(id, btn) {
     }
 
     if (id === "home") { _dashboardHash = null; incarcaDashboard(); }
+
+    // [v74.5] A5: titlu document dinamic per tab — utilă în browser history + screen reader
+    const _TITLURI_TAB = {
+        home:      'Z-FLOW — Acasă',
+        financiar: 'Z-FLOW — Financiar',
+        logistic:  'Z-FLOW — Logistică',
+        depozit:   'Z-FLOW — Depozit'
+    };
+    document.title = _TITLURI_TAB[id] || 'Z-FLOW';
 
     history.pushState({ zflowView: id }, '', location.pathname);
     ZFlowStore.currentTab = id;
@@ -2054,6 +2147,10 @@ function incarcaDashboard() {
 
     const setKPI = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
     setKPI("home-kpi-facturat", fmt(totalFacturat));
+    // [v75.0] TVA estimat dynamic — usa cota_tva_default din profil (fallback 21%)
+    const _kpiRate = ZFlowStore?.userProfile?.cota_tva_default ?? 21;
+    const elTvaKpi = document.getElementById('home-kpi-facturat-tva');
+    if (elTvaKpi) elTvaKpi.innerText = totalFacturat > 0 ? `TVA est. ${Math.round(totalFacturat * _kpiRate / (100 + _kpiRate)).toLocaleString('ro-RO')} lei (${_kpiRate}%)` : '';
     setKPI("home-kpi-neincasat", fmt(neincasat));
     setKPI("home-kpi-neplatit", fmt(neplatit));
     // KPI Net — culoare dinamică
@@ -2303,6 +2400,19 @@ function incarcaDashboard() {
     _setTrend('home-kpi-neplatit-trend',  neplatit, prevNP);
     _setTrend('home-kpi-net-trend',       net, prevNet);
 
+    // [v73.8] Alertă prag TVA 395.000 lei (OG 22/2025) — o singură dată per sesiune
+    const totalAnCurent = (ZFlowStore.dateFacturiBI || [])
+        .filter(f => new Date(f.data_emiterii || f.created_at).getFullYear() === new Date().getFullYear())
+        .reduce((s, f) => s + (Number(f.valoare) || 0), 0);
+    const PRAG_TVA = 395000;
+    if (totalAnCurent > PRAG_TVA * 0.8 && !sessionStorage.getItem('zflow_tva_warn')) {
+        sessionStorage.setItem('zflow_tva_warn', '1');
+        showNotification(
+            `⚠ Cifra de afaceri ${Math.round(totalAnCurent).toLocaleString('ro-RO')} lei — aproape de pragul TVA (395.000 lei). Verifică cu contabilul.`,
+            'warning', 8000
+        );
+    }
+
     // [R19] Widgets secundare Home
     _updateHomeMiniDepozit();
     _updateHomeMiniLogistic();
@@ -2388,6 +2498,27 @@ function _updateHomeMiniCashflow() {
     if (typeof verificaAlertaCashflow === 'function') verificaAlertaCashflow(soldInitial);
 }
 
+// [P1-B v74.7] Mini bar chart CSS-only cashflow net 30 zile în Home
+function _renderHomeCashflowBars(intrariArr, iesiriArr, netArr, labelsArr) {
+    const container = document.getElementById('home-cashflow-bars');
+    const inner     = document.getElementById('home-cashflow-bars-inner');
+    if (!container || !inner || !netArr || netArr.length === 0) return;
+    const maxVal = Math.max(...netArr.map(Math.abs), 1);
+    inner.innerHTML = netArr.map((v, i) => {
+        const pct   = Math.max(Math.round((Math.abs(v) / maxVal) * 40), 1);
+        const color = v >= 0 ? 'bg-emerald-400' : 'bg-red-400';
+        const lei   = (v >= 0 ? '+' : '') + Math.round(v).toLocaleString('ro-RO') + ' lei';
+        return `<div class="flex-1 flex flex-col items-center justify-end" title="${labelsArr[i]}: ${lei}"><div class="${color} rounded-sm w-full" style="height:${pct}px"></div></div>`;
+    }).join('');
+    const elStart = document.getElementById('home-cashflow-bars-label-start');
+    const elEnd   = document.getElementById('home-cashflow-bars-label-end');
+    if (labelsArr.length > 0) {
+        if (elStart) elStart.textContent = labelsArr[0];
+        if (elEnd)   elEnd.textContent   = labelsArr[labelsArr.length - 1];
+    }
+    container.classList.remove('hidden');
+}
+
 // [R19] Helper: buton alerte scadențe pe Home (mereu vizibil, stare dinamică)
 function _updateHomeAlerteSummary(clientiRestanti, furnizoriRestanti, totalCliVal, totalFurnVal, contributiiScadente, totalCtbScadenta) {
     const elSubtitle  = document.getElementById('home-alerte-scadente-subtitle');
@@ -2468,12 +2599,18 @@ function deschideModalFacturaPlatit(furnizorId, facturaId) {
             if (fac.data_emiterii) document.getElementById("display-fp-emisie").innerText = formateazaDataZFlow(fac.data_emiterii);
             if (fac.data_scadenta) document.getElementById("display-fp-scadenta").innerText = formateazaDataZFlow(fac.data_scadenta);
             populeazaSelectFurnizori(fac.furnizor_id);
+            // [v75.0] pre-fill TVA rate din factură existentă
+            const _fpCotaEdit = document.getElementById('in-fp-cota-tva');
+            if (_fpCotaEdit) _fpCotaEdit.value = String(fac.cota_tva ?? window.ZFlowStore?.userProfile?.cota_tva_default ?? 21);
         }
         if (title) title.innerText = "Editare Factură";
         if (btnSterge) btnSterge.classList.remove("hidden");
     } else {
         if (title) title.innerText = "Factură de Plătit";
         if (btnSterge) btnSterge.classList.add("hidden");
+        // [v75.0] pre-fill TVA rate din profil pentru factură nouă
+        const _fpCotaNou = document.getElementById('in-fp-cota-tva');
+        if (_fpCotaNou) _fpCotaNou.value = String(window.ZFlowStore?.userProfile?.cota_tva_default ?? 21);
     }
 
     modal.classList.add("active");
@@ -3842,6 +3979,9 @@ function updateBellUI(count) {
  * #12 - Notificări push scadențe
  */
 function verificaScadenteNotificari() {
+    // [v74.1] Respectăm opt-out-ul utilizatorului (toggle OFF din Profil)
+    if (localStorage.getItem('zflow_push_opted_out') === '1') return;
+
     const azi = new Date().toISOString().split('T')[0];
     const maine = new Date(Date.now() + 86400000).toISOString().split('T')[0];
 
@@ -5458,6 +5598,9 @@ function deschideModal(id, targetId = null) {
                     anafId.innerText = fc.id_descarcare_anaf ? "ID: " + fc.id_descarcare_anaf : "";
                 }
                 logicUIT(fc.valoare);
+                // [v75.0] pre-fill TVA rate din factură existentă
+                const _inFacCota = document.getElementById('in-fac-cota-tva');
+                if (_inFacCota) _inFacCota.value = String(fc.cota_tva ?? window.ZFlowStore?.userProfile?.cota_tva_default ?? 21);
             }
         } else {
             title.innerText = "Factură Nouă";
@@ -5471,6 +5614,9 @@ function deschideModal(id, targetId = null) {
             sincronizeazaDateVizual();
             if (anafBox) anafBox.classList.add("hidden");
             logicUIT(0);
+            // [v75.0] pre-fill TVA rate din profil pentru factură nouă
+            const _inFacCotaNou = document.getElementById('in-fac-cota-tva');
+            if (_inFacCotaNou) _inFacCotaNou.value = String(window.ZFlowStore?.userProfile?.cota_tva_default ?? 21);
         }
         // Arată/ascunde banner avertizare suport
         const warningFac = document.getElementById("modal-factura-suport-warning");
@@ -7199,6 +7345,71 @@ window.inchideModalResetPassword = inchideModalResetPassword;
 window.verificaOnboarding = verificaOnboarding;
 window.salveazaProfilOnboarding = salveazaProfilOnboarding;
 window.salteOnboarding = salteOnboarding;
+
+// [P3-B v74.7] Wizard onboarding — navigare între pași
+function onboardingGoToStep2() {
+    const cui       = document.getElementById('ob-cui')?.value.trim();
+    const numeFirma = document.getElementById('ob-nume-firma')?.value.trim();
+    if (!cui || !numeFirma) {
+        showNotification('Completează CUI-ul și denumirea firmei', 'error');
+        return;
+    }
+    document.getElementById('ob-step-1').classList.add('hidden');
+    document.getElementById('ob-step-2').classList.remove('hidden');
+    const d1 = document.getElementById('ob-step-dot-1');
+    const d2 = document.getElementById('ob-step-dot-2');
+    if (d1) { d1.classList.remove('bg-blue-900'); d1.classList.add('bg-blue-300'); }
+    if (d2) { d2.classList.remove('bg-slate-200', 'text-slate-400'); d2.classList.add('bg-blue-900', 'text-white'); }
+}
+window.onboardingGoToStep2 = onboardingGoToStep2;
+
+function onboardingGoToStep1() {
+    document.getElementById('ob-step-2').classList.add('hidden');
+    document.getElementById('ob-step-1').classList.remove('hidden');
+    const d1 = document.getElementById('ob-step-dot-1');
+    const d2 = document.getElementById('ob-step-dot-2');
+    if (d1) { d1.classList.remove('bg-blue-300'); d1.classList.add('bg-blue-900'); }
+    if (d2) { d2.classList.remove('bg-blue-900', 'text-white'); d2.classList.add('bg-slate-200', 'text-slate-400'); }
+}
+window.onboardingGoToStep1 = onboardingGoToStep1;
+
+async function salveazaOnboardingPas2() {
+    const cui       = document.getElementById('ob-cui')?.value.trim();
+    const numeFirma = document.getElementById('ob-nume-firma')?.value.trim();
+    if (!cui || !numeFirma) {
+        showNotification('Completează CUI-ul și denumirea firmei', 'error');
+        return;
+    }
+    const platitorTva = !!document.getElementById('ob-platitor-tva')?.checked;
+    setLoader(true);
+    try {
+        const payload = {
+            cui,
+            nume_firma:       numeFirma,
+            oras:             document.getElementById('ob-oras')?.value.trim()             || null,
+            adresa:           document.getElementById('ob-adresa')?.value.trim()           || null,
+            telefon:          document.getElementById('ob-telefon')?.value.trim()          || null,
+            persoana_contact: document.getElementById('ob-persoana-contact')?.value.trim() || null,
+            email:            document.getElementById('ob-email')?.value.trim()            || null,
+            iban:             document.getElementById('ob-iban')?.value.trim()             || null,
+            platitor_tva:     platitorTva,
+            cota_tva_default: platitorTva ? 21 : 0, // [v74.9] cotă implicită la finalizare onboarding
+            onboarding_done:  true
+        };
+        await ZFlowDB.upsertProfile(payload);
+        ZFlowStore.userProfile = { ...ZFlowStore.userProfile, ...payload };
+        if (typeof _aplicaTvaProfile === 'function') _aplicaTvaProfile(platitorTva);
+        document.getElementById('modal-onboarding').classList.remove('active');
+        showNotification('Profil salvat! Bun venit în Z-FLOW!', 'success');
+        init();
+    } catch (err) {
+        ZFlowLogger.error('app', 'salveazaOnboardingPas2 error:', err);
+        showNotification('Eroare la salvare: ' + err.message, 'error');
+    } finally {
+        setLoader(false);
+    }
+}
+window.salveazaOnboardingPas2 = salveazaOnboardingPas2;
 window.deschideProfilFirma = deschideProfilFirma;
 window.inchideProfilFirma = inchideProfilFirma;
 window.salveazaProfilFirma = salveazaProfilFirma;
@@ -7535,6 +7746,107 @@ async function activareNotificariPush() {
     }
 }
 window.activareNotificariPush = activareNotificariPush;
+
+// [v74.1] Toggle push notifications ON/OFF
+// Browserul nu permite programatic revocare permisiuni —
+// stocăm preferința în localStorage: 'zflow_push_opted_out' = '1'
+async function togglePushNotificari(checked) {
+    if (checked) {
+        // Utilizatorul vrea activare
+        localStorage.removeItem('zflow_push_opted_out');
+        await activareNotificariPush();
+    } else {
+        // Utilizatorul vrea dezactivare — stocăm opt-out local
+        localStorage.setItem('zflow_push_opted_out', '1');
+        showNotification('Notificările push au fost dezactivate. Le poți reactiva oricând.', 'info');
+    }
+    _updatePushNotifBtn();
+}
+window.togglePushNotificari = togglePushNotificari;
+
+// [v74] Actualizează starea vizuală a toggle-ului Push din Profil
+function _updatePushNotifBtn() {
+    const toggle  = document.getElementById('push-notif-toggle');
+    const status  = document.getElementById('push-notif-status-text');
+    const hint    = document.getElementById('push-notif-hint');
+    if (!toggle) return;
+
+    const optedOut = localStorage.getItem('zflow_push_opted_out') === '1';
+    const perm = ('Notification' in window) ? Notification.permission : 'unsupported';
+
+    if (perm === 'unsupported') {
+        toggle.disabled = true;
+        toggle.checked  = false;
+        if (status) status.textContent = 'Browser-ul nu suportă notificări push';
+        if (hint)   { hint.textContent = ''; hint.classList.add('hidden'); }
+        return;
+    }
+    if (perm === 'denied') {
+        toggle.checked  = false;
+        toggle.disabled = false;
+        if (status) status.textContent = 'Notificări blocate în browser';
+        if (hint)   { hint.textContent = 'Activează permisiunea din bara de adresă (pictograma 🔒), apoi revino aici.'; hint.classList.remove('hidden'); }
+        return;
+    }
+    // perm === 'granted' sau 'default'
+    const isOn = perm === 'granted' && !optedOut;
+    toggle.checked  = isOn;
+    toggle.disabled = false;
+    if (hint) hint.classList.add('hidden');
+    if (status) {
+        status.textContent = isOn
+            ? 'Activ — primești alerte la scadențe ≤5 zile'
+            : 'Dezactivat — nu primești notificări push';
+    }
+}
+window._updatePushNotifBtn = _updatePushNotifBtn;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [v74.4] TVA STATUS — propagare globală
+// Seteaz\u0103 atributul data-platitor-tva pe <body> \u0219i actualizeaz\u0103 hint-ul din Profil.
+// Toate efectele vizuale se fac prin CSS (\u0219i nu prin modificarea codul existent).
+// ─────────────────────────────────────────────────────────────────────────────
+function _aplicaTvaProfile(isPlat) {
+    const activ = !!isPlat;
+    document.body.dataset.platitorTva = activ ? 'true' : 'false';
+
+    // [v74.9] Arat\u0103/ascunde selectorul cot\u0103 TVA implicit\u0103 \u00een Profil Firm\u0103
+    const cotaWrap = document.getElementById('pf-cota-tva-wrap');
+    if (cotaWrap) cotaWrap.classList.toggle('hidden', !activ);
+
+    // Actualizeaz\u0103 hint-ul din formularul de Profil (dac\u0103 e deschis)
+    const hint = document.getElementById('pf-tva-status-hint');
+    if (hint) {
+        if (activ) {
+            // [v74.9] Cot\u0103 dinamic\u0103: din store \u2192 DOM select \u2192 fallback 21
+            const cotaNum = ZFlowStore?.userProfile?.cota_tva_default
+                ?? parseInt(document.getElementById('pf-cota-tva-default')?.value ?? 21);
+            hint.textContent = 'Plătitor TVA — cotă implicită: ' + (cotaNum || 21) + '%';
+        } else {
+            hint.textContent = 'Nepl\u0103titor \u2014 facturi f\u0103r\u0103 TVA';
+        }
+    }
+
+    // Actualizeaz\u0103 manual eticheta KPI dac\u0103 nu e pl\u0103titor (CSS ascunde, dar golim \u0219i textul)
+    const elTvaKpi = document.getElementById('home-kpi-facturat-tva');
+    if (elTvaKpi && !activ) elTvaKpi.innerText = '';
+}
+window._aplicaTvaProfile = _aplicaTvaProfile;
+
+// Handler inline pentru onchange-ul din formular
+function _onPlatitorTvaChange(checked) {
+    _aplicaTvaProfile(checked);
+}
+window._onPlatitorTvaChange = _onPlatitorTvaChange;
+
+// [v74.8] Update live hint când utilizatorul schimbă cota TVA implicită
+function _onCotaTvaDefaultChange(val) {
+    const cota = parseInt(val ?? 21);
+    const hint = document.getElementById('pf-tva-status-hint');
+    if (hint) hint.textContent = `Plătitor TVA — cotă implicită: ${cota || 21}%`;
+    if (ZFlowStore?.userProfile) ZFlowStore.userProfile.cota_tva_default = cota;
+}
+window._onCotaTvaDefaultChange = _onCotaTvaDefaultChange;
 window.schimbaTab = schimbaTab;
 window.comutaVedereFin = comutaVedereFin;
 window.toggleFAB = toggleFAB;

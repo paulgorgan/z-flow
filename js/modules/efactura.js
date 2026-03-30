@@ -23,12 +23,11 @@ const UBL_NAMESPACES = `xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invo
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2 UBL-Invoice-2.1.xsd"`;
 
-/** Tabela cote TVA valide conform ANAF */
+/** Tabela cote TVA valide conform ANAF Legea 2025 */
 const TVA_RATE_MAP = {
-    0:  { categorie: 'Z', motiv: 'Zero rated' },
-    5:  { categorie: 'S', motiv: null },
-    9:  { categorie: 'S', motiv: null },
-    19: { categorie: 'S', motiv: null },
+    0:  { categorie: 'Z', motiv: 'Zero rated / Scutit' },
+    11: { categorie: 'S', motiv: null }, // [v75.0] cotă redusă unificată 2025 (fostele 5% și 9%)
+    21: { categorie: 'S', motiv: null }, // [v75.0] cotă standard 2025 (fostă 19%)
 };
 
 /** Escapeaza entitati XML */
@@ -71,7 +70,7 @@ function genereazaXML(factura, client, profil) {
     }
 
     const valoare      = parseFloat(factura.valoare || 0);
-    const cotaTVA      = parseInt(factura.cota_tva != null ? factura.cota_tva : (factura.tva_procent != null ? factura.tva_procent : 19));
+    const cotaTVA      = parseInt(factura.cota_tva != null ? factura.cota_tva : (factura.tva_procent != null ? factura.tva_procent : 21)); // [P0-A v74.9] fallback 21% standard ANAF aug 2025
     const esteNeplatitor = factura.neplatitor_tva || profil.neplatitor_tva || false;
 
     // Calcule TVA
@@ -90,7 +89,7 @@ function genereazaXML(factura, client, profil) {
 
     const tvaInfo = esteNeplatitor
         ? { categorie: 'O', motiv: 'Not subject to VAT' }
-        : (TVA_RATE_MAP[cotaTVA] || TVA_RATE_MAP[19]);
+        : (TVA_RATE_MAP[cotaTVA] || TVA_RATE_MAP[21]); // [P0-A v74.7] fallback la 21% (standard aug 2025)
 
     // ID unic factura: numar_factura sau fallback UUID
     const idFactura = _esc(factura.numar_factura || factura.id || 'ZF-' + Date.now());

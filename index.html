@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="ro">
   <head>
     <meta charset="UTF-8" />
@@ -45,6 +45,47 @@
 
     <!-- Tailwind CSS (JIT via CDN) -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      /* [v74.4] TVA conditional display: ascunde KPI TVA și badge-urile TVA cât timp firma e neplatitoare */
+      body:not([data-platitor-tva="true"]) #home-kpi-facturat-tva { display: none !important; }
+      body[data-platitor-tva="true"] .tva-badge-neplatitor { display: none !important; }
+      body:not([data-platitor-tva="true"]) .tva-badge-platitor { display: none !important; }
+
+      /* [v74.5] M1: touch target minim 44×44px pentru butoanele icon din header */
+      #btn-alert-history,
+      button[data-action="init"][data-arg="false"],
+      button[data-action="toggleDarkMode"] {
+        min-width: 44px; min-height: 44px;
+        display: inline-flex; align-items: center; justify-content: center;
+      }
+
+      /* [v74.5] M2: text minim lizibil pe mobile (în loc de 9-10px fizic) */
+      @media (max-width: 640px) {
+        [class*="text-[9px]"]  { font-size: 11px !important; }
+        [class*="text-[10px]"] { font-size: 12px !important; }
+      }
+
+      /* [v74.5] M3: previne zoom automat iOS la focus pe input (font-size < 16px) */
+      @media (hover: none) and (pointer: coarse) {
+        input[type="text"], input[type="email"], input[type="number"],
+        input[type="tel"], input[type="password"], select, textarea {
+          font-size: 16px !important;
+        }
+      }
+
+      /* [v74.5] A2: contrast WCAG AA — text-slate-400 (#94a3b8 pe alb = ~2.9:1) → slate-500 (#64748b = ~4.7:1) */
+      .text-slate-400 { color: #64748b !important; }
+
+      /* [v74.5] A3: focus-visible ring pentru navigație cu tastatura (WCAG 2.4.7)
+         box-shadow nu interferează cu border-ul existent al inputurilor */
+      :focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 2px #fff, 0 0 0 4px #60a5fa !important;
+        border-radius: inherit;
+      }
+      /* Excepție: checkbox-urile (închise în peer-pattern cu sr-only) */
+      input[type="checkbox"]:focus-visible { box-shadow: none !important; }
+    </style>
 
     <!-- Runtime dependencies — heavy libs (jsPDF, xlsx, Chart.js) are loaded on-demand by JS modules -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" defer></script>
@@ -222,6 +263,18 @@
                 <span id="user-role-badge" class="text-[7px] font-semibold text-blue-500 leading-none mt-0.5">Vizualizare</span>
             </div>
         </button>
+        <!-- [v73.9] Buton Istoricul Alertelor -->
+        <button type="button" id="btn-alert-history"
+          onclick="toggleAlertHistory()"
+          class="relative p-2 text-slate-400 hover:text-amber-500 transition-colors"
+          aria-label="Istoricul alertelor"
+          title="Istoricul alertelor"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/>
+          </svg>
+          <span id="alert-history-badge" class="hidden absolute top-0.5 right-0.5 min-w-[14px] h-3.5 bg-red-500 text-white text-[7px] font-black rounded-full flex items-center justify-center px-0.5 leading-none">0</span>
+        </button>
         <button type="button"
           data-action="init" data-arg="false"
           class="p-2 text-slate-400 hover:text-blue-900 transition-colors active:rotate-180"
@@ -385,6 +438,7 @@
             <div class="flex items-center gap-1.5 mt-0.5">
               <span id="home-kpi-facturat-trend" class="text-[7px] font-black"></span>
             </div>
+            <p id="home-kpi-facturat-tva" class="text-[9px] font-bold text-slate-400 mt-0.5 truncate"></p>
           </div>
           <div
             class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100"
@@ -581,6 +635,21 @@
         </span>
       </div>
     </div>
+  </div>
+
+  <!-- [v73.9] Footer link contact.html în tab Home -->
+  <div class="flex items-center justify-center gap-4 py-4 border-t border-slate-100 mt-2">
+    <a href="contact.html" target="_blank" rel="noopener"
+       class="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 hover:text-blue-600 transition-colors">
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z"/></svg>
+      FAQ & Hartă Aplicație
+    </a>
+    <span class="text-slate-200">·</span>
+    <a href="contact.html#contact" target="_blank" rel="noopener"
+       class="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 hover:text-blue-600 transition-colors">
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/></svg>
+      Contact suport
+    </a>
   </div>
 
       </section>
@@ -2334,6 +2403,16 @@
             ></textarea>
           </div>
 
+          <!-- [P0-B v74.7] Cotă TVA per factură -->
+          <div id="fn-fac-cota-wrap" class="space-y-1">
+            <label class="text-[8px] font-bold text-slate-400 uppercase ml-1">Cotă TVA</label>
+            <select id="fn-fac-cota-tva" class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm outline-none">
+              <option value="21">21% — Standard</option>
+              <option value="11">11% — Redusă </option>
+              <option value="0">0% — Scutit / Neplătitor</option>
+            </select>
+          </div>
+
           <div class="flex flex-col gap-2 pt-4 border-t border-slate-50">
             <button type="button"
               data-action="salveazaFacturaNou"
@@ -2507,12 +2586,15 @@
             oninput="logicUIT(this.value)"
             class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
           />
-          <div
-            id="uit-display"
-            class="text-[9px] font-bold text-slate-400 px-1 hidden"
-          >
-            TVA 19%: <span id="uit-value">0</span> lei | Fără TVA:
-            <span id="fara-tva-value">0</span> lei
+          <!-- [v75.0] Cotă TVA per factură client -->
+          <div class="space-y-1">
+            <label class="text-[8px] font-bold text-slate-400 uppercase ml-1 block">Cotă TVA</label>
+            <select id="in-fac-cota-tva"
+              class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200">
+              <option value="21">21% — Standard</option>
+              <option value="11">11% — Redusă unificată</option>
+              <option value="0">0% — Scutit / Neplătitor</option>
+            </select>
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div>
@@ -2691,6 +2773,16 @@
                 </div>
               </div>
             </div>
+          </div>
+          <!-- [v75.0] Cotă TVA per factură furnizor -->
+          <div class="space-y-1">
+            <label class="text-[8px] font-bold text-slate-400 uppercase ml-1 block">Cotă TVA</label>
+            <select id="in-fp-cota-tva"
+              class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200">
+              <option value="21">21% — Standard</option>
+              <option value="11">11% — Redusă unificată</option>
+              <option value="0">0% — Scutit / Neplătitor</option>
+            </select>
           </div>
           <textarea
             id="in-fp-note"
@@ -3019,6 +3111,7 @@
             type="text"
             id="pf-nome"
             placeholder="Denumire firmă *"
+            autocomplete="organization"
             class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
           />
           <input
@@ -3026,42 +3119,49 @@
             id="pf-cui"
             inputmode="numeric"
             placeholder="CUI"
+            autocomplete="off"
             class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
           />
           <input
             type="text"
             id="pf-regcom"
             placeholder="Nr. Reg. Com."
+            autocomplete="off"
             class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
           />
           <input
             type="text"
             id="pf-adresa"
             placeholder="Adresa"
+            autocomplete="street-address"
             class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
           />
           <input
             type="text"
             id="pf-oras"
             placeholder="Oraș"
+            autocomplete="address-level2"
             class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
           />
           <input
             type="text"
             id="pf-judet"
             placeholder="Județ"
+            autocomplete="address-level1"
             class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
           />
           <input
             type="text"
             id="pf-iban"
             placeholder="IBAN principal"
+            autocomplete="off"
             class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
           />
           <input
             type="text"
             id="pf-banca"
             placeholder="Bancă"
+            autocomplete="off"
             class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
           />
           <input
@@ -3069,33 +3169,73 @@
             id="pf-tel"
             inputmode="numeric"
             placeholder="Telefon"
+            autocomplete="tel"
             class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
           />
           <input
             type="email"
             id="pf-email"
             placeholder="Email"
+            autocomplete="email"
             class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
           />
-        </div>
-        <!-- Firmele Mele (secțiune integrată în profilul firmei) -->
-        <div class="border-t border-slate-100 pt-3 mt-3">
-          <!-- Preferință: Data implicită = Azi -->
-          <label class="flex items-center justify-between gap-3 py-2 cursor-pointer">
-            <span class="text-[10px] font-black text-slate-600 uppercase">Dată implicită = Azi</span>
-            <div class="relative">
-              <input type="checkbox" id="pref-data-azi" onchange="salveazaPrefDataAzi(this.checked)" class="sr-only peer"/>
-              <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+          <!-- [v75.0] Card TVA unificat: toggle + cotă în același bloc -->
+          <div class="p-3 bg-indigo-50 border border-indigo-200 rounded-xl">
+            <label for="pf-platitor-tva" class="flex items-center justify-between gap-3 cursor-pointer">
+              <div class="min-w-0">
+                <p class="text-[11px] font-black text-indigo-800 uppercase leading-none mb-0.5">Plătitor de TVA</p>
+                <p id="pf-tva-status-hint" class="text-[9px] text-indigo-600 font-semibold">Neplătitor — facturi fără TVA</p>
+              </div>
+              <div class="relative flex-shrink-0">
+                <input type="checkbox" id="pf-platitor-tva" class="sr-only peer"
+                  onchange="window._onPlatitorTvaChange(this.checked)" />
+                <div class="relative w-10 h-6 bg-slate-200 rounded-full
+                  peer-checked:bg-indigo-500 transition-colors duration-200
+                  after:content-[''] after:absolute after:top-0.5 after:left-[2px]
+                  after:bg-white after:rounded-full after:w-5 after:h-5
+                  after:transition-all after:duration-200 after:shadow-sm
+                  peer-checked:after:translate-x-4"></div>
+              </div>
+            </label>
+            <!-- Cotă TVA implicită — vizibilă doar când Plătitor TVA = ON -->
+            <div id="pf-cota-tva-wrap" class="hidden mt-2.5 pt-2.5 border-t border-indigo-200">
+              <p class="text-[8px] font-bold text-indigo-400 uppercase mb-1.5">Cotă TVA implicită</p>
+              <select id="pf-cota-tva-default"
+                class="w-full p-3 bg-white rounded-xl font-bold text-sm outline-none border border-indigo-200"
+                onchange="window._onCotaTvaDefaultChange(this.value)">
+                <option value="21">21% — Standard</option>
+                <option value="11">11% — Redusă</option>
+               </select>
             </div>
-          </label>
-        </div>
-        <div id="pf-firme-mele-section" class="border-t border-slate-100 pt-3 mt-1">
-          <button type="button" data-action="toggleFirmeMulti"
-            class="w-full flex items-center justify-between py-1.5 text-[9px] font-black text-slate-500 uppercase hover:text-blue-700 transition-all">
-            <span class="flex items-center gap-1.5"><svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21"/></svg>Firmele Mele</span>
-            <span class="pf-arrow text-[10px]">-</span>
-          </button>
-          <div id="pf-firme-content" class="hidden pt-2"></div>
+          </div>
+          <!-- [v74.6] Notificări Scadențe Push — mutat sub selecție TVA -->
+          <div class="bg-amber-50 border border-amber-200 rounded-xl p-3">
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2.5 min-w-0">
+                <div class="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/>
+                  </svg>
+                </div>
+                <div class="min-w-0">
+                  <p class="text-[10px] font-black text-amber-800 uppercase leading-none mb-0.5">Notificări Scadențe</p>
+                  <p id="push-notif-status-text" class="text-[9px] text-amber-600 font-semibold truncate">Facturi scadente, contribuții, furnizori restanți</p>
+                </div>
+              </div>
+              <!-- Toggle switch -->
+              <label for="push-notif-toggle" class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                <input type="checkbox" id="push-notif-toggle" class="sr-only peer"
+                  onchange="togglePushNotificari(this.checked)" />
+                <div class="relative w-10 h-6 bg-slate-200 rounded-full
+                  peer-checked:bg-amber-500 transition-colors duration-200
+                  after:content-[''] after:absolute after:top-0.5 after:left-[2px]
+                  after:bg-white after:rounded-full after:w-5 after:h-5
+                  after:transition-all after:duration-200 after:shadow-sm
+                  peer-checked:after:translate-x-4"></div>
+              </label>
+            </div>
+            <p id="push-notif-hint" class="text-[9px] text-amber-600 font-semibold mt-2 hidden"></p>
+          </div>
         </div>
         <!-- Acțiuni suplimentare (Task 7 + Task 3) -->
         <div class="mt-4 space-y-2 border-t border-slate-100 pt-4">
@@ -3193,20 +3333,7 @@
           Schimbă Email / Parolă
         </button>
 
-        <!-- Golire cache — toți userii -->
-        <div data-account-only>
-          <button type="button" data-action="clearIDBCache"
-            class="w-full py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round"
-                d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/>
-            </svg>
-            Golește cache local
-          </button>
-          <p class="text-[9px] text-slate-400 text-center mt-1">
-            Datele se re-descarcă din cloud la refresh
-          </p>
-        </div>
+
       </div>
     </div>
 
@@ -3832,31 +3959,22 @@
 
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => {
+          // Captăm controller-ul existent ÎNAINTE de register.
+          // Dacă e null = primă instalare; reload necesar DOAR la update (controller existent).
+          const hadController = !!navigator.serviceWorker.controller;
+
           navigator.serviceWorker
             .register("./sw.js")
             .then((reg) => {
               console.log("Z-FLOW V2 Service Worker registered:", reg.scope);
 
-              // Forțează activarea SW-ului nou imediat ce e instalat
-              // fără să aștepte închiderea tuturor tab-urilor
-              const forceActivate = (worker) => {
-                worker.addEventListener("statechange", () => {
-                  if (worker.state === "installed") {
-                    worker.postMessage({ type: "SKIP_WAITING" });
-                  }
-                });
-              };
-
-              if (reg.installing) {
-                forceActivate(reg.installing);
-              }
-              reg.addEventListener("updatefound", () => {
-                if (reg.installing) forceActivate(reg.installing);
-              });
-
-              // Reîncarcă pagina când SW-ul nou preia controlul
+              // Reîncarcă pagina când SW-ul nou preia controlul —
+              // DAR NUMAI dacă era deja un controller activ (= scenariul de update).
+              // La prima instalare hadController=false → nu reîncărcăm → fără loop.
               navigator.serviceWorker.addEventListener("controllerchange", () => {
-                window.location.reload();
+                if (hadController) {
+                  window.location.reload();
+                }
               });
             })
             .catch((err) =>
@@ -3865,6 +3983,235 @@
         });
       }
     </script>
+
+    <!-- ==================== MODAL ONBOARDING [P3-B v74.7] 2 pași ====================
+    Afișat utilizatorilor noi la prima autentificare (onboarding_done !== true).
+    Pasul 1: Profil Firmă | Pasul 2: TVA & e-Factura
+    Funcții JS: verificaOnboarding(), onboardingGoToStep2(), onboardingGoToStep1(), salveazaOnboardingPas2(), salteOnboarding() -->
+    <div id="modal-onboarding" class="modal-sheet" role="dialog" aria-modal="true" aria-label="Configurare inițială Z-FLOW">
+      <div class="sheet-content">
+        <div class="w-12 h-1 bg-slate-100 rounded-full mx-auto mb-4"></div>
+        <!-- Indicator pași -->
+        <div class="flex items-center gap-2 mb-5">
+          <div id="ob-step-dot-1" class="w-6 h-6 rounded-full bg-blue-900 text-white flex items-center justify-center text-[9px] font-black flex-shrink-0">1</div>
+          <div class="flex-1 h-0.5 bg-slate-100"></div>
+          <div id="ob-step-dot-2" class="w-6 h-6 rounded-full bg-slate-200 text-slate-400 flex items-center justify-center text-[9px] font-black flex-shrink-0">2</div>
+        </div>
+
+        <!-- ===== PAS 1: Profil Firmă ===== -->
+        <div id="ob-step-1">
+          <p class="text-[9px] font-black text-blue-900 uppercase tracking-widest mb-1">Pas 1 din 2</p>
+          <h3 class="text-xl font-extrabold text-slate-800 mb-4 uppercase italic">Profilul Firmei</h3>
+          <div class="space-y-3">
+            <div class="grid grid-cols-2 gap-2">
+              <input type="text" id="ob-cui" placeholder="CUI" autocomplete="organization"
+                class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm outline-none" />
+              <input type="text" id="ob-nume-firma" placeholder="Denumire firmă" autocomplete="organization"
+                class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm outline-none" />
+            </div>
+            <input type="text" id="ob-oras" placeholder="Oraș" autocomplete="address-level2"
+              class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm outline-none" />
+            <input type="text" id="ob-adresa" placeholder="Adresă completă" autocomplete="street-address"
+              class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm outline-none" />
+            <div class="grid grid-cols-2 gap-2">
+              <input type="tel" id="ob-telefon" placeholder="Telefon" autocomplete="tel"
+                class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm outline-none" />
+              <input type="text" id="ob-persoana-contact" placeholder="Persoană contact" autocomplete="name"
+                class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm outline-none" />
+            </div>
+            <input type="email" id="ob-email" placeholder="Email firmă" autocomplete="email"
+              class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm outline-none" />
+            <input type="text" id="ob-iban" placeholder="IBAN (opțional)" autocomplete="off"
+              class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm outline-none" />
+          </div>
+          <div class="flex gap-2 mt-5">
+            <button type="button" onclick="salteOnboarding()"
+              class="flex-1 py-3 bg-slate-100 text-slate-500 rounded-xl text-[10px] font-black uppercase">Sari peste</button>
+            <button type="button" onclick="onboardingGoToStep2()"
+              class="flex-1 py-3 bg-blue-900 text-white rounded-xl text-[10px] font-black uppercase shadow-lg">Continuă →</button>
+          </div>
+        </div>
+
+        <!-- ===== PAS 2: TVA & e-Factura ===== -->
+        <div id="ob-step-2" class="hidden">
+          <p class="text-[9px] font-black text-blue-900 uppercase tracking-widest mb-1">Pas 2 din 2</p>
+          <h3 class="text-xl font-extrabold text-slate-800 mb-1 uppercase italic">TVA &amp; e-Factura</h3>
+          <p class="text-[10px] text-slate-500 mb-4">Configurare inițială — poate fi modificată oricând din Profil Firmă.</p>
+
+          <!-- Toggle TVA Plătitor -->
+          <div class="bg-blue-50 border border-blue-100 rounded-2xl p-4 mb-3">
+            <label class="flex items-center justify-between gap-3 cursor-pointer">
+              <div>
+                <p class="text-[11px] font-black text-blue-900 uppercase">Plătitor TVA</p>
+                <p class="text-[9px] text-blue-600 font-semibold mt-0.5">Cotă standard 21% · Redusă 11% </p>
+              </div>
+              <div class="relative flex-shrink-0">
+                <input type="checkbox" id="ob-platitor-tva" class="sr-only peer" />
+                <div class="w-10 h-6 bg-slate-200 rounded-full peer-checked:bg-blue-600 transition-colors duration-200
+                  after:content-[''] after:absolute after:top-0.5 after:left-[2px]
+                  after:bg-white after:rounded-full after:w-5 after:h-5
+                  after:transition-all after:duration-200 after:shadow-sm
+                  peer-checked:after:translate-x-4"></div>
+              </div>
+            </label>
+          </div>
+
+          <!-- Info e-Factura -->
+          <div class="bg-amber-50 border border-amber-100 rounded-2xl p-4 mb-4">
+            <div class="flex gap-3">
+              <div class="w-8 h-8 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                </svg>
+              </div>
+              <div>
+                <p class="text-[10px] font-black text-amber-800 uppercase mb-1">e-Factura ANAF — ce face Z-FLOW</p>
+                <p class="text-[9px] text-amber-700 leading-relaxed">Z-FLOW <strong>generează XML UBL 2.1</strong> conform ANAF și poate trimite prin SPV. Folosești SmartBill / Oblio pentru facturare? <strong>Perfect</strong> — Z-FLOW le completează cu logistică, GPS și vizibilitate operațională unică.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex gap-2">
+            <button type="button" onclick="onboardingGoToStep1()"
+              class="flex-1 py-3 bg-slate-100 text-slate-500 rounded-xl text-[10px] font-black uppercase">← Înapoi</button>
+            <button type="button" onclick="salveazaOnboardingPas2()"
+              class="flex-1 py-3 bg-blue-900 text-white rounded-xl text-[10px] font-black uppercase shadow-lg">Finalizează</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== MODAL ONBOARDING [P3-B v74.7] 2 pași ====================
+    Afișat utilizatorilor noi la prima autentificare (onboarding_done !== true).
+    Pasul 1: Profil Firmă | Pasul 2: TVA & e-Factura
+    Funcții JS: verificaOnboarding(), onboardingGoToStep2(), onboardingGoToStep1(), salveazaOnboardingPas2(), salteOnboarding() -->
+    <div id="modal-onboarding" class="modal-sheet" role="dialog" aria-modal="true" aria-label="Configurare inițială Z-FLOW">
+      <div class="sheet-content">
+        <div class="w-12 h-1 bg-slate-100 rounded-full mx-auto mb-4"></div>
+        <!-- Indicator pași -->
+        <div class="flex items-center gap-2 mb-5">
+          <div id="ob-step-dot-1" class="w-6 h-6 rounded-full bg-blue-900 text-white flex items-center justify-center text-[9px] font-black flex-shrink-0">1</div>
+          <div class="flex-1 h-0.5 bg-slate-100"></div>
+          <div id="ob-step-dot-2" class="w-6 h-6 rounded-full bg-slate-200 text-slate-400 flex items-center justify-center text-[9px] font-black flex-shrink-0">2</div>
+        </div>
+
+        <!-- ===== PAS 1: Profil Firmă ===== -->
+        <div id="ob-step-1">
+          <p class="text-[9px] font-black text-blue-900 uppercase tracking-widest mb-1">Pas 1 din 2</p>
+          <h3 class="text-xl font-extrabold text-slate-800 mb-4 uppercase italic">Profilul Firmei</h3>
+          <div class="space-y-3">
+            <div class="grid grid-cols-2 gap-2">
+              <input type="text" id="ob-cui" placeholder="CUI" autocomplete="organization"
+                class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm outline-none" />
+              <input type="text" id="ob-nume-firma" placeholder="Denumire firmă" autocomplete="organization"
+                class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm outline-none" />
+            </div>
+            <input type="text" id="ob-oras" placeholder="Oraș" autocomplete="address-level2"
+              class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm outline-none" />
+            <input type="text" id="ob-adresa" placeholder="Adresă completă" autocomplete="street-address"
+              class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm outline-none" />
+            <div class="grid grid-cols-2 gap-2">
+              <input type="tel" id="ob-telefon" placeholder="Telefon" autocomplete="tel"
+                class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm outline-none" />
+              <input type="text" id="ob-persoana-contact" placeholder="Persoană contact" autocomplete="name"
+                class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm outline-none" />
+            </div>
+            <input type="email" id="ob-email" placeholder="Email firmă" autocomplete="email"
+              class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm outline-none" />
+            <input type="text" id="ob-iban" placeholder="IBAN (opțional)" autocomplete="off"
+              class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm outline-none" />
+          </div>
+          <div class="flex gap-2 mt-5">
+            <button type="button" onclick="salteOnboarding()"
+              class="flex-1 py-3 bg-slate-100 text-slate-500 rounded-xl text-[10px] font-black uppercase">Sari peste</button>
+            <button type="button" onclick="onboardingGoToStep2()"
+              class="flex-1 py-3 bg-blue-900 text-white rounded-xl text-[10px] font-black uppercase shadow-lg">Continuă →</button>
+          </div>
+        </div>
+
+        <!-- ===== PAS 2: TVA & e-Factura ===== -->
+        <div id="ob-step-2" class="hidden">
+          <p class="text-[9px] font-black text-blue-900 uppercase tracking-widest mb-1">Pas 2 din 2</p>
+          <h3 class="text-xl font-extrabold text-slate-800 mb-1 uppercase italic">TVA &amp; e-Factura</h3>
+          <p class="text-[10px] text-slate-500 mb-4">Configurare inițială — poate fi modificată oricând din Profil Firmă.</p>
+
+          <!-- Toggle TVA Plătitor -->
+          <div class="bg-blue-50 border border-blue-100 rounded-2xl p-4 mb-3">
+            <label class="flex items-center justify-between gap-3 cursor-pointer">
+              <div>
+                <p class="text-[11px] font-black text-blue-900 uppercase">Plătitor TVA</p>
+                <p class="text-[9px] text-blue-600 font-semibold mt-0.5">Cotă standard 21% · Redusă 11%</p>
+              </div>
+              <div class="relative flex-shrink-0">
+                <input type="checkbox" id="ob-platitor-tva" class="sr-only peer" />
+                <div class="w-10 h-6 bg-slate-200 rounded-full peer-checked:bg-blue-600 transition-colors duration-200
+                  after:content-[''] after:absolute after:top-0.5 after:left-[2px]
+                  after:bg-white after:rounded-full after:w-5 after:h-5
+                  after:transition-all after:duration-200 after:shadow-sm
+                  peer-checked:after:translate-x-4"></div>
+              </div>
+            </label>
+          </div>
+
+          <!-- Info e-Factura -->
+          <div class="bg-amber-50 border border-amber-100 rounded-2xl p-4 mb-4">
+            <div class="flex gap-3">
+              <div class="w-8 h-8 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                </svg>
+              </div>
+              <div>
+                <p class="text-[10px] font-black text-amber-800 uppercase mb-1">e-Factura ANAF — ce face Z-FLOW</p>
+                <p class="text-[9px] text-amber-700 leading-relaxed">Z-FLOW <strong>generează XML UBL 2.1</strong> conform ANAF și poate trimite prin SPV. Folosești SmartBill / Oblio pentru facturare? <strong>Perfect</strong> — Z-FLOW le completează cu logistică, GPS și vizibilitate operațională unică.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex gap-2">
+            <button type="button" onclick="onboardingGoToStep1()"
+              class="flex-1 py-3 bg-slate-100 text-slate-500 rounded-xl text-[10px] font-black uppercase">← Înapoi</button>
+            <button type="button" onclick="salveazaOnboardingPas2()"
+              class="flex-1 py-3 bg-blue-900 text-white rounded-xl text-[10px] font-black uppercase shadow-lg">Finalizează</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== PANEL ISTORICUL ALERTELOR [v73.9] ==================== -->
+    <div id="alert-history-panel" class="hidden fixed inset-0 z-[900]" role="dialog" aria-modal="true" aria-label="Istoricul alertelor">
+      <!-- Backdrop -->
+      <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="toggleAlertHistory()"></div>
+      <!-- Sheet -->
+      <div class="absolute top-0 right-0 h-full w-full max-w-sm bg-white shadow-2xl flex flex-col" style="animation: slideInRight 0.22s ease-out;">
+        <style>@keyframes slideInRight{from{transform:translateX(100%)}to{transform:translateX(0)}}</style>
+        <!-- Header -->
+        <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+          <div class="flex items-center gap-2">
+            <svg class="w-4.5 h-4.5 text-amber-500 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/></svg>
+            <h3 class="text-sm font-black text-slate-800">Istoricul alertelor</h3>
+            <span id="alert-history-count" class="text-[9px] font-black text-slate-400 uppercase tracking-wide"></span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="clearAlertHistory()" class="text-[10px] font-bold text-slate-400 hover:text-red-500 transition-colors px-2 py-1 rounded-lg hover:bg-red-50">Șterge tot</button>
+            <button onclick="toggleAlertHistory()" class="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition-colors" aria-label="Închide panoul de alerte">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+          </div>
+        </div>
+        <!-- List -->
+        <div id="alert-history-list" class="flex-1 overflow-y-auto px-4 py-3 space-y-2">
+          <p class="text-center text-[11px] text-slate-400 font-semibold py-8">Nicio alertă înregistrată în această sesiune.</p>
+        </div>
+        <!-- Footer -->
+        <div class="px-5 py-3 border-t border-slate-100 flex items-center justify-between">
+          <p class="text-[9px] text-slate-400 font-semibold">Istoricul se resetează la deconectare</p>
+          <a href="contact.html#faq" target="_blank" rel="noopener" class="text-[9px] font-black text-blue-500 hover:text-blue-700 transition-colors">FAQ →</a>
+        </div>
+      </div>
+    </div>
 
     <!-- ==================== MODAL MENTENANȚĂ ==================== -->
     <!-- Afișat utilizatorilor non-admin când modul de mentenanță este activ -->
