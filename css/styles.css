@@ -818,9 +818,10 @@ input, select, button {
    RESPONSIVE - FONT SCALING
    ============================================ */
 @media (max-width: 640px) {
-  body { font-size: 11px; }
-  h1 { font-size: 1.3rem !important; }
-  h2 { font-size: 1.15rem !important; }
+  /* [v75.2] Full mobile — fonturi mărite pentru lizibilitate */
+  body { font-size: 13px; }
+  h1 { font-size: 1.4rem !important; }
+  h2 { font-size: 1.25rem !important; }
   /* Pill-uri mai mici pe mobil — toate 5 vizibile simultan */
   .pill-btn { font-size: 9px !important; padding: 10px 8px !important; }
 
@@ -839,9 +840,11 @@ input, select, button {
     overflow-x: hidden !important;
   }
 
-  /* Normalizare fonturi in carduri mobile */
-  .card-flow h4 { font-size: 13px !important; }
-  .card-flow p { font-size: 11px !important; }
+  /* [v75.2] Fonturi carduri — mărire pentru full mobile */
+  .card-flow h4 { font-size: 14px !important; }
+  .card-flow p { font-size: 12px !important; }
+  /* [v75.2] Etichete nav bottom mai lizibile pe full mobile */
+  .nav-item span { font-size: 12px !important; }
 
   /* Fix: bara butoane din Logistic si Depozit nu iese din container pe mobile complet */
   #logistic-view-comenzi > .flex.gap-2,

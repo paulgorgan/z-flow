@@ -372,6 +372,27 @@ function setAriaLabels() {
 // FUNCȚII DE INIȚIALIZARE
 // ==========================================
 
+// [v75.2] Banner TVA Prag — afișare dismissibilă, max o dată pe lună
+function _showTvaBanner(total, prag) {
+    const mk = 'zflow_tva_warn_' + new Date().toISOString().slice(0, 7); // YYYY-MM
+    if (localStorage.getItem(mk)) return; // deja dismiss în această lună
+    const banner = document.getElementById('tva-warn-banner');
+    const textEl = document.getElementById('tva-warn-banner-text');
+    if (!banner || !textEl) return;
+    const pct = Math.round(total / prag * 100);
+    textEl.textContent = `Cifra de afaceri curentă: ${Math.round(total).toLocaleString('ro-RO')} lei (${pct}% din pragul de ${prag.toLocaleString('ro-RO')} lei).`;
+    banner.classList.remove('hidden');
+}
+
+// [v75.2] Dismiss banner TVA — stochează în localStorage lunar
+function dismissTvaWarning() {
+    const mk = 'zflow_tva_warn_' + new Date().toISOString().slice(0, 7);
+    localStorage.setItem(mk, '1');
+    const banner = document.getElementById('tva-warn-banner');
+    if (banner) banner.classList.add('hidden');
+}
+window.dismissTvaWarning = dismissTvaWarning;
+
 /**
  * Funcție principală de inițializare
  */
@@ -476,6 +497,10 @@ async function init(goHome = true) {
             fr = frRes;
             fp = fpRes;
             if (profileRes) ZFlowStore.userProfile = profileRes;
+            // [v75.2] Expune profilul global pt ZFlowMultiFirma.getFirme() auto-populate
+            if (profileRes && !window.ZFlowUserProfile) window.ZFlowUserProfile = profileRes;
+            // [v75.2] Re-inițializează switcher-ul firmei cu suffix-ul corect (post-auth)
+            if (typeof ZFlowMultiFirma !== 'undefined') ZFlowMultiFirma.initSwitcher();
             // [v74.4] Propagă statusul TVA imediat după încărcarea profilului la login
             if (typeof _aplicaTvaProfile === 'function') _aplicaTvaProfile(!!profileRes?.platitor_tva);
             ZFlowStore._freshDataLoaded = true; // [SWR] date Supabase au sosit — blochează render stale
@@ -2400,17 +2425,13 @@ function incarcaDashboard() {
     _setTrend('home-kpi-neplatit-trend',  neplatit, prevNP);
     _setTrend('home-kpi-net-trend',       net, prevNet);
 
-    // [v73.8] Alertă prag TVA 395.000 lei (OG 22/2025) — o singură dată per sesiune
+    // [v75.2] Banner prag TVA — dismissibil, înlocuiește notificarea popup care apărea la fiecare logare
     const totalAnCurent = (ZFlowStore.dateFacturiBI || [])
         .filter(f => new Date(f.data_emiterii || f.created_at).getFullYear() === new Date().getFullYear())
         .reduce((s, f) => s + (Number(f.valoare) || 0), 0);
     const PRAG_TVA = 395000;
-    if (totalAnCurent > PRAG_TVA * 0.8 && !sessionStorage.getItem('zflow_tva_warn')) {
-        sessionStorage.setItem('zflow_tva_warn', '1');
-        showNotification(
-            `⚠ Cifra de afaceri ${Math.round(totalAnCurent).toLocaleString('ro-RO')} lei — aproape de pragul TVA (395.000 lei). Verifică cu contabilul.`,
-            'warning', 8000
-        );
+    if (totalAnCurent > PRAG_TVA * 0.8) {
+        if (typeof _showTvaBanner === 'function') _showTvaBanner(totalAnCurent, PRAG_TVA);
     }
 
     // [R19] Widgets secundare Home
