@@ -52,8 +52,13 @@ function setLoader(v) {
 /**
  * Afișează notificare toast
  */
-// [v73.9] Istoric alerte — stocat în sesiunea curentă
-const _alertHistory = [];
+// [v75.4] Restaurează istoricul din localStorage dacă există
+const _alertHistory = (() => {
+    try {
+        const _saved = JSON.parse(localStorage.getItem('zflow_alert_history') || '[]');
+        return Array.isArray(_saved) ? _saved : [];
+    } catch(_) { return []; }
+})();
 const _ALERT_HISTORY_MAX = 50;
 
 function showNotification(message, type = "info", duration = 3500) {
@@ -82,6 +87,11 @@ function showNotification(message, type = "info", duration = 3500) {
     _alertHistory.unshift({ type, message, ts: Date.now() });
     if (_alertHistory.length > _ALERT_HISTORY_MAX) _alertHistory.length = _ALERT_HISTORY_MAX;
     _updateAlertBadge();
+    // [v75.4] Persistă istoricul în localStorage (doar ultimele 20)
+    try {
+        const _toSave = _alertHistory.slice(0, 20).map(a => ({ type: a.type, message: a.message, ts: a.ts }));
+        localStorage.setItem('zflow_alert_history', JSON.stringify(_toSave));
+    } catch(_) {}
 }
 
 // [v73.9] — Funcții istoric alerte ─────────────────────────────────────────
@@ -1375,7 +1385,10 @@ async function verificaOnboarding(user) {
 }
 
 /**
- * Salvează datele firmei din modalul de onboarding
+ * Salvează datele firmei din modalul de onboarding (versiunea originală single-step)
+ * @deprecated Înlocuită de salveazaOnboardingPas2() care include câmpurile TVA
+ *   (platitor_tva, cota_tva_default). HTML-ul apelează salveazaOnboardingPas2.
+ *   Rămâne exportată pe window pentru compatibilitate. Nu șterge.
  */
 async function salveazaProfilOnboarding() {
     const cui       = document.getElementById('ob-cui')?.value.trim();
@@ -2426,11 +2439,13 @@ function incarcaDashboard() {
     _setTrend('home-kpi-net-trend',       net, prevNet);
 
     // [v75.2] Banner prag TVA — dismissibil, înlocuiește notificarea popup care apărea la fiecare logare
+    // [v75.3] Activ NUMAI pentru firmele neplatitoare de TVA (platitor_tva === false)
+    const _esteNeplatitorTva = !ZFlowStore?.userProfile?.platitor_tva;
     const totalAnCurent = (ZFlowStore.dateFacturiBI || [])
         .filter(f => new Date(f.data_emiterii || f.created_at).getFullYear() === new Date().getFullYear())
         .reduce((s, f) => s + (Number(f.valoare) || 0), 0);
     const PRAG_TVA = 395000;
-    if (totalAnCurent > PRAG_TVA * 0.8) {
+    if (_esteNeplatitorTva && totalAnCurent > PRAG_TVA * 0.8) {
         if (typeof _showTvaBanner === 'function') _showTvaBanner(totalAnCurent, PRAG_TVA);
     }
 
@@ -8298,6 +8313,9 @@ window.exportaPDF = exportaPDF;
 window.exportaExcel = exportaExcel;
 window.verificaScadenteNotificari = verificaScadenteNotificari;
 window.toggleBellNotificari = toggleBellNotificari;
+// [v75.3] Exports istorc alerte — apelate din onclick în index.html
+window.toggleAlertHistory   = toggleAlertHistory;
+window.clearAlertHistory    = clearAlertHistory;
 window.removePendingPDF = removePendingPDF;
 window.stergeAtasamentPDF = stergeAtasamentPDF;
 window.autoCautareCUI = autoCautareCUI;

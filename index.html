@@ -1444,14 +1444,18 @@
               <div class="flex items-center justify-end gap-2 min-h-[32px]">
                 <button type="button"
                   data-action="deschideModalContributie"
-                  class="text-[9px] font-black bg-orange-100 text-orange-700 px-3 py-1.5 rounded-lg hover:bg-orange-200 transition-all uppercase"
+                  class="inline-flex items-center justify-center text-[9px] font-black bg-orange-100 text-orange-700 px-3 py-1.5 rounded-lg hover:bg-orange-200 transition-all uppercase"
                   title="Adaugă contribuție buget stat"
                 >+ Adaugă</button>
                 <!-- Import contribuții din contabilitate -->
-                <label class="text-[9px] font-black bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg hover:bg-slate-200 transition-all uppercase cursor-pointer" title="Import contribuții CSV">
+                <label class="inline-flex items-center justify-center text-[9px] font-black bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg hover:bg-slate-200 transition-all uppercase cursor-pointer" title="Import contribuții CSV">
                   Import CSV
                   <input type="file" accept=".csv,.xlsx,.xls" class="hidden" onchange="if(typeof importaContributiiCSV==='function') importaContributiiCSV(this); this.value='';" />
                 </label>
+                <button type="button"
+                  onclick="if(typeof exportContributiiCSV==='function') exportContributiiCSV()"
+                  class="inline-flex items-center justify-center text-[9px] font-black bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-lg hover:bg-emerald-200 transition-all uppercase"
+                  title="Exportă contribuții CSV">Export CSV</button>
               </div>
             </div>
             <!-- Corpul colapsibil — ascuns implicit -->
@@ -1584,10 +1588,10 @@
           <div class="flex gap-2">
             <input id="logistic-search" type="text" placeholder="Caută rută sau tracking…" oninput="renderComenziTransportDebounced()"
               class="flex-1 min-w-0 px-4 py-2.5 bg-slate-50 rounded-2xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200 transition-all"/>
-            <button type="button" data-action="importaComenziTransport" title="Import CSV comenzi transport" class="flex-shrink-0 px-3 py-2.5 bg-slate-100 text-slate-600 rounded-2xl text-xs font-black uppercase shadow-sm border border-slate-200 hover:bg-slate-200 transition-all" data-permission="edit">
+            <button type="button" data-action="importaComenziTransport" title="Import CSV comenzi transport" class="flex-shrink-0 px-3 py-2 bg-slate-100 text-slate-600 rounded-2xl text-xs font-black uppercase shadow-sm border border-slate-200 hover:bg-slate-200 transition-all" data-permission="edit">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
             </button>
-            <button type="button" data-action="exportComenziTransportCSV" title="Export CSV comenzi" class="flex-shrink-0 px-3 py-2.5 bg-slate-100 text-slate-600 rounded-2xl text-xs font-black uppercase shadow-sm border border-slate-200 hover:bg-slate-200 transition-all">
+            <button type="button" data-action="exportComenziTransportCSV" title="Export CSV comenzi" class="flex-shrink-0 px-3 py-2 bg-slate-100 text-slate-600 rounded-2xl text-xs font-black uppercase shadow-sm border border-slate-200 hover:bg-slate-200 transition-all">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
             </button>
             <button type="button" data-action="deschideModalComandaTransport" data-arg="" class="zf-module-btn flex-shrink-0 px-4 py-2 bg-blue-900 text-white rounded-2xl text-xs font-black uppercase shadow-md" data-permission="edit">
@@ -1606,10 +1610,10 @@
           <div class="flex justify-between items-center">
             <p class="text-xs font-black text-slate-500 uppercase">Șoferi înregistrați</p>
             <div class="flex gap-2">
-              <button type="button" data-action="importaSoferiCSV" title="Import CSV Șoferi" class="p-2 bg-slate-100 text-slate-600 rounded-xl border border-slate-200 hover:bg-slate-200 transition-all" data-permission="edit">
+              <button type="button" data-action="importaSoferiCSV" title="Import CSV Șoferi" class="py-2 px-2.5 bg-slate-100 text-slate-600 rounded-2xl border border-slate-200 hover:bg-slate-200 transition-all" data-permission="edit">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
               </button>
-              <button type="button" data-action="exportSoferiCSV" title="Export CSV Șoferi" class="p-2 bg-slate-100 text-slate-600 rounded-xl border border-slate-200 hover:bg-slate-200 transition-all">
+              <button type="button" data-action="exportSoferiCSV" title="Export CSV Șoferi" class="py-2 px-2.5 bg-slate-100 text-slate-600 rounded-2xl border border-slate-200 hover:bg-slate-200 transition-all">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
               </button>
               <button type="button" data-action="deschideModalSofer" data-arg="" class="zf-module-btn px-4 py-2 bg-purple-700 text-white rounded-2xl text-xs font-black uppercase shadow-md" data-permission="edit">
@@ -1630,10 +1634,10 @@
           <div class="flex justify-between items-center">
             <p class="text-xs font-black text-slate-500 uppercase">Parc auto</p>
             <div class="flex gap-2">
-              <button type="button" data-action="importaVehiculeCSV" title="Import CSV vehicule" class="p-2 bg-slate-100 text-slate-600 rounded-xl border border-slate-200 hover:bg-slate-200 transition-all" data-permission="edit">
+              <button type="button" data-action="importaVehiculeCSV" title="Import CSV vehicule" class="py-2 px-2.5 bg-slate-100 text-slate-600 rounded-2xl border border-slate-200 hover:bg-slate-200 transition-all" data-permission="edit">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
               </button>
-              <button type="button" data-action="exportVehiculeCSV" title="Export CSV vehicule" class="p-2 bg-slate-100 text-slate-600 rounded-xl border border-slate-200 hover:bg-slate-200 transition-all">
+              <button type="button" data-action="exportVehiculeCSV" title="Export CSV vehicule" class="py-2 px-2.5 bg-slate-100 text-slate-600 rounded-2xl border border-slate-200 hover:bg-slate-200 transition-all">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
               </button>
               <button type="button" data-action="deschideModalVehicul" data-arg="" class="zf-module-btn px-4 py-2 bg-slate-800 text-white rounded-2xl text-xs font-black uppercase shadow-md" data-permission="edit">
@@ -1733,10 +1737,10 @@
           <div class="flex gap-2">
             <input id="depozit-search-produse" type="text" placeholder="Caută produs sau SKU…" oninput="renderProduseDebounced()"
               class="flex-1 min-w-0 px-4 py-2.5 bg-slate-50 rounded-2xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200 transition-all"/>
-            <button type="button" data-action="importaProduse" title="Import CSV produse" class="flex-shrink-0 px-3 py-2.5 bg-slate-100 text-slate-600 rounded-2xl text-xs font-black uppercase shadow-sm border border-slate-200 hover:bg-slate-200 transition-all" data-permission="edit">
+            <button type="button" data-action="importaProduse" title="Import CSV produse" class="flex-shrink-0 px-3 py-2 bg-slate-100 text-slate-600 rounded-2xl text-xs font-black uppercase shadow-sm border border-slate-200 hover:bg-slate-200 transition-all" data-permission="edit">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
             </button>
-            <button type="button" data-action="exportProduseCSV" title="Export CSV produse" class="flex-shrink-0 px-3 py-2.5 bg-slate-100 text-slate-600 rounded-2xl text-xs font-black uppercase shadow-sm border border-slate-200 hover:bg-slate-200 transition-all">
+            <button type="button" data-action="exportProduseCSV" title="Export CSV produse" class="flex-shrink-0 px-3 py-2 bg-slate-100 text-slate-600 rounded-2xl text-xs font-black uppercase shadow-sm border border-slate-200 hover:bg-slate-200 transition-all">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
             </button>
             <button type="button" data-action="deschideModalProdus" data-arg="" class="zf-module-btn flex-shrink-0 px-4 py-2 bg-blue-900 text-white rounded-2xl text-xs font-black uppercase shadow-md" data-permission="edit">
@@ -1768,7 +1772,7 @@
           <div class="flex justify-between items-center">
             <p class="text-xs font-black text-slate-500 uppercase">Recepții de la furnizori</p>
             <div class="flex gap-2">
-              <button type="button" data-action="exportProduseCSV" title="Export CSV produse" class="p-2 bg-slate-100 text-slate-600 rounded-xl border border-slate-200 hover:bg-slate-200 transition-all">
+              <button type="button" data-action="exportProduseCSV" title="Export CSV produse" class="py-2 px-2.5 bg-slate-100 text-slate-600 rounded-2xl border border-slate-200 hover:bg-slate-200 transition-all">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
               </button>
               <button type="button" data-action="deschideModalReceptie" class="zf-module-btn px-4 py-2 bg-emerald-700 text-white rounded-2xl text-xs font-black uppercase shadow-md" data-permission="edit">
@@ -1788,7 +1792,7 @@
           <div class="flex justify-between items-center">
             <p class="text-xs font-black text-slate-500 uppercase">Bonuri de livrare</p>
             <div class="flex gap-2">
-              <button type="button" data-action="exportMiscariStocCSV" title="Export CSV mișcări stoc" class="p-2 bg-slate-100 text-slate-600 rounded-xl border border-slate-200 hover:bg-slate-200 transition-all">
+              <button type="button" data-action="exportMiscariStocCSV" title="Export CSV mișcări stoc" class="py-2 px-2.5 bg-slate-100 text-slate-600 rounded-2xl border border-slate-200 hover:bg-slate-200 transition-all">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
               </button>
               <button type="button" data-action="deschideModalLivrare" class="zf-module-btn px-4 py-2 bg-blue-700 text-white rounded-2xl text-xs font-black uppercase shadow-md" data-permission="edit">
@@ -3419,7 +3423,7 @@
               Extinde
             </button>
             <button type="button" data-action="ascundeAdminExtend"
-              class="px-3 py-2 bg-slate-100 text-slate-500 rounded-lg text-xs font-black">
+              class="px-3 py-2 bg-slate-100 text-slate-500 rounded-lg text-xs font-black uppercase hover:bg-slate-200 transition-all">
               &times;
             </button>
           </div>
@@ -3439,7 +3443,7 @@
               Trimite
             </button>
             <button type="button" data-action="ascundeAdminNotif"
-              class="px-3 py-2 bg-slate-100 text-slate-500 rounded-lg text-xs font-black">
+              class="px-3 py-2 bg-slate-100 text-slate-500 rounded-lg text-xs font-black uppercase hover:bg-slate-200 transition-all">
               &times;
             </button>
           </div>
@@ -3462,7 +3466,7 @@
               Șterge definitiv
             </button>
             <button type="button" data-action="ascundeAdminDelete"
-              class="px-3 py-2 bg-slate-100 text-slate-500 rounded-lg text-xs font-black">
+              class="px-3 py-2 bg-slate-100 text-slate-500 rounded-lg text-xs font-black uppercase hover:bg-slate-200 transition-all">
               &times;
             </button>
           </div>
