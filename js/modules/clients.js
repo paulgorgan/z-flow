@@ -173,5 +173,78 @@ const ZFlowClients = {
     }
 };
 
+// ==========================================
+// [FEAT 2.2] ISTORIC FACTURI CLIENT
+// ==========================================
+
+/**
+ * Randează istoricul facturilor pentru un client în #client-invoice-history.
+ * Sortare descrescătoare după data emiterii, running total, viteza medie plată.
+ * @param {string|number} clientId
+ */
+function renderClientInvoiceHistory(clientId) {
+    const container = document.getElementById('client-invoice-history');
+    if (!container) {
+        ZFlowLogger.warn('clients', '[renderClientInvoiceHistory] Container #client-invoice-history lipsă din DOM');
+        return;
+    }
+
+    const facturi = (window.ZFlowStore?.dateFacturiBI || [])
+        .filter(f => String(f.client_id) === String(clientId))
+        .sort((a, b) => {
+            const da = a.data_emiterii || a.data_emitere || '';
+            const db = b.data_emiterii || b.data_emitere || '';
+            return db.localeCompare(da);
+        });
+
+    if (facturi.length === 0) {
+        container.innerHTML = '<p class="text-xs text-slate-400 italic p-3">Fără facturi înregistrate.</p>';
+        return;
+    }
+
+    // Calcul viteza medie de plată (doar facturi Incasat cu ambele date)
+    let totalZile = 0, nrPlatite = 0;
+    facturi.forEach(f => {
+        if ((f.status_plata === 'Incasat' || f.status_plata === 'Platit') && f.data_emiterii && f.data_scadenta) {
+            const emit = new Date(f.data_emiterii.length === 10 ? f.data_emiterii + 'T12:00:00' : f.data_emiterii);
+            const scad = new Date(f.data_scadenta.length === 10 ? f.data_scadenta + 'T12:00:00' : f.data_scadenta);
+            const zile = Math.round((scad - emit) / 86400000);
+            if (zile > 0) { totalZile += zile; nrPlatite++; }
+        }
+    });
+    const medieZile = nrPlatite > 0 ? Math.round(totalZile / nrPlatite) : null;
+
+    // Running total descrescător (suma cumulată de la cel mai recent la cel mai vechi)
+    let cumul = 0;
+    const items = facturi.map(f => {
+        const v = Number(f.valoare || f.suma || 0);
+        cumul += v;
+        const statusCls = f.status_plata === 'Incasat' || f.status_plata === 'Platit'
+            ? 'bg-emerald-100 text-emerald-700'
+            : f.status_plata === 'Incasat Partial'
+                ? 'bg-amber-100 text-amber-700'
+                : 'bg-red-100 text-red-700';
+        const fmt = typeof formateazaDataZFlow === 'function' ? formateazaDataZFlow : (d => d);
+        return `<div class="flex items-center justify-between gap-2 py-1.5 border-b border-slate-100 last:border-0 text-xs">
+            <div class="flex-1 min-w-0">
+                <span class="font-semibold text-slate-700 truncate">${f.numar_factura || f.nr_factura || '—'}</span>
+                <span class="text-slate-400 ml-1">${fmt(f.data_emiterii || f.data_emitere || '')}</span>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+                <span class="font-bold text-slate-800">${v.toLocaleString('ro-RO')} RON</span>
+                <span class="px-1.5 py-0.5 rounded-full text-[9px] font-black uppercase ${statusCls}">${f.status_plata || '?'}</span>
+                <span class="text-slate-300 text-[9px]">Σ ${cumul.toLocaleString('ro-RO')}</span>
+            </div>
+        </div>`;
+    }).join('');
+
+    const medieTxt = medieZile != null
+        ? `<p class="text-[10px] text-slate-400 mt-2">Termen mediu scadență: <strong>${medieZile} zile</strong> (din ${nrPlatite} facturi încasate)</p>`
+        : '';
+
+    container.innerHTML = `<div class="px-1">${items}${medieTxt}</div>`;
+}
+window.renderClientInvoiceHistory = renderClientInvoiceHistory;
+
 // Export global
 window.ZFlowClients = ZFlowClients;

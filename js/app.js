@@ -384,6 +384,7 @@ function setAriaLabels() {
 
 // [v75.2] Banner TVA Prag — afișare dismissibilă, max o dată pe lună
 function _showTvaBanner(total, prag) {
+    if (ZFlowStore?.userProfile?.platitor_tva) return; // [v75.9] firma deja platitoare TVA — fără alertă
     const mk = 'zflow_tva_warn_' + new Date().toISOString().slice(0, 7); // YYYY-MM
     if (localStorage.getItem(mk)) return; // deja dismiss în această lună
     const banner = document.getElementById('tva-warn-banner');
@@ -392,6 +393,8 @@ function _showTvaBanner(total, prag) {
     const pct = Math.round(total / prag * 100);
     textEl.textContent = `Cifra de afaceri curentă: ${Math.round(total).toLocaleString('ro-RO')} lei (${pct}% din pragul de ${prag.toLocaleString('ro-RO')} lei).`;
     banner.classList.remove('hidden');
+    // [v75.9] Adaugă la istoricul de alerte
+    showNotification(`Prag TVA: ${Math.round(total).toLocaleString('ro-RO')} lei (${pct}% din pragul de ${prag.toLocaleString('ro-RO')} lei) — verifică înregistrarea.`, 'warning');
 }
 
 // [v75.2] Dismiss banner TVA — stochează în localStorage lunar
@@ -646,6 +649,7 @@ async function init(goHome = true) {
             invalidateCashflowCache();
             if (typeof calculeazaCashflow === 'function') calculeazaCashflow();
             if (typeof updateFurnizoriKPI === 'function') updateFurnizoriKPI();
+            if (typeof incarcaDashboard === 'function') incarcaDashboard(); // [v75.9] alerte home cu contribuții
         }).catch(() => {});
 
         // === Depozit & Logistic — fire-and-forget (non-blocking) ===
@@ -2762,17 +2766,12 @@ function calculeazaCashflow() {
           ).reduce((sum, f) => sum + (Number(f.valoare) || 0), 0)
         : 0;
 
-    // Contribuții buget de stat (TVA, CAS, CASS, Impozit) — doar NEACHITATE, filtrate pe aceeași perioadă
+    // Contribuții buget de stat (TVA, CAS, CASS, Impozit) — TOATE neachitate, indiferent de intervalul selectat
+    // [v75.12] Nu filtrăm după data calendaristică — contribuțiile sunt datorii cumulate,
+    // nu legate de perioada facturilor analizate (identic cu ce afișează #card-contributii-mobile)
     const contributii = ZFlowStore.includeContributiiInAnaliza
-        ? (ZFlowStore.dateContributii || []).filter(c => {
-            if (c.achitat) return false; // cf-contributii = total NEACHITAT
-            if (!c.luna) return !start && !end;
-            const d = new Date((c.luna.length === 7 ? c.luna + '-01' : c.luna) + 'T12:00:00');
-            if (isNaN(d)) return true;
-            if (start && d < start) return false;
-            if (end && d > end) return false;
-            return true;
-        }).reduce((sum, c) => sum + (Number(c.suma) || 0), 0)
+        ? (ZFlowStore.dateContributii || []).filter(c => !c.achitat)
+          .reduce((sum, c) => sum + (Number(c.suma) || 0), 0)
         : 0;
 
     const totalIesiri = iesiri + contributii;
@@ -2788,7 +2787,7 @@ function calculeazaCashflow() {
     const cfContributii = document.getElementById("cf-contributii");
     if (cfContributii) cfContributii.innerText = contributii > 0 ? fmt(contributii) : '0 lei';
     if (cfNet) {
-        cfNet.innerText = tip === 'ambele' ? (net >= 0 ? '+' : '\u2212') + " " + fmt(net) : '—';
+        cfNet.innerText = (net >= 0 ? '+' : '\u2212') + " " + fmt(net);
         cfNet.className = `text-[0.875rem] font-semibold tabular-nums leading-tight ${net >= 0 ? "text-emerald-600" : "text-red-600"}`;
     }
     renderListaContributii();
@@ -3937,7 +3936,7 @@ function selectSingleBIFirma(id, tip, event) {
 function toggleContributiiInAnaliza(checked) {
     ZFlowStore.includeContributiiInAnaliza = !!checked;
     invalidateCashflowCache();
-    genereazaBI();
+    calculeazaCashflow();
 }
 
 /**
@@ -5446,10 +5445,8 @@ function setFiltruStatusBI(status, btn) {
     // Vizibilitate coloane totale în funcție de tab
     const colClienti = document.getElementById("bi-total-clienti-col");
     const colFurnizori = document.getElementById("bi-total-furnizori-col");
-    const colNet = document.getElementById("bi-total-net-col");
     if (colClienti) colClienti.classList.toggle("hidden", status === 'Platit');
     if (colFurnizori) colFurnizori.classList.toggle("hidden", status === 'Neincasat' || status === 'Incasat');
-    if (colNet) colNet.classList.toggle("hidden", status !== 'toate');
 
     updateAnalizaInstant();
 }
@@ -5488,10 +5485,8 @@ function setFiltruTipBI(tip, btn) {
     // Totale bar: arată col furnizori doar când mode !== clienti
     const colClienti = document.getElementById("bi-total-clienti-col");
     const colFurnizori = document.getElementById("bi-total-furnizori-col");
-    const colNet = document.getElementById("bi-total-net-col");
     if (colClienti) colClienti.classList.toggle("hidden", tip === "furnizori");
     if (colFurnizori) colFurnizori.classList.toggle("hidden", tip === "clienti");
-    if (colNet) colNet.classList.toggle("hidden", tip !== "ambele");
 
     // Reset sume la 0 la schimbarea modului
     const sumaClienti = document.getElementById("suma-selectata-bi");
@@ -6026,7 +6021,7 @@ async function importaDateSaga(tipImport = 'clienti') {
                         ZFlowLogger.debug('app', '[Import] Headere CSV detectate (' + headere.length + '):', headere);
                         ZFlowLogger.debug('app', '[Import] Primul rând valorificat:', JSON.stringify(rows[0]));
                     }
-                    const { clienti: csvClienti, facturi: csvFacturi, errors: mapErrors } = ZFlowImport.mapSAGAData(rows);
+                    const { clienti: csvClienti, facturi: csvFacturi, errors: mapErrors } = ZFlowImport.mapSAGAData(rows, isFurnizori); // [BUG4-FIX] transmite tipul
                     ZFlowLogger.debug('app', '[Import] Clienți detectați:', csvClienti.length, '| Facturi:', csvFacturi.length, '| Erori mapare:', mapErrors.length);
                     if (csvClienti.length > 0) ZFlowLogger.debug('app', '[Import] Primul client mapat:', JSON.stringify(csvClienti[0]));
                     if (mapErrors.length > 0) { ZFlowLogger.warn('app', '[Import] Erori mapare:'); mapErrors.forEach(e => ZFlowLogger.warn('app', ' -', e)); }
@@ -6148,12 +6143,15 @@ async function importaDateSaga(tipImport = 'clienti') {
                                 : (existingFact.status_plata !== 'Incasat');
                             const newNote = (csvFact.descriere || '').trim();
                             const noteChanged = newNote && newNote !== (existingFact.note || '').trim();
-                            if ((isPaidNow && wasUnpaid) || noteChanged) {
+                            const valoareNou = Number(csvFact.suma || csvFact.valoare || 0);
+                            const valoareChanged = valoareNou > 0 && valoareNou !== Number(existingFact.valoare || 0); // [v75.9]
+                            if ((isPaidNow && wasUnpaid) || noteChanged || valoareChanged) {
                                 // Status schimbat spre plătit SAU nota actualizată → upsert
                                 try {
                                     const updatePayload = {};
                                     if (isPaidNow && wasUnpaid) updatePayload.status_plata = newStatus;
                                     if (noteChanged) updatePayload.note = newNote;
+                                    if (valoareChanged) updatePayload.valoare = valoareNou; // [v75.9]
                                     if (isFurnizori) {
                                         await ZFlowDB.updateFacturaPlatit(existingFact.id, updatePayload);
                                     } else {
@@ -8122,6 +8120,86 @@ function swipeToggleIncasare(facturaId, statusCurent) {
     SwipeHandler.executeAction(event.target);
     toggleStatusPlata(facturaId, statusCurent);
 }
+
+/**
+ * [FEAT 1.1] Marchează o factură ca parțial încasată.
+ * Dacă sumaIncasata >= valoare totală, trece la status 'Incasat' complet via toggleStatusPlata.
+ * Dacă sumaIncasata < valoare, setează status 'Incasat Partial' + câmpul valoare_incasata.
+ * @param {string|number} facturaId - ID factură din facturi_incasare
+ * @param {number} sumaIncasata - Suma efectiv încasată (RON)
+ * @param {string} [clientId] - ID client (opțional, dedus din store dacă lipsește)
+ */
+async function markIncasatPartial(facturaId, sumaIncasata, clientId) {
+    if (!hasPermission('canEdit')) { showNotification('Nu ai permisiunea de a modifica facturi', 'error'); return; }
+    const suma = Number(sumaIncasata);
+    if (!suma || suma <= 0) { showNotification('Suma încasată trebuie să fie mai mare decât 0', 'warning'); return; }
+
+    const factura = (ZFlowStore.dateFacturiBI || []).find(f => String(f.id) === String(facturaId));
+    if (!factura) { showNotification('Factura nu a fost găsită', 'error'); return; }
+
+    const valoare = Number(factura.valoare || factura.suma || 0);
+    if (valoare > 0 && suma > valoare) {
+        showNotification(`Suma (${suma.toLocaleString('ro-RO')} RON) depășește valoarea facturii (${valoare.toLocaleString('ro-RO')} RON)`, 'warning');
+        return;
+    }
+
+    setLoader(true);
+    try {
+        if (valoare > 0 && suma >= valoare) {
+            // Plată integrală — reutilizează fluxul existent
+            await ZFlowDB.updateFactura(facturaId, { status_plata: 'Incasat', valoare_incasata: valoare });
+            showNotification('Factură marcată ca Incasat complet', 'success');
+        } else {
+            const soldRamas = valoare > 0 ? (valoare - suma) : 0;
+            await ZFlowDB.updateFactura(facturaId, {
+                status_plata: 'Incasat Partial',
+                valoare_incasata: suma
+            });
+            const soldTxt = soldRamas > 0 ? ` | Sold rămas: ${soldRamas.toLocaleString('ro-RO')} RON` : '';
+            showNotification(`Plată parțială: ${suma.toLocaleString('ro-RO')} RON înregistrată${soldTxt}`, 'success', 5000);
+        }
+        // Actualizează store local optimist
+        const idx = (ZFlowStore.dateFacturiBI || []).findIndex(f => String(f.id) === String(facturaId));
+        if (idx !== -1) {
+            ZFlowStore.dateFacturiBI[idx].status_plata = suma >= valoare ? 'Incasat' : 'Incasat Partial';
+            ZFlowStore.dateFacturiBI[idx].valoare_incasata = suma;
+        }
+        if (typeof renderMainThrottled === 'function') renderMainThrottled();
+    } catch (e) {
+        ZFlowLogger.error('app', '[markIncasatPartial]', e.message);
+        showNotification('Eroare la înregistrarea plății parțiale: ' + e.message, 'error');
+    } finally {
+        setLoader(false);
+    }
+}
+window.markIncasatPartial = markIncasatPartial;
+
+/**
+ * [FEAT 3.1] Actualizează bara de progres #import-progress în timpul importului.
+ * Bară ascunsă automat la 100% după 800ms.
+ * @param {number} current - rândul curent procesat
+ * @param {number} total   - totalul rândurilor de importat
+ */
+function updateImportProgress(current, total) {
+    const bar   = document.getElementById('import-progress');
+    const label = document.getElementById('import-progress-label');
+    if (!bar && !label) return; // element opțional — nu forțăm erori
+    const pct = total > 0 ? Math.round((current / total) * 100) : 0;
+    if (bar) {
+        bar.style.width = pct + '%';
+        bar.setAttribute('aria-valuenow', pct);
+        bar.classList.remove('hidden');
+        bar.parentElement && bar.parentElement.classList.remove('hidden');
+    }
+    if (label) label.textContent = `Procesare: ${current}/${total} rânduri`;
+    if (current >= total) {
+        setTimeout(() => {
+            if (bar) { bar.style.width = '0%'; bar.parentElement && bar.parentElement.classList.add('hidden'); }
+            if (label) label.textContent = '';
+        }, 800);
+    }
+}
+window.updateImportProgress = updateImportProgress;
 
 /**
  * Acțiune swipe pentru ștergere rapidă

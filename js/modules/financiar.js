@@ -51,6 +51,25 @@ function _sortFacturiDueClosestFin(a, b, azi, paidStatus) {
 }
 
 
+/**
+ * [BUG2-FIX] Returnează true dacă CUI-ul apare atât în clienți cât și în furnizori.
+ * Folosit pentru badge-ul "Client + Furnizor" din lista principală.
+ * @param {string} cui
+ * @returns {boolean}
+ */
+function esteSiClientSiFurnizor(cui) {
+    if (!cui) return false;
+    const cuiNorm = String(cui).trim().toUpperCase().replace(/^RO/i, '');
+    const inClienti = (window.ZFlowStore?.dateLocal || []).some(c =>
+        String(c.cui || '').trim().toUpperCase().replace(/^RO/i, '') === cuiNorm
+    );
+    const inFurnizori = (window.ZFlowStore?.dateFurnizori || []).some(f =>
+        String(f.cui || '').trim().toUpperCase().replace(/^RO/i, '') === cuiNorm
+    );
+    return inClienti && inFurnizori;
+}
+window.esteSiClientSiFurnizor = esteSiClientSiFurnizor;
+
 function renderMainThrottled() {
     if (_renderThrottle.main) return; // render deja programat pentru acest frame
     _renderThrottle.main = true;
@@ -1214,6 +1233,144 @@ async function salveazaFacturaNou() {
         setLoader(false);
     }
 }
+
+// ==========================================
+// [FEAT 1.3] ALERTE CONTRIBUȚII RESTANTE
+// ==========================================
+
+/**
+ * Randează blocul de contribuții restante în #alerte-contributii-container.
+ * Returnează numărul de contribuții restante (folosit pentru badge nav).
+ * @returns {number} count contribuții neachitate scadente
+ */
+function renderAlerteContributii() {
+    const container = document.getElementById('alerte-contributii-container');
+    const contributii = window.ZFlowStore?.dateContributii || [];
+    const azi = new Date(); azi.setHours(0, 0, 0, 0);
+
+    const restante = contributii.filter(c => {
+        if (c.achitat === true || c.achitat === 'da' || c.achitat === 1) return false;
+        if (!c.data_scadenta && !c.luna) return false;
+        // Calculăm scadența: dacă e câmp explicit, folosim; altfel luna + zi 25
+        let scad;
+        if (c.data_scadenta) {
+            scad = new Date(c.data_scadenta.length === 10 ? c.data_scadenta + 'T12:00:00' : c.data_scadenta);
+        } else if (c.luna) {
+            // luna format "AAAA-LL" → scadenta e pe 25 ale lunii următoare
+            const [an, luna] = String(c.luna).split('-').map(Number);
+            scad = new Date(luna === 12 ? an + 1 : an, luna === 12 ? 0 : luna, 25);
+        }
+        return scad && scad < azi;
+    });
+
+    if (!container) {
+        ZFlowLogger.warn('financiar', '[renderAlerteContributii] Container #alerte-contributii-container lipsă din DOM');
+        return restante.length;
+    }
+
+    if (restante.length === 0) {
+        container.innerHTML = '';
+        container.classList.add('hidden');
+        return 0;
+    }
+
+    // Grupare pe tip
+    const peType = {};
+    restante.forEach(c => {
+        const tip = (c.tip || 'Altele').toUpperCase();
+        if (!peType[tip]) peType[tip] = { suma: 0, count: 0 };
+        peType[tip].suma += Number(c.suma || 0);
+        peType[tip].count++;
+    });
+
+    const rânduri = Object.entries(peType).map(([tip, { suma, count }]) =>
+        `<div class="flex justify-between items-center py-1 border-b border-red-100 last:border-0">
+            <span class="text-xs font-semibold text-red-700">${tip}</span>
+            <span class="text-xs text-red-600">${count} pos. · ${suma.toLocaleString('ro-RO')} RON</span>
+        </div>`
+    ).join('');
+
+    container.innerHTML = `
+        <div class="bg-red-50 border border-red-200 rounded-xl p-3 mt-2">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="text-red-600 font-black text-xs uppercase tracking-wide">⚠ Contribuții restante (${restante.length})</span>
+            </div>
+            ${rânduri}
+        </div>`;
+    container.classList.remove('hidden');
+    return restante.length;
+}
+window.renderAlerteContributii = renderAlerteContributii;
+
+// ==========================================
+// [FEAT 2.1] FILTRARE FACTURI REALTIME
+// ==========================================
+
+/**
+ * Filtrează facturile din ZFlowStore și apelează renderMain cu rezultatul filtrat.
+ * @param {Object} query
+ * @param {string} [query.text]       - Caută în nr_factura, client name
+ * @param {string} [query.status]     - 'Incasat'|'Neincasat'|'Incasat Partial'|''
+ * @param {string} [query.dateFrom]   - ISO date string inclusiv
+ * @param {string} [query.dateTo]     - ISO date string inclusiv
+ * @param {number} [query.sumaMin]    - Suma minimă
+ * @param {number} [query.sumaMax]    - Suma maximă
+ * @returns {Array} lista filtrată
+ */
+function filtreazaFacturiRealtime(query = {}) {
+    const clienti = window.ZFlowStore?.dateLocal || [];
+    const toateFacturile = window.ZFlowStore?.dateFacturiBI || [];
+    const text = (query.text || '').toLowerCase().trim();
+    const status = (query.status || '').trim();
+    const dateFrom = query.dateFrom ? new Date(query.dateFrom + 'T00:00:00') : null;
+    const dateTo   = query.dateTo   ? new Date(query.dateTo + 'T23:59:59') : null;
+    const sumaMin  = query.sumaMin != null ? Number(query.sumaMin) : null;
+    const sumaMax  = query.sumaMax != null ? Number(query.sumaMax) : null;
+
+    // Construim un index rapid CUI → nrFacturi per client pentru sumar
+    const clientById = {};
+    clienti.forEach(c => { clientById[String(c.id)] = c; });
+
+    // Filtrăm pe clienți care au cel puțin o factură corespunzătoare
+    const filtrate = clienti.filter(client => {
+        if (!text && !status && !dateFrom && !dateTo && sumaMin == null && sumaMax == null) return true;
+        const facturiClient = toateFacturile.filter(f => String(f.client_id) === String(client.id));
+        return facturiClient.some(f => {
+            if (text) {
+                const nr = (f.numar_factura || f.nr_factura || '').toLowerCase();
+                const nume = (client.nume_firma || '').toLowerCase();
+                if (!nr.includes(text) && !nume.includes(text)) return false;
+            }
+            if (status && f.status_plata !== status) return false;
+            if (dateFrom || dateTo) {
+                const d = f.data_emiterii || f.data_emitere;
+                if (!d) return false;
+                const dObj = new Date(d.length === 10 ? d + 'T12:00:00' : d);
+                if (dateFrom && dObj < dateFrom) return false;
+                if (dateTo   && dObj > dateTo)   return false;
+            }
+            if (sumaMin != null || sumaMax != null) {
+                const v = Number(f.valoare || f.suma || 0);
+                if (sumaMin != null && v < sumaMin) return false;
+                if (sumaMax != null && v > sumaMax) return false;
+            }
+            return true;
+        });
+    });
+
+    // Actualizează contorul dacă elementul există
+    const counter = document.getElementById('facturi-count-display');
+    if (counter) {
+        const total = clienti.length;
+        counter.textContent = filtrate.length < total
+            ? `${filtrate.length} clienți găsiți din ${total} total`
+            : `${total} clienți`;
+    }
+
+    if (typeof renderMain === 'function') renderMain(filtrate);
+    return filtrate;
+}
+window.filtreazaFacturiRealtime = filtreazaFacturiRealtime;
 
 // ==========================================
 // EXPORTS — financiar.js

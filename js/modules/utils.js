@@ -35,17 +35,18 @@ function debounce(func, delay) {
  * La runtime, versiunea din app.js suprascrie aceasta (app.js se încarcă după utils.js).
  */
 /**
- * Formatează data în format ZZ/LL/AA
+ * Formatează data în format ZZ/LL/AAAA
  * @param {string} dataString - Data în format ISO
  * @returns {string} Data formatată
  */
 function formateazaDataZFlow(dataString) {
     if (!dataString) return "";
-    const d = new Date(dataString);
+    const d = new Date(typeof dataString === 'string' && dataString.length === 10
+        ? dataString + 'T12:00:00' : dataString);
     if (isNaN(d.getTime())) return dataString;
     const zi = String(d.getDate()).padStart(2, "0");
     const luna = String(d.getMonth() + 1).padStart(2, "0");
-    const an = String(d.getFullYear()).slice(-2);
+    const an = d.getFullYear(); // [BUG1-FIX] an complet 4 cifre; era: .slice(-2)
     return `${zi}/${luna}/${an}`;
 }
 

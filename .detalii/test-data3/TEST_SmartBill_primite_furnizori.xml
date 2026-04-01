@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- TEST_SmartBill_primite_furnizori.xml -->
+<!-- Facturi PRIMITE de firma noastra (ClientCIF = RO99887766) de la furnizori -->
+<!-- Detectie: ClientCIF = CUI firma din Profil → tip = FURNIZORI (facturi de platit) -->
+<!-- Inainte de import, seteaza CUI firma la RO99887766 in Profil Firma -->
+<Facturi>
+  <!-- ──────────────── 2024 Q1 ──────────────── -->
+  <Factura>
+    <FurnizorCIF>RO32415161</FurnizorCIF>
+    <FurnizorNume>GLOBAL ENERGY SRL</FurnizorNume>
+    <ClientCIF>RO99887766</ClientCIF>
+    <ClientNume>FIRMA MEA SRL</ClientNume>
+    <FacturaNumar>GE-PRIM-2024-001</FacturaNumar>
+    <FacturaData>2024-01-05</FacturaData>
+    <FacturaScadenta>2024-02-05</FacturaScadenta>
+    <TotalValoare>13200.00</TotalValoare>
+    <StatusPlata>Platit</StatusPlata>
+  </Factura>
+  <Factura>
+    <FurnizorCIF>RO21314151</FurnizorCIF>
+    <FurnizorNume>ALFA PREST SRL</FurnizorNume>
+    <ClientCIF>RO99887766</ClientCIF>
+    <ClientNume>FIRMA MEA SRL</ClientNume>
+    <FacturaNumar>AP-PRIM-2024-001</FacturaNumar>
+    <FacturaData>2024-01-05</FacturaData>
+    <FacturaScadenta>2024-02-05</FacturaScadenta>
+    <TotalValoare>4800.00</TotalValoare>
+    <StatusPlata>Platit</StatusPlata>
+  </Factura>
+  <!-- ──────────────── 2024 Q2-Q3 ──────────────── -->
+  <Factura>
+    <FurnizorCIF>RO43526171</FurnizorCIF>
+    <FurnizorNume>BIROU EXPERT CONTAB SRL</FurnizorNume>
+    <ClientCIF>RO99887766</ClientCIF>
+    <ClientNume>FIRMA MEA SRL</ClientNume>
+    <FacturaNumar>BEC-PRIM-2024-006</FacturaNumar>
+    <FacturaData>2024-06-05</FacturaData>
+    <FacturaScadenta>2024-07-05</FacturaScadenta>
+    <TotalValoare>2500.00</TotalValoare>
+    <StatusPlata>Platit</StatusPlata>
+  </Factura>
+  <Factura>
+    <FurnizorCIF>RO12345678</FurnizorCIF>
+    <FurnizorNume>TEHNO CONSTRUCT SRL</FurnizorNume>
+    <ClientCIF>RO99887766</ClientCIF>
+    <ClientNume>FIRMA MEA SRL</ClientNume>
+    <FacturaNumar>TC-PRIM-2024-003</FacturaNumar>
+    <FacturaData>2024-04-15</FacturaData>
+    <FacturaScadenta>2024-05-15</FacturaScadenta>
+    <TotalValoare>22000.00</TotalValoare>
+    <StatusPlata>Platit</StatusPlata>
+  </Factura>
+  <Factura>
+    <FurnizorCIF>RO34567890</FurnizorCIF>
+    <FurnizorNume>METAL GRUP SRL</FurnizorNume>
+    <ClientCIF>RO99887766</ClientCIF>
+    <ClientNume>FIRMA MEA SRL</ClientNume>
+    <FacturaNumar>MG-PRIM-2024-003</FacturaNumar>
+    <FacturaData>2024-06-05</FacturaData>
+    <FacturaScadenta>2024-07-05</FacturaScadenta>
+    <TotalValoare>15600.00</TotalValoare>
+    <StatusPlata>Platit</StatusPlata>
+  </Factura>
+  <!-- ──────────────── 2024 Q4 ──────────────── -->
+  <Factura>
+    <FurnizorCIF>RO77889900</FurnizorCIF>
+    <FurnizorNume>IMPEX CHEMICALS SRL</FurnizorNume>
+    <ClientCIF>RO99887766</ClientCIF>
+    <ClientNume>FIRMA MEA SRL</ClientNume>
+    <FacturaNumar>IC-PRIM-2024-003</FacturaNumar>
+    <FacturaData>2024-08-15</FacturaData>
+    <FacturaScadenta>2024-09-15</FacturaScadenta>
+    <TotalValoare>9500.00</TotalValoare>
+    <StatusPlata>Platit</StatusPlata>
+  </Factura>
+  <Factura>
+    <FurnizorCIF>RO88990011</FurnizorCIF>
+    <FurnizorNume>DATACENTER RO SRL</FurnizorNume>
+    <ClientCIF>RO99887766</ClientCIF>
+    <ClientNume>FIRMA MEA SRL</ClientNume>
+    <FacturaNumar>DC-PRIM-2024-004</FacturaNumar>
+    <FacturaData>2024-10-01</FacturaData>
+    <FacturaScadenta>2024-10-31</FacturaScadenta>
+    <TotalValoare>4200.00</TotalValoare>
+    <StatusPlata>Platit</StatusPlata>
+  </Factura>
+  <!-- ──────────────── 2025 Q1 ──────────────── -->
+  <Factura>
+    <FurnizorCIF>RO32415161</FurnizorCIF>
+    <FurnizorNume>GLOBAL ENERGY SRL</FurnizorNume>
+    <ClientCIF>RO99887766</ClientCIF>
+    <ClientNume>FIRMA MEA SRL</ClientNume>
+    <FacturaNumar>GE-PRIM-2025-001</FacturaNumar>
+    <FacturaData>2025-01-05</FacturaData>
+    <FacturaScadenta>2025-02-05</FacturaScadenta>
+    <TotalValoare>14500.00</TotalValoare>
+    <StatusPlata>Platit</StatusPlata>
+  </Factura>
+  <Factura>
+    <FurnizorCIF>RO23456789</FurnizorCIF>
+    <FurnizorNume>AGRO PRODUSE SA</FurnizorNume>
+    <ClientCIF>RO99887766</ClientCIF>
+    <ClientNume>FIRMA MEA SRL</ClientNume>
+    <FacturaNumar>AP-PRIM-2025-001</FacturaNumar>
+    <FacturaData>2025-01-12</FacturaData>
+    <FacturaScadenta>2025-02-12</FacturaScadenta>
+    <TotalValoare>21000.00</TotalValoare>
+    <StatusPlata>Platit</StatusPlata>
+  </Factura>
+  <Factura>
+    <FurnizorCIF>RO67890123</FurnizorCIF>
+    <FurnizorNume>EUROCOM TRADING SRL</FurnizorNume>
+    <ClientCIF>RO99887766</ClientCIF>
+    <ClientNume>FIRMA MEA SRL</ClientNume>
+    <FacturaNumar>EC-PRIM-2025-001</FacturaNumar>
+    <FacturaData>2025-01-05</FacturaData>
+    <FacturaScadenta>2025-02-05</FacturaScadenta>
+    <TotalValoare>48000.00</TotalValoare>
+    <StatusPlata>Platit</StatusPlata>
+  </Factura>
+  <!-- ──────────────── 2025 Q2 ──────────────── -->
+  <Factura>
+    <FurnizorCIF>RO12345678</FurnizorCIF>
+    <FurnizorNume>TEHNO CONSTRUCT SRL</FurnizorNume>
+    <ClientCIF>RO99887766</ClientCIF>
+    <ClientNume>FIRMA MEA SRL</ClientNume>
+    <FacturaNumar>TC-PRIM-2025-004</FacturaNumar>
+    <FacturaData>2025-03-15</FacturaData>
+    <FacturaScadenta>2025-04-15</FacturaScadenta>
+    <TotalValoare>21500.00</TotalValoare>
+    <StatusPlata>Neplatit</StatusPlata>
+  </Factura>
+  <Factura>
+    <FurnizorCIF>RO34567890</FurnizorCIF>
+    <FurnizorNume>METAL GRUP SRL</FurnizorNume>
+    <ClientCIF>RO99887766</ClientCIF>
+    <ClientNume>FIRMA MEA SRL</ClientNume>
+    <FacturaNumar>MG-PRIM-2025-004</FacturaNumar>
+    <FacturaData>2025-03-20</FacturaData>
+    <FacturaScadenta>2025-04-20</FacturaScadenta>
+    <TotalValoare>16000.00</TotalValoare>
+    <StatusPlata>Neplatit</StatusPlata>
+  </Factura>
+  <!-- ──────────────── 2025 Q3-Q4 ──────────────── -->
+  <Factura>
+    <FurnizorCIF>RO54637281</FurnizorCIF>
+    <FurnizorNume>OFFICE SUPPLY CO SRL</FurnizorNume>
+    <ClientCIF>RO99887766</ClientCIF>
+    <ClientNume>FIRMA MEA SRL</ClientNume>
+    <FacturaNumar>OSC-PRIM-2025-003</FacturaNumar>
+    <FacturaData>2025-07-10</FacturaData>
+    <FacturaScadenta>2025-08-10</FacturaScadenta>
+    <TotalValoare>2600.00</TotalValoare>
+    <StatusPlata>Neplatit</StatusPlata>
+  </Factura>
+  <Factura>
+    <FurnizorCIF>RO77889900</FurnizorCIF>
+    <FurnizorNume>IMPEX CHEMICALS SRL</FurnizorNume>
+    <ClientCIF>RO99887766</ClientCIF>
+    <ClientNume>FIRMA MEA SRL</ClientNume>
+    <FacturaNumar>IC-PRIM-2025-003</FacturaNumar>
+    <FacturaData>2025-09-15</FacturaData>
+    <FacturaScadenta>2025-10-15</FacturaScadenta>
+    <TotalValoare>13800.00</TotalValoare>
+    <StatusPlata>Neplatit</StatusPlata>
+  </Factura>
+  <!-- ──────────────── 2026 Q1 (recente) ──────────────── -->
+  <Factura>
+    <FurnizorCIF>RO43526171</FurnizorCIF>
+    <FurnizorNume>BIROU EXPERT CONTAB SRL</FurnizorNume>
+    <ClientCIF>RO99887766</ClientCIF>
+    <ClientNume>FIRMA MEA SRL</ClientNume>
+    <FacturaNumar>BEC-PRIM-2026-001</FacturaNumar>
+    <FacturaData>2026-01-05</FacturaData>
+    <FacturaScadenta>2026-02-05</FacturaScadenta>
+    <TotalValoare>3200.00</TotalValoare>
+    <StatusPlata>Platit</StatusPlata>
+  </Factura>
+  <Factura>
+    <FurnizorCIF>RO88990011</FurnizorCIF>
+    <FurnizorNume>DATACENTER RO SRL</FurnizorNume>
+    <ClientCIF>RO99887766</ClientCIF>
+    <ClientNume>FIRMA MEA SRL</ClientNume>
+    <FacturaNumar>DC-PRIM-2026-001</FacturaNumar>
+    <FacturaData>2026-01-01</FacturaData>
+    <FacturaScadenta>2026-01-31</FacturaScadenta>
+    <TotalValoare>4800.00</TotalValoare>
+    <StatusPlata>Platit</StatusPlata>
+  </Factura>
+  <Factura>
+    <FurnizorCIF>RO32415161</FurnizorCIF>
+    <FurnizorNume>GLOBAL ENERGY SRL</FurnizorNume>
+    <ClientCIF>RO99887766</ClientCIF>
+    <ClientNume>FIRMA MEA SRL</ClientNume>
+    <FacturaNumar>GE-PRIM-2026-002</FacturaNumar>
+    <FacturaData>2026-03-05</FacturaData>
+    <FacturaScadenta>2026-04-05</FacturaScadenta>
+    <TotalValoare>14200.00</TotalValoare>
+    <StatusPlata>Neplatit</StatusPlata>
+  </Factura>
+</Facturi>

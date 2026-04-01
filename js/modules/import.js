@@ -87,7 +87,7 @@ const ZFlowImport = {
      * @param {Array} sagaData - Date parsate din SAGA
      * @returns {Object} - { clienti: Array, facturi: Array, errors: Array }
      */
-    mapSAGAData(sagaData) {
+    mapSAGAData(sagaData, isFurnizor = false) { // [BUG4-FIX] param isFurnizor pentru status corect
         const clienti = [];
         const facturi = [];
         const errors = [];
@@ -177,13 +177,13 @@ const ZFlowImport = {
                 const statusRaw = _col(row,
                     'STATUS', 'status', 'STATUS PLATA', 'status_plata', 'STATUS PLATĂ',
                     'ACHITAT', 'achitat', 'INCASAT', 'incasat', 'PLATIT', 'platit').toLowerCase().trim();
-                let statusPlata = 'Neincasat'; // default pentru clienți (furnizori: Neplatit—detectat în app.js)
+                let statusPlata = isFurnizor ? 'Neplatit' : 'Neincasat'; // [BUG4-FIX] default corect per tip
                 // Verificare exactă pentru a evita false positive pe "Neincasat", "Neplatit"
                 const isPaid = statusRaw === 'incasat' || statusRaw === 'platit' || statusRaw === 'achitat'
                              || statusRaw === 'da' || statusRaw === 'yes' || statusRaw === '1'
                              || statusRaw === 'paid' || statusRaw === 'p';
                 if (isPaid) {
-                    statusPlata = 'Incasat'; // normalizat la inserare: furnizori → 'Platit' în app.js
+                    statusPlata = isFurnizor ? 'Platit' : 'Incasat'; // [BUG4-FIX] status corect per tip
                 }
                 
                 if (!numeClient && !cuiClient) {
@@ -213,8 +213,9 @@ const ZFlowImport = {
                         nr_factura: nrFactura,
                         data_emitere: dataEmitere,
                         data_scadenta: dataScadenta,
-                        suma: suma,
-                        status_plata: statusPlata,   // din CSV sau 'Neincasat' implicit
+                        valoare: suma,               // [BUG5-FIX] camp canonic citit de financiar/analytics
+                        suma: suma,                  // pastrat pentru compatibilitate
+                        status_plata: statusPlata,   // din CSV sau default per tip
                         sursa: 'SAGA',
                         descriere: _col(row, 'DESCRIERE', 'Descriere', 'descriere', 'observatii', 'OBSERVATII', 'Observatii', 'NOTE', 'note', 'Note', 'obs', 'OBS')
                     };
@@ -255,12 +256,12 @@ const ZFlowImport = {
                 ZFlowLogger.warn('import', `[Import] Dată inexistentă ignorată: "${dateStr}"`);
                 return null;
             }
-            return `${an}-${String(luna).padStart(2,'0')}-${String(zi).padStart(2,'0')}`;
+            return `${an}-${String(luna).padStart(2,'0')}-${String(zi).padStart(2,'0')}T12:00:00`; // [BUG3-FIX] previne shift UTC-2
         }
         
         // Format ISO
         if (dateStr.match(/\d{4}-\d{2}-\d{2}/)) {
-            return dateStr.split('T')[0];
+            return dateStr.split('T')[0] + 'T12:00:00'; // [BUG3-FIX] previne shift UTC-2
         }
         
         return null;

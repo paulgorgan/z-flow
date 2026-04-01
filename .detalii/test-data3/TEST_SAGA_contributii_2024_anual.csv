@@ -1,0 +1,61 @@
+tip;suma;luna;achitat;observatii
+TVA;11200.00;2024-01;da;TVA Ianuarie 2024 - achitat 25 Feb 2024
+TVA;13500.00;2024-02;da;TVA Februarie 2024 - achitat 25 Mar 2024
+TVA;15800.00;2024-03;da;TVA Martie 2024 - achitat 25 Apr 2024
+TVA;12100.00;2024-04;da;TVA Aprilie 2024 - achitat 25 Mai 2024
+TVA;14300.00;2024-05;da;TVA Mai 2024 - achitat 25 Iun 2024
+TVA;16200.00;2024-06;da;TVA Iunie 2024 - achitat 25 Iul 2024
+TVA;11800.00;2024-07;da;TVA Iulie 2024 - achitat 25 Aug 2024
+TVA;13900.00;2024-08;da;TVA August 2024 - achitat 25 Sep 2024
+TVA;15100.00;2024-09;da;TVA Septembrie 2024 - achitat 25 Oct 2024
+TVA;12600.00;2024-10;da;TVA Octombrie 2024 - achitat 25 Nov 2024
+TVA;14800.00;2024-11;da;TVA Noiembrie 2024 - achitat 25 Dec 2024
+TVA;16500.00;2024-12;nu;TVA Decembrie 2024 - scadent 25 Ian 2025
+CAS;4200.00;2024-01;da;CAS angajator Ianuarie 2024 - achitat
+CAS;4200.00;2024-02;da;CAS angajator Februarie 2024 - achitat
+CAS;4200.00;2024-03;da;CAS angajator Martie 2024 - achitat
+CAS;4350.00;2024-04;da;CAS angajator Aprilie 2024 - achitat
+CAS;4350.00;2024-05;da;CAS angajator Mai 2024 - achitat
+CAS;4350.00;2024-06;da;CAS angajator Iunie 2024 - achitat
+CAS;4500.00;2024-07;da;CAS angajator Iulie 2024 - achitat
+CAS;4500.00;2024-08;da;CAS angajator August 2024 - achitat
+CAS;4500.00;2024-09;da;CAS angajator Septembrie 2024 - achitat
+CAS;4500.00;2024-10;da;CAS angajator Octombrie 2024 - achitat
+CAS;4500.00;2024-11;da;CAS angajator Noiembrie 2024 - achitat
+CAS;4500.00;2024-12;nu;CAS angajator Decembrie 2024 - scadent 25 Ian 2025
+CASS;1950.00;2024-01;da;CASS angajator Ianuarie 2024 - achitat
+CASS;1950.00;2024-02;da;CASS angajator Februarie 2024 - achitat
+CASS;1950.00;2024-03;da;CASS angajator Martie 2024 - achitat
+CASS;2020.00;2024-04;da;CASS angajator Aprilie 2024 - achitat
+CASS;2020.00;2024-05;da;CASS angajator Mai 2024 - achitat
+CASS;2020.00;2024-06;da;CASS angajator Iunie 2024 - achitat
+CASS;2080.00;2024-07;da;CASS angajator Iulie 2024 - achitat
+CASS;2080.00;2024-08;da;CASS angajator August 2024 - achitat
+CASS;2080.00;2024-09;da;CASS angajator Septembrie 2024 - achitat
+CASS;2080.00;2024-10;da;CASS angajator Octombrie 2024 - achitat
+CASS;2080.00;2024-11;da;CASS angajator Noiembrie 2024 - achitat
+CASS;2080.00;2024-12;nu;CASS angajator Decembrie 2024 - scadent 25 Ian 2025
+Impozit;3100.00;2024-01;da;Impozit venit microintreprindere Ian 2024
+Impozit;3200.00;2024-02;da;Impozit venit microintreprindere Feb 2024
+Impozit;3250.00;2024-03;da;Impozit venit microintreprindere Mar 2024
+Impozit;3100.00;2024-04;da;Impozit venit microintreprindere Apr 2024
+Impozit;3350.00;2024-05;da;Impozit venit microintreprindere Mai 2024
+Impozit;3400.00;2024-06;da;Impozit venit microintreprindere Iun 2024
+Impozit;3200.00;2024-07;da;Impozit venit microintreprindere Iul 2024
+Impozit;3300.00;2024-08;da;Impozit venit microintreprindere Aug 2024
+Impozit;3450.00;2024-09;da;Impozit venit microintreprindere Sep 2024
+Impozit;3250.00;2024-10;da;Impozit venit microintreprindere Oct 2024
+Impozit;3400.00;2024-11;da;Impozit venit microintreprindere Nov 2024
+Impozit;3500.00;2024-12;nu;Impozit venit microintreprindere Dec 2024 - scadent 25 Ian 2025
+Altele;850.00;2024-01;da;Fond garantare salarii Ian 2024 - achitat
+Altele;850.00;2024-02;da;Fond garantare salarii Feb 2024 - achitat
+Altele;850.00;2024-03;da;Fond garantare salarii Mar 2024 - achitat
+Altele;880.00;2024-04;da;Fond garantare salarii Apr 2024 - achitat
+Altele;880.00;2024-05;da;Fond garantare salarii Mai 2024 - achitat
+Altele;880.00;2024-06;da;Fond garantare salarii Iun 2024 - achitat
+Altele;900.00;2024-07;da;Fond garantare salarii Iul 2024 - achitat
+Altele;900.00;2024-08;da;Fond garantare salarii Aug 2024 - achitat
+Altele;900.00;2024-09;da;Fond garantare salarii Sep 2024 - achitat
+Altele;900.00;2024-10;da;Fond garantare salarii Oct 2024 - achitat
+Altele;900.00;2024-11;da;Fond garantare salarii Nov 2024 - achitat
+Altele;900.00;2024-12;nu;Fond garantare salarii Dec 2024 - scadent 25 Ian 2025

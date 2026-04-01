@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- TEST_XML_SAGA_nativ_emise.xml -->
+<!-- Format XML nativ SAGA (structura <jurnal> cu <factura> lowercase) -->
+<!-- Detectat de importDinSAGAXML() din bridge.js ca format SAGA nativ -->
+<!-- FurnizorCIF = RO99887766 → facturi EMISE → tab Clienti -->
+<jurnal>
+  <metadata>
+    <versiune>1.0</versiune>
+    <exportat_de>SAGA</exportat_de>
+    <data_export>2026-04-01</data_export>
+    <firma_cui>RO99887766</firma_cui>
+    <firma_nume>FIRMA MEA SRL</firma_nume>
+  </metadata>
+  <!-- ──────────────── 2024 ──────────────── -->
+  <factura>
+    <nrdoc>SAGA-EMI-2024-001</nrdoc>
+    <cui_partener>RO10203040</cui_partener>
+    <partener>CONSTRUCTII PREMIUM SRL</partener>
+    <data>15.01.2024</data>
+    <data_scadenta>15.03.2024</data_scadenta>
+    <total>120000.00</total>
+    <tva>22800.00</tva>
+    <status>Incasat</status>
+  </factura>
+  <factura>
+    <nrdoc>SAGA-EMI-2024-002</nrdoc>
+    <cui_partener>RO20304050</cui_partener>
+    <partener>LOGISTICA RAPIDA SRL</partener>
+    <data>02.02.2024</data>
+    <data_scadenta>02.04.2024</data_scadenta>
+    <total>45000.00</total>
+    <tva>8550.00</tva>
+    <status>Incasat</status>
+  </factura>
+  <factura>
+    <nrdoc>SAGA-EMI-2024-003</nrdoc>
+    <cui_partener>RO12345678</cui_partener>
+    <partener>TEHNO CONSTRUCT SRL</partener>
+    <data>10.03.2024</data>
+    <data_scadenta>10.05.2024</data_scadenta>
+    <total>88000.00</total>
+    <tva>16720.00</tva>
+    <status>Incasat</status>
+  </factura>
+  <factura>
+    <nrdoc>SAGA-EMI-2024-004</nrdoc>
+    <cui_partener>RO90123456</cui_partener>
+    <partener>MEDICA FARM SRL</partener>
+    <data>05.04.2024</data>
+    <data_scadenta>05.06.2024</data_scadenta>
+    <total>32500.00</total>
+    <tva>6175.00</tva>
+    <status>Incasat</status>
+  </factura>
+  <factura>
+    <nrdoc>SAGA-EMI-2024-005</nrdoc>
+    <cui_partener>RO34567890</cui_partener>
+    <partener>METAL GRUP SRL</partener>
+    <data>20.05.2024</data>
+    <data_scadenta>20.07.2024</data_scadenta>
+    <total>56000.00</total>
+    <tva>10640.00</tva>
+    <status>Incasat</status>
+  </factura>
+  <factura>
+    <nrdoc>SAGA-EMI-2024-006</nrdoc>
+    <cui_partener>RO66778899</cui_partener>
+    <partener>GREEN ENERGY SA</partener>
+    <data>15.06.2024</data>
+    <data_scadenta>15.08.2024</data_scadenta>
+    <total>74500.00</total>
+    <tva>14155.00</tva>
+    <status>Incasat</status>
+  </factura>
+  <factura>
+    <nrdoc>SAGA-EMI-2024-007</nrdoc>
+    <cui_partener>RO23456789</cui_partener>
+    <partener>AGRO PRODUSE SA</partener>
+    <data>10.07.2024</data>
+    <data_scadenta>10.09.2024</data_scadenta>
+    <total>98000.00</total>
+    <tva>18620.00</tva>
+    <status>Incasat</status>
+  </factura>
+  <factura>
+    <nrdoc>SAGA-EMI-2024-008</nrdoc>
+    <cui_partener>RO11223344</cui_partener>
+    <partener>NOVA DIGITAL SRL</partener>
+    <data>05.08.2024</data>
+    <data_scadenta>05.10.2024</data_scadenta>
+    <total>39000.00</total>
+    <tva>7410.00</tva>
+    <status>Incasat</status>
+  </factura>
+  <factura>
+    <nrdoc>SAGA-EMI-2024-009</nrdoc>
+    <cui_partener>RO67890123</cui_partener>
+    <partener>EUROCOM TRADING SRL</partener>
+    <data>20.09.2024</data>
+    <data_scadenta>20.11.2024</data_scadenta>
+    <total>185000.00</total>
+    <tva>35150.00</tva>
+    <status>Incasat</status>
+  </factura>
+  <factura>
+    <nrdoc>SAGA-EMI-2024-010</nrdoc>
+    <cui_partener>RO56789012</cui_partener>
+    <partener>SMART IT SOLUTIONS SRL</partener>
+    <data>15.11.2024</data>
+    <data_scadenta>15.01.2025</data_scadenta>
+    <total>61000.00</total>
+    <tva>11590.00</tva>
+    <status>Neincasat</status>
+  </factura>
+  <!-- ──────────────── 2025 H1 ──────────────── -->
+  <factura>
+    <nrdoc>SAGA-EMI-2025-001</nrdoc>
+    <cui_partener>RO10203040</cui_partener>
+    <partener>CONSTRUCTII PREMIUM SRL</partener>
+    <data>10.01.2025</data>
+    <data_scadenta>10.03.2025</data_scadenta>
+    <total>130000.00</total>
+    <tva>24700.00</tva>
+    <status>Incasat</status>
+  </factura>
+  <factura>
+    <nrdoc>SAGA-EMI-2025-002</nrdoc>
+    <cui_partener>RO22334455</cui_partener>
+    <partener>CASA IMPEX SRL</partener>
+    <data>15.02.2025</data>
+    <data_scadenta>15.04.2025</data_scadenta>
+    <total>77000.00</total>
+    <tva>14630.00</tva>
+    <status>Neincasat</status>
+  </factura>
+  <factura>
+    <nrdoc>SAGA-EMI-2025-003</nrdoc>
+    <cui_partener>RO34567890</cui_partener>
+    <partener>METAL GRUP SRL</partener>
+    <data>05.03.2025</data>
+    <data_scadenta>05.05.2025</data_scadenta>
+    <total>63000.00</total>
+    <tva>11970.00</tva>
+    <status>Neincasat</status>
+  </factura>
+  <factura>
+    <nrdoc>SAGA-EMI-2025-004</nrdoc>
+    <cui_partener>RO44556677</cui_partener>
+    <partener>AGRI SOLAR SA</partener>
+    <data>20.03.2025</data>
+    <data_scadenta>20.05.2025</data_scadenta>
+    <total>290000.00</total>
+    <tva>55100.00</tva>
+    <status>Neincasat</status>
+  </factura>
+</jurnal>

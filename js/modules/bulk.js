@@ -33,6 +33,7 @@ const ZFlowBulk = {
         const arr = (window.ZFlowStore?.bulkSelectedFacturi) || [];
         const idx = arr.indexOf(String(facturaId));
         if (idx === -1) arr.push(String(facturaId)); else arr.splice(idx, 1);
+        if (window.ZFlowStore) window.ZFlowStore.bulkSelectedFacturi = arr; // [BUG6-FIX] scrie înapoi în store
         this.updateUI();
     },
 
