@@ -1151,10 +1151,15 @@ function initRealtimeSubscriptions() {
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'clienti' }, (payload) => {
             // [PERF-FIX] Adaugă incremental în store — fără fetch complet
             if (window.ZFlowStore) {
-                window.ZFlowStore.dateLocal = [
-                    { ...payload.new, facturi: [], sold: 0, sumaScadenta: 0 },
-                    ...(window.ZFlowStore.dateLocal || [])
-                ];
+                // [v75.15] Guard anti-duplicat: Realtime poate sosi după init() full-fetch
+                // (latență Supabase Realtime ~500-2000ms). Fără guard, clientul apărea de 2 ori.
+                const _exists = (window.ZFlowStore.dateLocal || []).some(c => String(c.id) === String(payload.new.id));
+                if (!_exists) {
+                    window.ZFlowStore.dateLocal = [
+                        { ...payload.new, facturi: [], sold: 0, sumaScadenta: 0 },
+                        ...(window.ZFlowStore.dateLocal || [])
+                    ];
+                }
             }
             if (window.ZFlowFinanciar) ZFlowFinanciar.renderMain(); else if (typeof renderMain === 'function') renderMain();
         })

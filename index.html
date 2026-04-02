@@ -943,28 +943,28 @@
             <div class="grid grid-cols-2 gap-1.5 bg-slate-100 p-1.5 rounded-xl mb-3">
               <button type="button"
                 data-action="setFiltruStatusBI" data-arg="toate"
-                class="bi-status-btn py-2 px-1 text-[9px] font-black uppercase rounded-lg bg-white text-blue-900 shadow-sm transition-all flex items-center justify-center gap-1"
+                class="bi-status-btn py-2 px-1 text-[9px] leading-none font-black uppercase rounded-lg bg-white text-blue-900 shadow-sm transition-all flex items-center justify-center gap-1"
               >
                 <span class="w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0"></span> Toate
               </button>
               <button type="button"
                 id="bi-btn-restant"
                 data-action="setFiltruStatusBI" data-arg="Neincasat"
-                class="bi-status-btn py-2 px-1 text-[9px] font-black uppercase rounded-lg text-slate-500 hover:text-red-600 transition-all flex items-center justify-center gap-1"
+                class="bi-status-btn py-2 px-1 text-[9px] leading-none font-black uppercase rounded-lg text-slate-500 hover:text-red-600 transition-all flex items-center justify-center gap-1"
               >
                 <span class="w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0"></span> Neîncasate
               </button>
               <button type="button"
                 id="bi-btn-incasat"
                 data-action="setFiltruStatusBI" data-arg="Incasat"
-                class="bi-status-btn py-2 px-1 text-[9px] font-black uppercase rounded-lg text-slate-500 hover:text-emerald-600 transition-all flex items-center justify-center gap-1"
+                class="bi-status-btn py-2 px-1 text-[9px] leading-none font-black uppercase rounded-lg text-slate-500 hover:text-emerald-600 transition-all flex items-center justify-center gap-1"
               >
                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0"></span> Încasate clienți
               </button>
               <button type="button"
                 id="bi-btn-platit"
                 data-action="setFiltruStatusBI" data-arg="Platit"
-                class="bi-status-btn py-2 px-1 text-[9px] font-black uppercase rounded-lg text-slate-500 hover:text-red-700 transition-all flex items-center justify-center gap-1"
+                class="bi-status-btn py-2 px-1 text-[9px] leading-none font-black uppercase rounded-lg text-slate-500 hover:text-red-700 transition-all flex items-center justify-center gap-1"
               >
                 <span class="w-1.5 h-1.5 rounded-full bg-red-600 flex-shrink-0"></span> Neplătite furnizori
               </button>
@@ -2644,6 +2644,9 @@
           <div
             class="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center"
             id="dropzone-factura"
+            ondragover="event.preventDefault(); event.currentTarget.classList.add('border-blue-400','bg-blue-50')"
+            ondragleave="event.currentTarget.classList.remove('border-blue-400','bg-blue-50')"
+            ondrop="event.preventDefault(); event.currentTarget.classList.remove('border-blue-400','bg-blue-50'); const _f=event.dataTransfer.files[0]; if(_f && _f.type==='application/pdf') _setDroppedPDF(_f,'dropzone-factura','PDF atașat'); else showNotification('Acceptăm doar fișiere PDF','error')"
           >
             <input
               type="file"

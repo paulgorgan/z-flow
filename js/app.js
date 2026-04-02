@@ -384,7 +384,8 @@ function setAriaLabels() {
 
 // [v75.2] Banner TVA Prag — afișare dismissibilă, max o dată pe lună
 function _showTvaBanner(total, prag) {
-    if (ZFlowStore?.userProfile?.platitor_tva) return; // [v75.9] firma deja platitoare TVA — fără alertă
+    // [v75.13] Nu afișa banner dacă profilul nu e încă încărcat (SWR stale-render)
+    if (!ZFlowStore?.userProfile || ZFlowStore.userProfile.platitor_tva) return;
     const mk = 'zflow_tva_warn_' + new Date().toISOString().slice(0, 7); // YYYY-MM
     if (localStorage.getItem(mk)) return; // deja dismiss în această lună
     const banner = document.getElementById('tva-warn-banner');
@@ -577,7 +578,7 @@ async function init(goHome = true) {
 
         // Procesăm datele clienților
         ZFlowStore.dateLocal = (cl || []).map((c) => {
-            const fcs = ZFlowStore.dateFacturiBI.filter((f) => String(f.client_id) === String(c.id));
+            const fcs = (ZFlowStore.dateFacturiBI || []).filter((f) => String(f.client_id) === String(c.id));
             const sold = fcs
                 .filter((f) => f.status_plata !== "Incasat")
                 .reduce((sum, f) => sum + (Number(f.valoare) || 0), 0);
@@ -2444,7 +2445,8 @@ function incarcaDashboard() {
 
     // [v75.2] Banner prag TVA — dismissibil, înlocuiește notificarea popup care apărea la fiecare logare
     // [v75.3] Activ NUMAI pentru firmele neplatitoare de TVA (platitor_tva === false)
-    const _esteNeplatitorTva = !ZFlowStore?.userProfile?.platitor_tva;
+    // [v75.13] Guard suplimentar: profilul trebuie să fie încărcat (evită fals-pozitiv pe SWR stale path)
+    const _esteNeplatitorTva = ZFlowStore?.userProfile && !ZFlowStore.userProfile.platitor_tva;
     const totalAnCurent = (ZFlowStore.dateFacturiBI || [])
         .filter(f => new Date(f.data_emiterii || f.created_at).getFullYear() === new Date().getFullYear())
         .reduce((s, f) => s + (Number(f.valoare) || 0), 0);
@@ -5445,8 +5447,11 @@ function setFiltruStatusBI(status, btn) {
     // Vizibilitate coloane totale în funcție de tab
     const colClienti = document.getElementById("bi-total-clienti-col");
     const colFurnizori = document.getElementById("bi-total-furnizori-col");
+    const colNet = document.getElementById("bi-total-net-col");
     if (colClienti) colClienti.classList.toggle("hidden", status === 'Platit');
     if (colFurnizori) colFurnizori.classList.toggle("hidden", status === 'Neincasat' || status === 'Incasat');
+    // [v75.13] Coloana Diferență vizibilă pentru toate filtrele de status
+    if (colNet) colNet.classList.remove("hidden");
 
     updateAnalizaInstant();
 }
@@ -8407,6 +8412,9 @@ window.comutaTipFacturaNou = comutaTipFacturaNou;
 window.salveazaFacturaNou = salveazaFacturaNou;
 window.incarcaDashboard = incarcaDashboard;
 window.renderTransportTab = renderTransportTab;
+// [v75.7] Funcții apelate din onchange/oninput în HTML — export explicit pentru robustețe
+window.filtreazaFirmeInCollapse  = filtreazaFirmeInCollapse;
+window.renderListaContributii    = renderListaContributii;
 window.initMap = initMap;
 window.actualizaMarkerePeHarta = actualizaMarkerePeHarta;
 window.initScanner = initScanner;

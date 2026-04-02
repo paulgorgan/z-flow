@@ -11,7 +11,12 @@ const srv = http.createServer((req, res) => {
   let p = path.join(ROOT, req.url === '/' ? 'index.html' : req.url.split('?')[0]);
   fs.readFile(p, (err, data) => {
     if (err) { res.writeHead(404); res.end('Not found: ' + req.url); return; }
-    res.writeHead(200, {'Content-Type': MIME[path.extname(p)] || 'text/plain'});
+    // [v75.15] sw.js și version.js nu trebuie cache-uite HTTP — altfel browserul
+    // nu detectează update-uri SW și servește fișiere vechi după version bump.
+    const isSWCritical = req.url === '/sw.js' || req.url.startsWith('/js/version.js');
+    const headers = { 'Content-Type': MIME[path.extname(p)] || 'text/plain' };
+    if (isSWCritical) headers['Cache-Control'] = 'no-store, no-cache';
+    res.writeHead(200, headers);
     res.end(data);
   });
 });

@@ -67,7 +67,9 @@ self.addEventListener('install', event => {
     caches.open(CACHE_NAME)
       .then(cache => {
         swLog('📦 SW V2: Caching static assets');
-        return cache.addAll(STATIC_ASSETS);
+        // [v75.15] Forcează fetch de pe rețea (cache:'no-cache') pentru a evita
+        // HTTP-cache-ul browserului care servi versiuni vechi la fiecare upgrade.
+        return cache.addAll(STATIC_ASSETS.map(url => new Request(url, { cache: 'no-cache' })));
       })
       .then(() => {
         swLog('✅ SW V2: Static assets cached');
