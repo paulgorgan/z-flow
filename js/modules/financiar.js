@@ -111,6 +111,16 @@ function _recomputeFurnizoriData() {
     });
 }
 
+function _highlightTerm(text, term) {
+    if (!term || !text) return typeof escapeHtml === 'function' ? escapeHtml(String(text || '')) : String(text || '');
+    const safe = typeof escapeHtml === 'function' ? escapeHtml(String(text)) : String(text);
+    const safeTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return safe.replace(
+        new RegExp('(' + safeTerm + ')', 'gi'),
+        '<mark style="background:#fef08a;color:#713f12;border-radius:2px;padding:0 1px">$1</mark>'
+    );
+}
+
 /**
  * Renderizează lista principală de clienți
  */
@@ -196,7 +206,7 @@ function renderMain(lista = null) {
     <div class="flex-1 flex flex-col">
     <div class="flex justify-between items-start w-full">
         <div class="max-w-[60%]">
-            <h4 class="text-[15px] font-black text-slate-800 leading-tight truncate">${_esc(f.nume_firma || f.cui)}</h4>
+            <h4 class="text-[15px] font-black text-slate-800 leading-tight truncate">${_highlightTerm(f.nume_firma || f.cui, document.getElementById('search-firme')?.value?.trim())}</h4>
             <div class="flex flex-wrap gap-1 mt-0.5">
             ${esteSiClientSiFurnizor(f.cui) ? '<span class="inline-block text-[7px] font-black uppercase px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700">Client + Furnizor</span>' : ''}
             ${f.eticheta ? `<span class="inline-block text-[7px] font-bold uppercase px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700">${_esc(f.eticheta)}</span>` : ''}
@@ -387,7 +397,7 @@ function renderFurnizori(lista) {
     <div class="flex-1 flex flex-col">
     <div class="flex justify-between items-start w-full">
         <div class="max-w-[60%]">
-            <h4 class="text-[15px] font-black text-slate-800 leading-tight truncate">${_esc(f.nume_firma || f.cui)}</h4>
+            <h4 class="text-[15px] font-black text-slate-800 leading-tight truncate">${_highlightTerm(f.nume_firma || f.cui, document.getElementById('search-furnizori')?.value?.trim())}</h4>
             <div class="flex flex-wrap gap-1 mt-0.5">
             ${esteSiClientSiFurnizor(f.cui) ? '<span class="inline-block text-[7px] font-black uppercase px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700">Client + Furnizor</span>' : ''}
             ${f.eticheta ? `<span class="inline-block text-[7px] font-bold uppercase px-1.5 py-0.5 rounded-full bg-red-100 text-red-700">${_esc(f.eticheta)}</span>` : ''}
@@ -850,22 +860,30 @@ function deschideModalFurnizor(id) {
  * Salvează furnizor (insert sau update)
  */
 async function salveazaFurnizor() {
+    const _saveBtn = document.querySelector('[data-action="salveazaFurnizor"]');
+    if (typeof ZFlowUI !== 'undefined') ZFlowUI.setButtonLoading(_saveBtn, true);
     const id = document.getElementById("in-furn-id")?.value.trim();
     const numeFirma = document.getElementById("in-furn-nume")?.value.trim();
     const cui = document.getElementById("in-furn-cui")?.value.trim();
 
     if (!numeFirma && !cui) {
         showNotification("Completează cel puțin CUI-ul sau denumirea firmei", "error");
+        if (typeof ZFlowUI !== 'undefined') ZFlowUI.setButtonLoading(_saveBtn, false);
         return;
     }
 
     // Validare CUI + IBAN
     if (cui && typeof validareCUI === 'function' && !validareCUI(cui)) {
-        if (!confirm("CUI-ul furnizorului nu trece validarea cifrei de control ANAF. Continuați oricum?")) return;
+        if (!confirm("CUI-ul furnizorului nu trece validarea cifrei de control ANAF. Continuați oricum?")) {
+            if (typeof ZFlowUI !== 'undefined') ZFlowUI.setButtonLoading(_saveBtn, false);
+            return;
+        }
     }
     const ibanFurn = document.getElementById("in-furn-iban")?.value.trim();
     if (ibanFurn && typeof validareIBAN === 'function' && !validareIBAN(ibanFurn)) {
-        showNotification('IBAN furnizor invalid (format sau cifră de control incorectă)', 'error'); return;
+        showNotification('IBAN furnizor invalid (format sau cifră de control incorectă)', 'error');
+        if (typeof ZFlowUI !== 'undefined') ZFlowUI.setButtonLoading(_saveBtn, false);
+        return;
     }
 
     // Verificare duplicat furnizor (doar la inserare, nu la editare)
@@ -878,7 +896,10 @@ async function salveazaFurnizor() {
         );
         if (existentF) {
             const continuaF = confirm(`Furnizorul "${existentF.nume_firma}" (CUI: ${existentF.cui || '—'}) există deja!\n\nApăsați OK pentru a adăuga oricum sau Anulați.`);
-            if (!continuaF) return;
+            if (!continuaF) {
+                if (typeof ZFlowUI !== 'undefined') ZFlowUI.setButtonLoading(_saveBtn, false);
+                return;
+            }
         }
     }
 
@@ -927,6 +948,7 @@ async function salveazaFurnizor() {
         showNotification("Eroare: " + err.message, "error");
     } finally {
         setLoader(false);
+        if (typeof ZFlowUI !== 'undefined') ZFlowUI.setButtonLoading(document.querySelector('[data-action="salveazaFurnizor"]'), false);
     }
 }
 
@@ -941,6 +963,7 @@ function stergeFurnizorModal() {
         async () => {
             setLoader(true);
             try {
+                const _backupPtUndo = { ...(ZFlowStore.dateFurnizori.find(f => String(f.id) === String(id)) || {}) };
                 await ZFlowDB.deleteFurnizor(id);
                 inchideModal("modal-furnizor");
                 // [QUALITY-FIX] FIX 6 — ștergere optimistă din store, fără re-fetch din DB
@@ -951,7 +974,9 @@ function stergeFurnizorModal() {
                 updateFurnizoriKPI();
                 invalidateCashflowCache();
                 incarcaDashboard(); // Actualizează chart Home
-                showNotification("Furnizor șters!", "success");
+                if (typeof showNotificationWithUndo === 'function') showNotificationWithUndo('Furnizor șters. Poți anula în 5 secunde.', () => { if (_backupPtUndo.id) ZFlowDB.insertFurnizor(_backupPtUndo).then(() => { ZFlowStore.dateFurnizori.push(_backupPtUndo); renderFurnizoriThrottled(); updateFurnizoriKPI(); }).catch(() => {}); });
+                else showNotification("Furnizor șters!", "success");
+                if (navigator.vibrate) navigator.vibrate([30, 15, 30]);
             } catch (err) {
                 showNotification("Eroare: " + err.message, "error");
             } finally {
@@ -969,6 +994,7 @@ function stergeFurnizorDirect(id) {
     showConfirmModal("Ștergi furnizorul? Toate facturile asociate vor fi șterse.", async () => {
         setLoader(true);
         try {
+            const _backupPtUndo = { ...(ZFlowStore.dateFurnizori.find(f => String(f.id) === String(id)) || {}) };
             await ZFlowDB.deleteFurnizor(id);
             // [QUALITY-FIX] FIX 6 — ștergere optimistă din store, fără re-fetch din DB
             ZFlowStore.dateFurnizori = ZFlowStore.dateFurnizori.filter(f => String(f.id) !== String(id));
@@ -977,7 +1003,9 @@ function stergeFurnizorDirect(id) {
             updateFurnizoriKPI();
             invalidateCashflowCache();
             incarcaDashboard(); // Actualizează chart Home
-            showNotification('Furnizor șters!', 'success');
+            if (typeof showNotificationWithUndo === 'function') showNotificationWithUndo('Furnizor șters. Poți anula în 5 secunde.', () => { if (_backupPtUndo.id) ZFlowDB.insertFurnizor(_backupPtUndo).then(() => { ZFlowStore.dateFurnizori.push(_backupPtUndo); renderFurnizoriThrottled(); updateFurnizoriKPI(); }).catch(() => {}); });
+            else showNotification('Furnizor șters!', 'success');
+            if (navigator.vibrate) navigator.vibrate([30, 15, 30]);
         } catch (err) { showNotification('Eroare: ' + err.message, 'error'); }
         finally { setLoader(false); }
     });
@@ -1075,12 +1103,15 @@ async function autoCautareCUIFirmaNou() {
  * Salvează firma nouă (Client / Furnizor / Ambele)
  */
 async function salveazaFirmaNou() {
+    const _saveBtn = document.querySelector('[data-action="salveazaFirmaNou"]');
+    if (typeof ZFlowUI !== 'undefined') ZFlowUI.setButtonLoading(_saveBtn, true);
     const tipActiv = document.querySelector(".fn-tip-btn.bg-blue-900")?.dataset.tip || "client";
     const cui = document.getElementById("fn-cui").value.trim();
     const numeFirma = document.getElementById("fn-nume").value.trim();
 
     if (!cui || !numeFirma) {
         showNotification("CUI-ul și Denumirea sunt obligatorii!", "error");
+        if (typeof ZFlowUI !== 'undefined') ZFlowUI.setButtonLoading(_saveBtn, false);
         return;
     }
 
@@ -1116,6 +1147,7 @@ async function salveazaFirmaNou() {
         showNotification("Eroare: " + e.message, "error");
     } finally {
         setLoader(false);
+        if (typeof ZFlowUI !== 'undefined') ZFlowUI.setButtonLoading(document.querySelector('[data-action="salveazaFirmaNou"]'), false);
     }
 }
 
@@ -1180,6 +1212,8 @@ function comutaTipFacturaNou(tip) {
  * Salvează factura nouă (de încasat sau de plătit)
  */
 async function salveazaFacturaNou() {
+    const _saveBtn = document.querySelector('[data-action="salveazaFacturaNou"]');
+    if (typeof ZFlowUI !== 'undefined') ZFlowUI.setButtonLoading(_saveBtn, true);
     const tip = document.querySelector(".fn-fac-tip-btn.bg-blue-900")?.dataset.tip || "incasat";
     const nr = document.getElementById("fn-fac-nr").value.trim();
     const val = parseFloat(document.getElementById("fn-fac-val").value);
@@ -1190,6 +1224,7 @@ async function salveazaFacturaNou() {
     const cotaTva = parseInt(document.getElementById('fn-fac-cota-tva')?.value ?? 21); // [P0-B v74.7]
     if (!val || isNaN(val)) {
         showNotification("Valoarea este obligatorie!", "error");
+        if (typeof ZFlowUI !== 'undefined') ZFlowUI.setButtonLoading(_saveBtn, false);
         return;
     }
 
@@ -1234,6 +1269,7 @@ async function salveazaFacturaNou() {
         showNotification("Eroare: " + e.message, "error");
     } finally {
         setLoader(false);
+        if (typeof ZFlowUI !== 'undefined') ZFlowUI.setButtonLoading(document.querySelector('[data-action="salveazaFacturaNou"]'), false);
     }
 }
 

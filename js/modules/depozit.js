@@ -432,10 +432,12 @@ function inchideModalProdus() {
 }
 
 async function salveazaProdus() {
+    const _saveBtn = document.querySelector('[data-action="salveazaProdus"]');
+    if (typeof ZFlowUI !== 'undefined') ZFlowUI.setButtonLoading(_saveBtn, true);
     const fv = el => document.getElementById(el)?.value?.trim() || '';
     const id = document.getElementById('produs-id-hidden')?.value;
     const name = fv('produs-name');
-    if (!name) { showNotification('Completează denumirea produsului', 'error'); return; }
+    if (!name) { showNotification('Completează denumirea produsului', 'error'); if (typeof ZFlowUI !== 'undefined') ZFlowUI.setButtonLoading(_saveBtn, false); return; }
 
     setLoader(true);
     try {
@@ -475,7 +477,10 @@ async function salveazaProdus() {
         if (typeof ZFlowMobile !== 'undefined') ZFlowMobile.vibrate(30);
     } catch (err) {
         showNotification('Eroare: ' + err.message, 'error');
-    } finally { setLoader(false); }
+    } finally {
+        setLoader(false);
+        if (typeof ZFlowUI !== 'undefined') ZFlowUI.setButtonLoading(document.querySelector('[data-action="salveazaProdus"]'), false);
+    }
 }
 
 async function stergeProdus(id) {
@@ -522,6 +527,8 @@ function inchideModalMiscare() {
 }
 
 async function salveazaMiscare() {
+    const _saveBtn = document.querySelector('[data-action="salveazaMiscare"]');
+    if (typeof ZFlowUI !== 'undefined') ZFlowUI.setButtonLoading(_saveBtn, true);
     const produsId = document.getElementById('miscare-produs-select')?.value;
     const tip      = document.getElementById('miscare-tip')?.value;
     const cant     = Number(document.getElementById('miscare-cantitate')?.value);
@@ -529,7 +536,7 @@ async function salveazaMiscare() {
     const obs      = document.getElementById('miscare-obs')?.value?.trim() || null;
 
     if (!produsId || !tip || !cant || cant <= 0) {
-        showNotification('Completează toate câmpurile obligatorii', 'error'); return;
+        showNotification('Completează toate câmpurile obligatorii', 'error'); if (typeof ZFlowUI !== 'undefined') ZFlowUI.setButtonLoading(_saveBtn, false); return;
     }
     setLoader(true);
     try {
@@ -544,7 +551,10 @@ async function salveazaMiscare() {
         if (typeof ZFlowMobile !== 'undefined') ZFlowMobile.vibrate(30);
     } catch (err) {
         showNotification('Eroare: ' + err.message, 'error');
-    } finally { setLoader(false); }
+    } finally {
+        setLoader(false);
+        if (typeof ZFlowUI !== 'undefined') ZFlowUI.setButtonLoading(document.querySelector('[data-action="salveazaMiscare"]'), false);
+    }
 }
 
 // ==========================================
@@ -809,8 +819,10 @@ function recalcTotalReceptie() {
 }
 
 async function salveazaReceptie() {
+    const _saveBtn = document.querySelector('[data-action="salveazaReceptie"]');
+    if (typeof ZFlowUI !== 'undefined') ZFlowUI.setButtonLoading(_saveBtn, true);
     const itemsValide = _receptieItems.filter(i => i.produs_id && Number(i.cantitate) > 0);
-    if (!itemsValide.length) { showNotification('Adaugă cel puțin un produs valid', 'error'); return; }
+    if (!itemsValide.length) { showNotification('Adaugă cel puțin un produs valid', 'error'); if (typeof ZFlowUI !== 'undefined') ZFlowUI.setButtonLoading(_saveBtn, false); return; }
     const furnizorId = document.getElementById('rec-furnizor-select')?.value || null;
     const data = document.getElementById('rec-data')?.value || new Date().toISOString().split('T')[0];
     const obs = document.getElementById('rec-obs')?.value?.trim() || null;
@@ -839,7 +851,10 @@ async function salveazaReceptie() {
         if (typeof ZFlowMobile !== 'undefined') ZFlowMobile.vibrate(30);
     } catch(err) {
         showNotification('Eroare: ' + err.message, 'error');
-    } finally { setLoader(false); }
+    } finally {
+        setLoader(false);
+        if (typeof ZFlowUI !== 'undefined') ZFlowUI.setButtonLoading(document.querySelector('[data-action="salveazaReceptie"]'), false);
+    }
 }
 
 // ==========================================
@@ -923,8 +938,10 @@ function recalcTotalLivrare() {
 }
 
 async function salveazaLivrare() {
+    const _saveBtn = document.querySelector('[data-action="salveazaLivrare"]');
+    if (typeof ZFlowUI !== 'undefined') ZFlowUI.setButtonLoading(_saveBtn, true);
     const itemsValide = _livrareItems.filter(i => i.produs_id && Number(i.cantitate) > 0);
-    if (!itemsValide.length) { showNotification('Adaugă cel puțin un produs valid', 'error'); return; }
+    if (!itemsValide.length) { showNotification('Adaugă cel puțin un produs valid', 'error'); if (typeof ZFlowUI !== 'undefined') ZFlowUI.setButtonLoading(_saveBtn, false); return; }
     const clientId = document.getElementById('liv-client-select')?.value || null;
     const data = document.getElementById('liv-data')?.value || new Date().toISOString().split('T')[0];
     const obs = document.getElementById('liv-obs')?.value?.trim() || null;
@@ -936,6 +953,7 @@ async function salveazaLivrare() {
         const prod = (ZFlowStore.dateProduse || []).find(p => String(p.id) === String(item.produs_id));
         if (Number(item.cantitate) > stocDisp) {
             showNotification(`Stoc insuficient pentru ${prod?.nume || 'produs'} (${stocDisp} disponibil)`, 'error');
+            if (typeof ZFlowUI !== 'undefined') ZFlowUI.setButtonLoading(_saveBtn, false);
             return;
         }
     }
@@ -963,7 +981,10 @@ async function salveazaLivrare() {
         if (typeof ZFlowMobile !== 'undefined') ZFlowMobile.vibrate(30);
     } catch(err) {
         showNotification('Eroare: ' + err.message, 'error');
-    } finally { setLoader(false); }
+    } finally {
+        setLoader(false);
+        if (typeof ZFlowUI !== 'undefined') ZFlowUI.setButtonLoading(document.querySelector('[data-action="salveazaLivrare"]'), false);
+    }
 }
 
 // ==========================================

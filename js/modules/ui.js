@@ -225,6 +225,19 @@ const ZFlowUI = {
             if (text) btn.setAttribute('aria-label', text);
         });
     }
+    ,setButtonLoading(btn, loading) {
+        if (!btn) return;
+        if (loading) {
+            btn.disabled = true;
+            btn.dataset.origText = btn.innerText;
+            btn.innerText = btn.dataset.loadingText || 'Se procesează...';
+            btn.style.opacity = '0.7';
+        } else {
+            btn.disabled = false;
+            btn.innerText = btn.dataset.origText || btn.dataset.originalText || btn.innerText;
+            btn.style.opacity = '';
+        }
+    }
 };
 
 // Export global

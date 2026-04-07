@@ -343,10 +343,12 @@ function inchideModalComandaTransport() {
 }
 
 async function salveazaComandaTransport() {
+    const _saveBtn = document.querySelector('[data-action="salveazaComandaTransport"]');
+    if (typeof ZFlowUI !== 'undefined') ZFlowUI.setButtonLoading(_saveBtn, true);
     const fv = el => document.getElementById(el)?.value?.trim() || '';
     const id = document.getElementById('ct-id-hidden')?.value;
     const rutaDe = fv('ct-ruta-de'), rutaLa = fv('ct-ruta-la');
-    if (!rutaDe || !rutaLa) { showNotification('Completează ruta (plecare și destinație)', 'error'); return; }
+    if (!rutaDe || !rutaLa) { showNotification('Completează ruta (plecare și destinație)', 'error'); if (typeof ZFlowUI !== 'undefined') ZFlowUI.setButtonLoading(_saveBtn, false); return; }
 
     setLoader(true);
     try {
@@ -382,7 +384,7 @@ async function salveazaComandaTransport() {
         if (typeof ZFlowMobile !== 'undefined') ZFlowMobile.vibrate(30);
     } catch (err) {
         showNotification('Eroare: ' + err.message, 'error');
-    } finally { setLoader(false); }
+    } finally { setLoader(false); if (typeof ZFlowUI !== 'undefined') ZFlowUI.setButtonLoading(document.querySelector('[data-action="salveazaComandaTransport"]'), false); }
 }
 
 async function stergeComandaTransport(id) {
@@ -426,10 +428,12 @@ function deschideModalSofer(id) {
 function inchideModalSofer() { const m = document.getElementById('modal-sofer'); if (m) m.classList.remove('active'); }
 
 async function salveazaSofer() {
+    const _saveBtn = document.querySelector('[data-action="salveazaSofer"]');
+    if (typeof ZFlowUI !== 'undefined') ZFlowUI.setButtonLoading(_saveBtn, true);
     const fv = el => document.getElementById(el)?.value?.trim() || '';
     const id = document.getElementById('sofer-id-hidden')?.value;
     const name = fv('sofer-name');
-    if (!name) { showNotification('Completează numele șoferului', 'error'); return; }
+    if (!name) { showNotification('Completează numele șoferului', 'error'); if (typeof ZFlowUI !== 'undefined') ZFlowUI.setButtonLoading(_saveBtn, false); return; }
     setLoader(true);
     try {
         const payload = { nume: name, telefon: fv('sofer-tel')||null, nr_permis: fv('sofer-permis')||null, cnp: fv('sofer-cnp')||null };
@@ -443,7 +447,7 @@ async function salveazaSofer() {
         inchideModalSofer(); calculeazaKPILogistic(); renderSoferi();
         showNotification('Șofer salvat!', 'success');
         if (typeof ZFlowMobile !== 'undefined') ZFlowMobile.vibrate(30);
-    } catch (err) { showNotification('Eroare: '+err.message,'error'); } finally { setLoader(false); }
+    } catch (err) { showNotification('Eroare: '+err.message,'error'); } finally { setLoader(false); if (typeof ZFlowUI !== 'undefined') ZFlowUI.setButtonLoading(document.querySelector('[data-action="salveazaSofer"]'), false); }
 }
 
 async function stergeSofer(id) {
@@ -486,10 +490,12 @@ function deschideModalVehicul(id) {
 function inchideModalVehicul() { const m = document.getElementById('modal-vehicul'); if (m) m.classList.remove('active'); }
 
 async function salveazaVehicul() {
+    const _saveBtn = document.querySelector('[data-action="salveazaVehicul"]');
+    if (typeof ZFlowUI !== 'undefined') ZFlowUI.setButtonLoading(_saveBtn, true);
     const fv = el => document.getElementById(el)?.value?.trim() || '';
     const id = document.getElementById('vehicul-id-hidden')?.value;
     const nr = fv('vehicul-nr');
-    if (!nr) { showNotification('Completează nr. de înmatriculare', 'error'); return; }
+    if (!nr) { showNotification('Completează nr. de înmatriculare', 'error'); if (typeof ZFlowUI !== 'undefined') ZFlowUI.setButtonLoading(_saveBtn, false); return; }
     setLoader(true);
     try {
         const latVal = document.getElementById('vehicul-gps-lat')?.value;
@@ -520,7 +526,7 @@ async function salveazaVehicul() {
         inchideModalVehicul(); calculeazaKPILogistic(); renderVehicule();
         showNotification('Vehicul salvat!', 'success');
         if (typeof ZFlowMobile !== 'undefined') ZFlowMobile.vibrate(30);
-    } catch (err) { showNotification('Eroare: '+err.message,'error'); } finally { setLoader(false); }
+    } catch (err) { showNotification('Eroare: '+err.message,'error'); } finally { setLoader(false); if (typeof ZFlowUI !== 'undefined') ZFlowUI.setButtonLoading(document.querySelector('[data-action="salveazaVehicul"]'), false); }
 }
 
 async function stergeVehicul(id) {

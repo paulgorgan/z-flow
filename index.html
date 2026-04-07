@@ -110,6 +110,13 @@
       /* Only the active tab is visible */
       .tab-content{display:none}
       .tab-content.active{display:block}
+      .tab-content.active {
+          animation: zfTabIn 0.15s ease-out both;
+      }
+      @keyframes zfTabIn {
+          from { opacity: 0; transform: translateY(6px); }
+          to   { opacity: 1; transform: translateY(0); }
+      }
       /* Reserve fixed-position layout anchors */
       header{position:sticky;top:0;z-index:40;background:#1e3a8a;min-height:56px}
       .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e2e8f0;z-index:50;min-height:68px}
@@ -707,7 +714,7 @@
 
         <!-- VIEW: LISTA CLIENȚI -->
         <div id="view-firme" class="space-y-6">
-          <div class="relative text-slate-400">
+          <div class="relative text-slate-400 zf-search-wrapper">
             <input
               type="text"
               id="search-firme"
@@ -715,6 +722,10 @@
               placeholder="Căutare client sau categorie..."
               class="zf-search-input w-full h-14 pl-12 pr-32 bg-white rounded-2xl shadow-sm border-none outline-none text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-blue-100 transition-all"
             />
+            <button type="button" class="zf-search-clear" aria-label="Șterge căutarea"
+              onclick="(function(w,b){const inp=w.querySelector('.zf-search-input');if(inp){inp.value='';inp.dispatchEvent(new Event('input',{bubbles:true}));b.classList.remove('visible');inp.focus();}})(this.parentElement,this)">
+              ×
+            </button>
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
@@ -977,7 +988,7 @@
               <div id="bi-total-clienti-col" class="flex flex-col items-end">
                 <span
                   class="text-[7px] font-semibold text-blue-700 uppercase tracking-widest"
-                  >Intrări clienți</span
+                  >Ieșiri clienți</span
                 >
                 <span
                   id="suma-selectata-bi"
@@ -988,7 +999,7 @@
               <div id="bi-total-furnizori-col" class="flex flex-col items-end">
                 <span
                   class="text-[7px] font-semibold text-red-700 uppercase tracking-widest"
-                  >Ieșiri furnizori</span
+                  >Intrări furnizori</span
                 >
                 <span
                   id="suma-platit-bi"
@@ -1045,6 +1056,7 @@
             </button>
             <div id="bi-firme-collapse" class="hidden mt-3 space-y-2">
               <!-- Search firme -->
+              <div class="zf-search-wrapper">
               <input
                 type="text"
                 id="search-firme-collapse"
@@ -1052,6 +1064,11 @@
                 placeholder="Caută după nume sau CUI..."
                 class="zf-search-input w-full p-2.5 bg-slate-50 rounded-xl text-[10px] italic outline-none border border-transparent focus:border-blue-200 transition-all"
               />
+              <button type="button" class="zf-search-clear" aria-label="Șterge căutarea"
+                onclick="(function(w,b){const inp=w.querySelector('.zf-search-input');if(inp){inp.value='';inp.dispatchEvent(new Event('input',{bubbles:true}));b.classList.remove('visible');inp.focus();}})(this.parentElement,this)">
+                ×
+              </button>
+              </div>
               <div class="flex justify-between items-center">
                 <span
                   class="zf-category-label"
@@ -1181,6 +1198,7 @@
 
           <!-- Câmp căutare + buton selecție multiplă -->
           <div id="search-bi-row" class="flex gap-2 items-center">
+            <div class="zf-search-wrapper flex-1">
             <input
               type="text"
               id="search-bi"
@@ -1188,6 +1206,11 @@
               placeholder="Caută firmă sau nr. factură..."
               class="zf-search-input flex-1 p-3 bg-white rounded-xl text-[10px] italic outline-none border border-slate-200 focus:border-blue-200 shadow-sm transition-all"
             />
+            <button type="button" class="zf-search-clear" aria-label="Șterge căutarea"
+              onclick="(function(w,b){const inp=w.querySelector('.zf-search-input');if(inp){inp.value='';inp.dispatchEvent(new Event('input',{bubbles:true}));b.classList.remove('visible');inp.focus();}})(this.parentElement,this)">
+              ×
+            </button>
+            </div>
             <button type="button"
               data-action="toggleBulkMode"
               id="btn-toggle-bulk"
@@ -1288,7 +1311,7 @@
 
         <!-- VIEW: LISTA FURNIZORI -->
         <div id="view-furnizori" class="hidden space-y-6">
-          <div class="relative text-slate-400">
+          <div class="relative text-slate-400 zf-search-wrapper">
             <input
               type="text"
               id="search-furnizori"
@@ -1296,6 +1319,10 @@
               placeholder="Căutare furnizor sau categorie..."
               class="zf-search-input w-full h-14 pl-12 pr-32 bg-white rounded-2xl shadow-sm border-none outline-none text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-red-100 transition-all"
             />
+            <button type="button" class="zf-search-clear" aria-label="Șterge căutarea"
+              onclick="(function(w,b){const inp=w.querySelector('.zf-search-input');if(inp){inp.value='';inp.dispatchEvent(new Event('input',{bubbles:true}));b.classList.remove('visible');inp.focus();}})(this.parentElement,this)">
+              ×
+            </button>
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
@@ -1585,17 +1612,23 @@
 
         <!-- VIEW: Comenzi -->
         <div id="logistic-view-comenzi" class="space-y-3">
-          <div class="flex gap-2">
-            <input id="logistic-search" type="text" placeholder="Caută rută sau tracking…" oninput="renderComenziTransportDebounced()"
-              class="flex-1 min-w-0 px-4 py-2.5 bg-slate-50 rounded-2xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200 transition-all"/>
+          <div class="flex items-center justify-end gap-2">
             <button type="button" data-action="importaComenziTransport" title="Import CSV comenzi transport" class="flex-shrink-0 px-3 py-2 bg-slate-100 text-slate-600 rounded-2xl text-xs font-black uppercase shadow-sm border border-slate-200 hover:bg-slate-200 transition-all" data-permission="edit">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
             </button>
             <button type="button" data-action="exportComenziTransportCSV" title="Export CSV comenzi" class="flex-shrink-0 px-3 py-2 bg-slate-100 text-slate-600 rounded-2xl text-xs font-black uppercase shadow-sm border border-slate-200 hover:bg-slate-200 transition-all">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
             </button>
-            <button type="button" data-action="deschideModalComandaTransport" data-arg="" class="zf-module-btn flex-shrink-0 px-4 py-2 bg-blue-900 text-white rounded-2xl text-xs font-black uppercase shadow-md" data-permission="edit">
+            <button type="button" data-action="deschideModalComandaTransport" data-arg="" class="zf-module-btn px-4 py-2 bg-blue-900 text-white rounded-2xl text-xs font-black uppercase shadow-md" data-permission="edit">
               + Comandă
+            </button>
+          </div>
+          <div class="zf-search-wrapper">
+            <input id="logistic-search" type="text" placeholder="Caută rută sau tracking…" oninput="renderComenziTransportDebounced()"
+              class="zf-search-input flex-1 min-w-0 px-4 py-2.5 bg-slate-50 rounded-2xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200 transition-all"/>
+            <button type="button" class="zf-search-clear" aria-label="Șterge căutarea"
+              onclick="(function(w,b){const inp=w.querySelector('.zf-search-input');if(inp){inp.value='';inp.dispatchEvent(new Event('input',{bubbles:true}));b.classList.remove('visible');inp.focus();}})(this.parentElement,this)">
+              ×
             </button>
           </div>
           <!-- Comenzi noi (modul logistic) -->
@@ -1621,8 +1654,12 @@
               </button>
             </div>
           </div>
-          <div class="relative text-slate-400">
+          <div class="relative text-slate-400 zf-search-wrapper">
             <input type="text" id="search-soferi" oninput="filtreazaSoferi(this.value)" placeholder="Caută șofer după nume..." class="zf-search-input w-full h-10 pl-9 pr-4 bg-white rounded-2xl shadow-sm border border-slate-100 outline-none text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-purple-100 transition-all"/>
+            <button type="button" class="zf-search-clear" aria-label="Șterge căutarea"
+              onclick="(function(w,b){const inp=w.querySelector('.zf-search-input');if(inp){inp.value='';inp.dispatchEvent(new Event('input',{bubbles:true}));b.classList.remove('visible');inp.focus();}})(this.parentElement,this)">
+              ×
+            </button>
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="absolute left-3 top-2.5 w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
           </div>
           <div id="logistic-soferi-list" class="space-y-2"></div>
@@ -1645,8 +1682,12 @@
               </button>
             </div>
           </div>
-          <div class="relative text-slate-400">
+          <div class="relative text-slate-400 zf-search-wrapper">
             <input type="text" id="search-vehicule" oninput="filtreazaVehicule(this.value)" placeholder="Caută după nr. înmatriculare sau marcă..." class="zf-search-input w-full h-10 pl-9 pr-4 bg-white rounded-2xl shadow-sm border border-slate-100 outline-none text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-slate-200 transition-all"/>
+            <button type="button" class="zf-search-clear" aria-label="Șterge căutarea"
+              onclick="(function(w,b){const inp=w.querySelector('.zf-search-input');if(inp){inp.value='';inp.dispatchEvent(new Event('input',{bubbles:true}));b.classList.remove('visible');inp.focus();}})(this.parentElement,this)">
+              ×
+            </button>
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="absolute left-3 top-2.5 w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
           </div>
           <div id="logistic-vehicule-list" class="space-y-2"></div>
@@ -1734,17 +1775,23 @@
 
         <!-- VIEW: Produse -->
         <div id="depozit-view-produse" class="space-y-3">
-          <div class="flex gap-2">
-            <input id="depozit-search-produse" type="text" placeholder="Caută produs sau SKU…" oninput="renderProduseDebounced()"
-              class="flex-1 min-w-0 px-4 py-2.5 bg-slate-50 rounded-2xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200 transition-all"/>
+          <div class="flex items-center justify-end gap-2">
             <button type="button" data-action="importaProduse" title="Import CSV produse" class="flex-shrink-0 px-3 py-2 bg-slate-100 text-slate-600 rounded-2xl text-xs font-black uppercase shadow-sm border border-slate-200 hover:bg-slate-200 transition-all" data-permission="edit">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
             </button>
             <button type="button" data-action="exportProduseCSV" title="Export CSV produse" class="flex-shrink-0 px-3 py-2 bg-slate-100 text-slate-600 rounded-2xl text-xs font-black uppercase shadow-sm border border-slate-200 hover:bg-slate-200 transition-all">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
             </button>
-            <button type="button" data-action="deschideModalProdus" data-arg="" class="zf-module-btn flex-shrink-0 px-4 py-2 bg-blue-900 text-white rounded-2xl text-xs font-black uppercase shadow-md" data-permission="edit">
+            <button type="button" data-action="deschideModalProdus" data-arg="" class="zf-module-btn px-4 py-2 bg-blue-900 text-white rounded-2xl text-xs font-black uppercase shadow-md" data-permission="edit">
               + Produs
+            </button>
+          </div>
+          <div class="zf-search-wrapper">
+            <input id="depozit-search-produse" type="text" placeholder="Caută produs sau SKU…" oninput="renderProduseDebounced()"
+              class="zf-search-input flex-1 min-w-0 px-4 py-2.5 bg-slate-50 rounded-2xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200 transition-all"/>
+            <button type="button" class="zf-search-clear" aria-label="Șterge căutarea"
+              onclick="(function(w,b){const inp=w.querySelector('.zf-search-input');if(inp){inp.value='';inp.dispatchEvent(new Event('input',{bubbles:true}));b.classList.remove('visible');inp.focus();}})(this.parentElement,this)">
+              ×
             </button>
           </div>
           <div id="depozit-lista-produse" class="space-y-2"></div>
@@ -1759,8 +1806,12 @@
               + Mișcare
             </button>
           </div>
-          <div class="relative text-slate-400">
+          <div class="relative text-slate-400 zf-search-wrapper">
             <input type="text" id="search-miscari" oninput="filtreazaMiscari(this.value)" placeholder="Caută produs sau observații..." class="zf-search-input w-full h-10 pl-9 pr-4 bg-white rounded-2xl shadow-sm border border-slate-100 outline-none text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-blue-100 transition-all"/>
+            <button type="button" class="zf-search-clear" aria-label="Șterge căutarea"
+              onclick="(function(w,b){const inp=w.querySelector('.zf-search-input');if(inp){inp.value='';inp.dispatchEvent(new Event('input',{bubbles:true}));b.classList.remove('visible');inp.focus();}})(this.parentElement,this)">
+              ×
+            </button>
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="absolute left-3 top-2.5 w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
           </div>
           <div id="depozit-lista-miscari" class="space-y-2"></div>
@@ -1780,8 +1831,12 @@
               </button>
             </div>
           </div>
-          <div class="relative text-slate-400">
+          <div class="relative text-slate-400 zf-search-wrapper">
             <input type="text" id="search-receptii" oninput="filtreazaReceptii(this.value)" placeholder="Caută după furnizor..." class="zf-search-input w-full h-10 pl-9 pr-4 bg-white rounded-2xl shadow-sm border border-slate-100 outline-none text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-100 transition-all"/>
+            <button type="button" class="zf-search-clear" aria-label="Șterge căutarea"
+              onclick="(function(w,b){const inp=w.querySelector('.zf-search-input');if(inp){inp.value='';inp.dispatchEvent(new Event('input',{bubbles:true}));b.classList.remove('visible');inp.focus();}})(this.parentElement,this)">
+              ×
+            </button>
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="absolute left-3 top-2.5 w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
           </div>
           <div id="depozit-lista-receptii" class="space-y-2"></div>
@@ -1800,8 +1855,12 @@
               </button>
             </div>
           </div>
-          <div class="relative text-slate-400">
+          <div class="relative text-slate-400 zf-search-wrapper">
             <input type="text" id="search-livrari" oninput="filtreazaLivrari(this.value)" placeholder="Caută după client..." class="zf-search-input w-full h-10 pl-9 pr-4 bg-white rounded-2xl shadow-sm border border-slate-100 outline-none text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-blue-100 transition-all"/>
+            <button type="button" class="zf-search-clear" aria-label="Șterge căutarea"
+              onclick="(function(w,b){const inp=w.querySelector('.zf-search-input');if(inp){inp.value='';inp.dispatchEvent(new Event('input',{bubbles:true}));b.classList.remove('visible');inp.focus();}})(this.parentElement,this)">
+              ×
+            </button>
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="absolute left-3 top-2.5 w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
           </div>
           <div id="depozit-lista-livrari" class="space-y-2"></div>
@@ -1871,7 +1930,7 @@
           >0</span
         >
       </button>
-      <button type="button" data-action="navLogistic" class="nav-item">
+      <button type="button" data-action="navLogistic" class="nav-item relative">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
@@ -1886,8 +1945,12 @@
           />
         </svg>
         <span class="text-[9px]">LOGISTIC</span>
+        <span id="nav-badge-logistic"
+          class="hidden absolute top-1 right-2.5 min-w-[16px] h-4
+                 bg-amber-500 text-white text-[7px] font-black rounded-full
+                 flex items-center justify-center px-0.5">0</span>
       </button>
-      <button type="button" data-action="navDepozit" class="nav-item">
+      <button type="button" data-action="navDepozit" class="nav-item relative">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
@@ -1902,6 +1965,10 @@
           />
         </svg>
         <span class="text-[9px]">DEPOZIT</span>
+        <span id="nav-badge-depozit"
+          class="hidden absolute top-1 right-2.5 min-w-[16px] h-4
+                 bg-orange-500 text-white text-[7px] font-black rounded-full
+                 flex items-center justify-center px-0.5">0</span>
       </button>
       <button type="button"
         id="nav-btn-actions"
@@ -2122,7 +2189,10 @@
               inputmode="numeric"
               placeholder="CUI"
               class="w-full p-5 bg-slate-50 rounded-xl font-bold text-sm border-none outline-none"
+            
+              oninput="(function(v,el){if(!v){el.style.borderColor='';const fb=el.parentElement&&el.parentElement.querySelector('.zf-field-feedback');if(fb)fb.textContent='';return;}const ok=typeof validareCUI==='function'&&validareCUI(v);el.style.borderColor=ok?'#10b981':'#ef4444';const fb=el.parentElement&&el.parentElement.querySelector('.zf-field-feedback');if(fb){fb.textContent=ok?'CUI valid':'CUI invalid';fb.style.color=ok?'#10b981':'#ef4444';}})(this.value,this)"
             />
+            <span class="zf-field-feedback text-[10px] font-semibold mt-0.5 block" style="min-height:12px"></span>
             <button type="button"
               data-action="autoCautareCUIFirmaNou"
               class="absolute right-3 top-3 bg-blue-900 text-white h-10 w-10 rounded-xl flex items-center justify-center shadow-lg hover:bg-blue-800"
@@ -2184,7 +2254,10 @@
             id="fn-iban"
             placeholder="IBAN"
             class="w-full p-5 bg-slate-50 rounded-xl font-bold text-sm outline-none"
+          
+            oninput="(function(v,el){if(!v){el.style.borderColor='';const fb=el.parentElement&&el.parentElement.querySelector('.zf-field-feedback');if(fb)fb.textContent='';return;}const ok=typeof validareIBAN==='function'&&validareIBAN(v);el.style.borderColor=ok?'#10b981':'#ef4444';const fb=el.parentElement&&el.parentElement.querySelector('.zf-field-feedback');if(fb){fb.textContent=ok?'IBAN valid':'IBAN invalid';fb.style.color=ok?'#10b981':'#ef4444';}})(this.value,this)"
           />
+          <span class="zf-field-feedback text-[10px] font-semibold mt-0.5 block" style="min-height:12px"></span>
           <input
             type="text"
             id="fn-oras"
@@ -2214,6 +2287,8 @@
           <div class="flex flex-col gap-2 pt-4">
             <button type="button"
               data-action="salveazaFirmaNou"
+              data-loading-text="Se salvează..."
+              data-original-text="Salvează Firma"
               class="w-full bg-blue-900 text-white btn-action shadow-xl shadow-blue-900/20"
             >
               Salvează Firma
@@ -2403,6 +2478,8 @@
           <div class="flex flex-col gap-2 pt-4 border-t border-slate-50">
             <button type="button"
               data-action="salveazaFacturaNou"
+              data-loading-text="Se salvează..."
+              data-original-text="Salvează Factura"
               class="w-full bg-blue-900 text-white btn-action shadow-xl shadow-blue-900/20"
             >
               Salvează Factura
@@ -2447,7 +2524,10 @@
               inputmode="numeric"
               placeholder="CUI"
               class="flex-1 p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
+            
+              oninput="(function(v,el){if(!v){el.style.borderColor='';const fb=el.parentElement&&el.parentElement.querySelector('.zf-field-feedback');if(fb)fb.textContent='';return;}const ok=typeof validareCUI==='function'&&validareCUI(v);el.style.borderColor=ok?'#10b981':'#ef4444';const fb=el.parentElement&&el.parentElement.querySelector('.zf-field-feedback');if(fb){fb.textContent=ok?'CUI valid':'CUI invalid';fb.style.color=ok?'#10b981':'#ef4444';}})(this.value,this)"
             />
+            <span class="zf-field-feedback text-[10px] font-semibold mt-0.5 block" style="min-height:12px"></span>
             <button type="button"
               data-action="autoCautareCUI"
               class="px-4 bg-blue-900 text-white rounded-xl text-[9px] font-black uppercase"
@@ -2497,7 +2577,10 @@
             id="in-iban"
             placeholder="IBAN"
             class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
-          />
+          
+              oninput="(function(v,el){if(!v){el.style.borderColor='';const fb=el.parentElement&&el.parentElement.querySelector('.zf-field-feedback');if(fb)fb.textContent='';return;}const ok=typeof validareIBAN==='function'&&validareIBAN(v);el.style.borderColor=ok?'#10b981':'#ef4444';const fb=el.parentElement&&el.parentElement.querySelector('.zf-field-feedback');if(fb){fb.textContent=ok?'IBAN valid':'IBAN invalid';fb.style.color=ok?'#10b981':'#ef4444';}})(this.value,this)"
+            />
+            <span class="zf-field-feedback text-[10px] font-semibold mt-0.5 block" style="min-height:12px"></span>
           <div class="flex gap-2">
             <input
               type="text"
@@ -2522,6 +2605,8 @@
           </button>
           <button type="button"
             data-action="salveazaClient"
+            data-loading-text="Se salvează..."
+            data-original-text="Salvează"
             class="flex-1 py-3 bg-blue-900 text-white rounded-xl text-[10px] font-black uppercase shadow-lg"
           >
             Salvează
@@ -2684,6 +2769,8 @@
           </button>
           <button type="button"
             data-action="salveazaFacturaOrchestrator"
+            data-loading-text="Se salvează..."
+            data-original-text="Salvează"
             class="flex-1 py-3 bg-blue-900 text-white rounded-xl text-[10px] font-black uppercase shadow-lg"
           >
             Salvează
@@ -2797,6 +2884,8 @@
           </button>
           <button type="button"
             data-action="salveazaFacturaPlatit"
+            data-loading-text="Se salvează..."
+            data-original-text="Salvează"
             class="flex-1 py-3 bg-blue-900 text-white rounded-xl text-[10px] font-black uppercase shadow-lg"
           >
             Salvează
@@ -2873,6 +2962,8 @@
           >ȘTERGE</button>
           <button type="button"
             data-action="salveazaContributie"
+            data-loading-text="Se salvează..."
+            data-original-text="Salvează"
             class="flex-1 py-3 bg-orange-600 text-white rounded-xl text-[10px] font-black uppercase shadow-lg"
           >Salvează</button>
         </div>
@@ -2898,7 +2989,10 @@
               inputmode="numeric"
               placeholder="CUI"
               class="flex-1 p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
+            
+              oninput="(function(v,el){if(!v){el.style.borderColor='';const fb=el.parentElement&&el.parentElement.querySelector('.zf-field-feedback');if(fb)fb.textContent='';return;}const ok=typeof validareCUI==='function'&&validareCUI(v);el.style.borderColor=ok?'#10b981':'#ef4444';const fb=el.parentElement&&el.parentElement.querySelector('.zf-field-feedback');if(fb){fb.textContent=ok?'CUI valid':'CUI invalid';fb.style.color=ok?'#10b981':'#ef4444';}})(this.value,this)"
             />
+            <span class="zf-field-feedback text-[10px] font-semibold mt-0.5 block" style="min-height:12px"></span>
             <button type="button"
               data-action="autoCautareCUIFurnizor"
               class="px-4 bg-blue-900 text-white rounded-xl text-[9px] font-black uppercase"
@@ -2948,7 +3042,10 @@
             id="in-furn-iban"
             placeholder="IBAN"
             class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
-          />
+          
+              oninput="(function(v,el){if(!v){el.style.borderColor='';const fb=el.parentElement&&el.parentElement.querySelector('.zf-field-feedback');if(fb)fb.textContent='';return;}const ok=typeof validareIBAN==='function'&&validareIBAN(v);el.style.borderColor=ok?'#10b981':'#ef4444';const fb=el.parentElement&&el.parentElement.querySelector('.zf-field-feedback');if(fb){fb.textContent=ok?'IBAN valid':'IBAN invalid';fb.style.color=ok?'#10b981':'#ef4444';}})(this.value,this)"
+            />
+            <span class="zf-field-feedback text-[10px] font-semibold mt-0.5 block" style="min-height:12px"></span>
           <div class="flex gap-2">
             <input
               type="text"
@@ -2979,6 +3076,8 @@
           </button>
           <button type="button"
             data-action="salveazaFurnizor"
+            data-loading-text="Se salvează..."
+            data-original-text="Salvează"
             class="flex-1 py-3 bg-blue-900 text-white rounded-xl text-[10px] font-black uppercase shadow-lg"
           >
             Salvează
@@ -3041,7 +3140,7 @@
           <div class="bg-slate-50 rounded-2xl p-3">
             <div class="flex justify-between items-center mb-2">
               <p class="text-xs font-black text-slate-500 uppercase">Produse primite</p>
-              <button type="button" data-action="adaugaItemReceptie" class="text-xs font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-lg uppercase transition-all flex items-center gap-1"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>Adăugați</button>
+              <button type="button" data-action="adaugaItemReceptie" data-loading-text="Se salvează..." data-original-text="Adăugați" class="text-xs font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-lg uppercase transition-all flex items-center gap-1"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>Adăugați</button>
             </div>
             <div id="rec-items-list"></div>
             <p id="rec-total-display" class="text-xs font-black text-right text-slate-700 mt-2">Total: 0 lei</p>
@@ -3050,7 +3149,7 @@
         </div>
         <div class="flex gap-3 mt-4">
           <button type="button" data-action="inchideModalReceptie" class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase">Anulare</button>
-          <button type="button" data-action="salveazaReceptie" class="flex-1 py-3 bg-emerald-700 text-white rounded-xl text-[10px] font-black uppercase shadow-lg flex items-center justify-center gap-1.5"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>Salvează Recepție</button>
+          <button type="button" data-action="salveazaReceptie" data-loading-text="Se salvează..." data-original-text="Salvează Recepție" class="flex-1 py-3 bg-emerald-700 text-white rounded-xl text-[10px] font-black uppercase shadow-lg flex items-center justify-center gap-1.5"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>Salvează Recepție</button>
         </div>
       </div>
     </div>
@@ -3069,7 +3168,7 @@
           <div class="bg-slate-50 rounded-2xl p-3">
             <div class="flex justify-between items-center mb-2">
               <p class="text-xs font-black text-slate-500 uppercase">Produse livrate</p>
-              <button type="button" data-action="adaugaItemLivrare" class="text-xs font-black text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg uppercase transition-all flex items-center gap-1"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>Adăugați</button>
+              <button type="button" data-action="adaugaItemLivrare" data-loading-text="Se salvează..." data-original-text="Adăugați" class="text-xs font-black text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg uppercase transition-all flex items-center gap-1"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>Adăugați</button>
             </div>
             <div id="liv-items-list"></div>
             <p id="liv-total-display" class="text-xs font-black text-right text-slate-700 mt-2">Total: 0 lei</p>
@@ -3078,7 +3177,7 @@
         </div>
         <div class="flex gap-3 mt-4">
           <button type="button" data-action="inchideModalLivrare" class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase">Anulare</button>
-          <button type="button" data-action="salveazaLivrare" class="flex-1 py-3 bg-blue-700 text-white rounded-xl text-[10px] font-black uppercase shadow-lg flex items-center justify-center gap-1.5"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>Salvează Livrare</button>
+          <button type="button" data-action="salveazaLivrare" data-loading-text="Se salvează..." data-original-text="Salvează Livrare" class="flex-1 py-3 bg-blue-700 text-white rounded-xl text-[10px] font-black uppercase shadow-lg flex items-center justify-center gap-1.5"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>Salvează Livrare</button>
         </div>
       </div>
     </div>
@@ -3111,7 +3210,10 @@
             placeholder="CUI"
             autocomplete="off"
             class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
+          
+          oninput="(function(v,el){if(!v){el.style.borderColor='';const fb=el.parentElement&&el.parentElement.querySelector('.zf-field-feedback');if(fb)fb.textContent='';return;}const ok=typeof validareCUI==='function'&&validareCUI(v);el.style.borderColor=ok?'#10b981':'#ef4444';const fb=el.parentElement&&el.parentElement.querySelector('.zf-field-feedback');if(fb){fb.textContent=ok?'CUI valid':'CUI invalid';fb.style.color=ok?'#10b981':'#ef4444';}})(this.value,this)"
           />
+          <span class="zf-field-feedback text-[10px] font-semibold mt-0.5 block" style="min-height:12px"></span>
           <input
             type="text"
             id="pf-regcom"
@@ -3146,7 +3248,10 @@
             placeholder="IBAN principal"
             autocomplete="off"
             class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-2 border-transparent outline-none focus:border-blue-200"
+          
+          oninput="(function(v,el){if(!v){el.style.borderColor='';const fb=el.parentElement&&el.parentElement.querySelector('.zf-field-feedback');if(fb)fb.textContent='';return;}const ok=typeof validareIBAN==='function'&&validareIBAN(v);el.style.borderColor=ok?'#10b981':'#ef4444';const fb=el.parentElement&&el.parentElement.querySelector('.zf-field-feedback');if(fb){fb.textContent=ok?'IBAN valid':'IBAN invalid';fb.style.color=ok?'#10b981':'#ef4444';}})(this.value,this)"
           />
+          <span class="zf-field-feedback text-[10px] font-semibold mt-0.5 block" style="min-height:12px"></span>
           <input
             type="text"
             id="pf-banca"
@@ -3337,6 +3442,8 @@
           </button>
           <button type="button"
             data-action="salveazaProfilFirma"
+            data-loading-text="Se salvează..."
+            data-original-text="Salvează"
             class="flex-1 py-3 bg-blue-900 text-white rounded-xl text-[10px] font-black uppercase shadow-lg"
           >
             Salvează
@@ -3742,7 +3849,7 @@
         </div>
         <div class="flex gap-3 mt-4">
           <button type="button" data-action="inchideModalProdus" class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase">Închide</button>
-          <button type="button" data-action="salveazaProdus" class="flex-1 py-3 bg-blue-900 text-white rounded-xl text-[10px] font-black uppercase shadow-lg">Salvează</button>
+          <button type="button" data-action="salveazaProdus" data-loading-text="Se salvează..." data-original-text="Salvează" class="flex-1 py-3 bg-blue-900 text-white rounded-xl text-[10px] font-black uppercase shadow-lg">Salvează</button>
         </div>
       </div>
     </div>
@@ -3768,7 +3875,7 @@
         </div>
         <div class="flex gap-3 mt-4">
           <button type="button" data-action="inchideModalMiscare" class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase">Închide</button>
-          <button type="button" data-action="salveazaMiscare" class="flex-1 py-3 bg-blue-900 text-white rounded-xl text-[10px] font-black uppercase shadow-lg">Înregistrează</button>
+          <button type="button" data-action="salveazaMiscare" data-loading-text="Se salvează..." data-original-text="Înregistrează" class="flex-1 py-3 bg-blue-900 text-white rounded-xl text-[10px] font-black uppercase shadow-lg">Înregistrează</button>
         </div>
       </div>
     </div>
@@ -3814,7 +3921,7 @@
         </div>
         <div class="flex gap-3 mt-4">
           <button type="button" data-action="inchideModalComandaTransport" class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase">Închide</button>
-          <button type="button" data-action="salveazaComandaTransport" class="flex-1 py-3 bg-blue-900 text-white rounded-xl text-[10px] font-black uppercase shadow-lg">Salvează</button>
+          <button type="button" data-action="salveazaComandaTransport" data-loading-text="Se salvează..." data-original-text="Salvează" class="flex-1 py-3 bg-blue-900 text-white rounded-xl text-[10px] font-black uppercase shadow-lg">Salvează</button>
         </div>
       </div>
     </div>
@@ -3833,7 +3940,7 @@
         </div>
         <div class="flex gap-3 mt-4">
           <button type="button" data-action="inchideModalSofer" class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase">Închide</button>
-          <button type="button" data-action="salveazaSofer" class="flex-1 py-3 bg-purple-700 text-white rounded-xl text-[10px] font-black uppercase shadow-lg">Salvează</button>
+          <button type="button" data-action="salveazaSofer" data-loading-text="Se salvează..." data-original-text="Salvează" class="flex-1 py-3 bg-purple-700 text-white rounded-xl text-[10px] font-black uppercase shadow-lg">Salvează</button>
         </div>
       </div>
     </div>
@@ -3865,7 +3972,7 @@
         </div>
         <div class="flex gap-3 mt-4">
           <button type="button" data-action="inchideModalVehicul" class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase">Închide</button>
-          <button type="button" data-action="salveazaVehicul" class="flex-1 py-3 bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase shadow-lg">Salvează</button>
+          <button type="button" data-action="salveazaVehicul" data-loading-text="Se salvează..." data-original-text="Salvează" class="flex-1 py-3 bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase shadow-lg">Salvează</button>
         </div>
       </div>
     </div>
@@ -3995,7 +4102,9 @@
           <div class="space-y-3">
             <div class="grid grid-cols-2 gap-2">
               <input type="text" id="ob-cui" placeholder="CUI" autocomplete="organization"
-                class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm outline-none" />
+                class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm outline-none" 
+                oninput="(function(v,el){if(!v){el.style.borderColor='';const fb=el.parentElement&&el.parentElement.querySelector('.zf-field-feedback');if(fb)fb.textContent='';return;}const ok=typeof validareCUI==='function'&&validareCUI(v);el.style.borderColor=ok?'#10b981':'#ef4444';const fb=el.parentElement&&el.parentElement.querySelector('.zf-field-feedback');if(fb){fb.textContent=ok?'CUI valid':'CUI invalid';fb.style.color=ok?'#10b981':'#ef4444';}})(this.value,this)" />
+                <span class="zf-field-feedback text-[10px] font-semibold mt-0.5 block" style="min-height:12px"></span>
               <input type="text" id="ob-nume-firma" placeholder="Denumire firmă" autocomplete="organization"
                 class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm outline-none" />
             </div>
@@ -4012,7 +4121,9 @@
             <input type="email" id="ob-email" placeholder="Email firmă" autocomplete="email"
               class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm outline-none" />
             <input type="text" id="ob-iban" placeholder="IBAN (opțional)" autocomplete="off"
-              class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm outline-none" />
+              class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm outline-none" 
+                oninput="(function(v,el){if(!v){el.style.borderColor='';const fb=el.parentElement&&el.parentElement.querySelector('.zf-field-feedback');if(fb)fb.textContent='';return;}const ok=typeof validareIBAN==='function'&&validareIBAN(v);el.style.borderColor=ok?'#10b981':'#ef4444';const fb=el.parentElement&&el.parentElement.querySelector('.zf-field-feedback');if(fb){fb.textContent=ok?'IBAN valid':'IBAN invalid';fb.style.color=ok?'#10b981':'#ef4444';}})(this.value,this)" />
+                <span class="zf-field-feedback text-[10px] font-semibold mt-0.5 block" style="min-height:12px"></span>
           </div>
           <div class="flex gap-2 mt-5">
             <button type="button" onclick="salteOnboarding()"
@@ -4093,7 +4204,9 @@
           <div class="space-y-3">
             <div class="grid grid-cols-2 gap-2">
               <input type="text" id="ob-cui" placeholder="CUI" autocomplete="organization"
-                class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm outline-none" />
+                class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm outline-none" 
+                oninput="(function(v,el){if(!v){el.style.borderColor='';const fb=el.parentElement&&el.parentElement.querySelector('.zf-field-feedback');if(fb)fb.textContent='';return;}const ok=typeof validareCUI==='function'&&validareCUI(v);el.style.borderColor=ok?'#10b981':'#ef4444';const fb=el.parentElement&&el.parentElement.querySelector('.zf-field-feedback');if(fb){fb.textContent=ok?'CUI valid':'CUI invalid';fb.style.color=ok?'#10b981':'#ef4444';}})(this.value,this)" />
+                <span class="zf-field-feedback text-[10px] font-semibold mt-0.5 block" style="min-height:12px"></span>
               <input type="text" id="ob-nume-firma" placeholder="Denumire firmă" autocomplete="organization"
                 class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm outline-none" />
             </div>
@@ -4110,7 +4223,9 @@
             <input type="email" id="ob-email" placeholder="Email firmă" autocomplete="email"
               class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm outline-none" />
             <input type="text" id="ob-iban" placeholder="IBAN (opțional)" autocomplete="off"
-              class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm outline-none" />
+              class="w-full p-4 bg-slate-50 rounded-xl font-bold text-sm outline-none" 
+                oninput="(function(v,el){if(!v){el.style.borderColor='';const fb=el.parentElement&&el.parentElement.querySelector('.zf-field-feedback');if(fb)fb.textContent='';return;}const ok=typeof validareIBAN==='function'&&validareIBAN(v);el.style.borderColor=ok?'#10b981':'#ef4444';const fb=el.parentElement&&el.parentElement.querySelector('.zf-field-feedback');if(fb){fb.textContent=ok?'IBAN valid':'IBAN invalid';fb.style.color=ok?'#10b981':'#ef4444';}})(this.value,this)" />
+                <span class="zf-field-feedback text-[10px] font-semibold mt-0.5 block" style="min-height:12px"></span>
           </div>
           <div class="flex gap-2 mt-5">
             <button type="button" onclick="salteOnboarding()"

@@ -106,6 +106,31 @@ function showNotification(message, type = "info", duration = 3500) {
     } catch(_) {}
 }
 
+function showNotificationWithUndo(message, undoCallback, duration = 5000) {
+    const id = 'notify-undo-' + Date.now();
+    const notif = document.createElement('div');
+    notif.id = id;
+    notif.className = 'fixed top-4 right-4 bg-slate-700 text-white px-4 py-3 rounded-xl shadow-xl z-[1000] text-sm font-semibold flex items-center gap-3 max-w-[340px] transition-opacity duration-300';
+    notif.style.opacity = '0';
+    let _undoDone = false;
+    notif.innerHTML = `<span class="leading-snug flex-1">${message}</span><button type="button" class="ml-2 px-3 py-1 rounded-lg bg-white text-slate-700 text-xs font-bold hover:bg-slate-100 transition-colors flex-shrink-0" id="${id}-undo">Anulează</button>`;
+    document.body.appendChild(notif);
+    requestAnimationFrame(() => { notif.style.opacity = '1'; });
+    const _dismiss = () => { notif.style.opacity = '0'; setTimeout(() => notif?.remove(), 300); };
+    const _timer = setTimeout(() => { if (!_undoDone) _dismiss(); }, duration);
+    const _undoBtn = document.getElementById(id + '-undo');
+    if (_undoBtn) {
+        _undoBtn.addEventListener('click', () => {
+            if (_undoDone) return;
+            _undoDone = true;
+            clearTimeout(_timer);
+            _dismiss();
+            if (typeof undoCallback === 'function') undoCallback();
+        });
+    }
+}
+window.showNotificationWithUndo = showNotificationWithUndo;
+
 // [v73.9] — Funcții istoric alerte ─────────────────────────────────────────
 function _updateAlertBadge() {
     const badge = document.getElementById('alert-history-badge');
@@ -1762,11 +1787,14 @@ function inchideProfilFirma() {
  * Salvează modificările din modalul de profil firmă
  */
 async function salveazaProfilFirma() {
+    const _saveBtn = document.querySelector('[data-action="salveazaProfilFirma"]');
+    if (typeof ZFlowUI !== 'undefined') ZFlowUI.setButtonLoading(_saveBtn, true);
     const cui       = document.getElementById('pf-cui')?.value.trim();
     const numeFirma = document.getElementById('pf-nome')?.value.trim();
 
     if (!cui || !numeFirma) {
         showNotification('Completează CUI-ul și denumirea firmei', 'error');
+        if (typeof ZFlowUI !== 'undefined') ZFlowUI.setButtonLoading(_saveBtn, false);
         return;
     }
 
@@ -1807,6 +1835,7 @@ async function salveazaProfilFirma() {
         showNotification('Eroare la salvare: ' + err.message, 'error');
     } finally {
         setLoader(false);
+        if (typeof ZFlowUI !== 'undefined') ZFlowUI.setButtonLoading(document.querySelector('[data-action="salveazaProfilFirma"]'), false);
     }
 }
 
@@ -1848,12 +1877,19 @@ function updateDateLabels() {
 // NAVIGARE UI
 // ==========================================
 
+const _tabScrollPositions = {};
+
 /**
  * Schimbă tab-ul principal
  */
 function schimbaTab(id, btn) {
+    const _mainEl = document.querySelector('main');
+    if (ZFlowStore.currentTab && _mainEl) {
+        _tabScrollPositions[ZFlowStore.currentTab] = _mainEl.scrollTop;
+    }
     document.querySelectorAll(".tab-content").forEach((t) => t.classList.remove("active"));
     document.getElementById(id).classList.add("active");
+    if (ZFlowStore.currentTab && ZFlowStore.currentTab !== id) { const _prev = document.getElementById(ZFlowStore.currentTab); if (_prev) { _prev.style.animation = ''; } }
     document.querySelectorAll(".nav-item").forEach((l) => l.classList.remove("active"));
     if (btn) btn.classList.add("active");
 
@@ -1907,6 +1943,9 @@ function schimbaTab(id, btn) {
     document.title = _TITLURI_TAB[id] || 'Z-FLOW';
 
     history.pushState({ zflowView: id }, '', location.pathname);
+    if (_tabScrollPositions[id] !== undefined && _mainEl) {
+        requestAnimationFrame(() => { _mainEl.scrollTop = _tabScrollPositions[id]; });
+    }
     ZFlowStore.currentTab = id;
 }
 
@@ -2367,6 +2406,22 @@ function incarcaDashboard() {
             if (nrAlerte > 0) { badge.innerText = nrAlerte; badge.classList.remove("hidden"); }
             else { badge.classList.add("hidden"); }
         }
+        const _bdgLog = document.getElementById('nav-badge-logistic');
+        if (_bdgLog) {
+            const _comenActive = (ZFlowStore.dateComenziTransport || []).filter(
+                c => c.status !== 'livrat' && c.status !== 'anulat'
+            ).length;
+            if (_comenActive > 0) { _bdgLog.innerText = _comenActive; _bdgLog.classList.remove('hidden'); }
+            else _bdgLog.classList.add('hidden');
+        }
+        const _bdgDep = document.getElementById('nav-badge-depozit');
+        if (_bdgDep) {
+            const _subMinim = (ZFlowStore.dateProduse || []).filter(
+                p => p.stoc_curent !== undefined && p.stoc_minim !== undefined && p.stoc_curent <= p.stoc_minim
+            ).length;
+            if (_subMinim > 0) { _bdgDep.innerText = _subMinim; _bdgDep.classList.remove('hidden'); }
+            else _bdgDep.classList.add('hidden');
+        }
     }
 
     // Cashflow chart — ultimele 30 de zile (rolling window, se actualizează zilnic)
@@ -2668,6 +2723,15 @@ function deschideModalFacturaPlatit(furnizorId, facturaId) {
     }
 
     modal.classList.add("active");
+    setTimeout(() => {
+        const _activeModal = document.querySelector('.modal-sheet.active');
+        if (_activeModal) {
+            const _firstInput = _activeModal.querySelector(
+                'input:not([type="hidden"]):not([type="checkbox"]):not([disabled]), select:not([disabled])'
+            );
+            if (_firstInput) _firstInput.focus();
+        }
+    }, 50);
 }
 
 /**
@@ -3094,10 +3158,13 @@ window.deschideModalContributie = deschideModalContributie;
  * Salvează (insert sau update) contribuția curentă din modal.
  */
 async function salveazaContributie() {
+    const _saveBtn = document.querySelector('[data-action="salveazaContributie"]');
+    if (typeof ZFlowUI !== 'undefined') ZFlowUI.setButtonLoading(_saveBtn, true);
     const id = document.getElementById('ctb-id')?.value?.trim() || null;
     const suma = parseFloat(document.getElementById('ctb-suma')?.value) || 0;
     if (!suma || suma <= 0) {
         showNotification('Introduceți o sumă validă (> 0).', 'error');
+        if (typeof ZFlowUI !== 'undefined') ZFlowUI.setButtonLoading(_saveBtn, false);
         return;
     }
     const _lunaRaw = document.getElementById('ctb-luna')?.value || null;
@@ -3126,6 +3193,8 @@ async function salveazaContributie() {
     } catch (err) {
         ZFlowLogger.error('ctb', 'Eroare salvare contribuție:', err);
         showNotification('Eroare la salvare. Verificați consola.', 'error');
+    } finally {
+        if (typeof ZFlowUI !== 'undefined') ZFlowUI.setButtonLoading(document.querySelector('[data-action="salveazaContributie"]'), false);
     }
 }
 window.salveazaContributie = salveazaContributie;
@@ -4162,6 +4231,7 @@ function genereazaBI() {
     if (ZFlowStore.filtruStatusBI === 'Platit') {
         if (sumaDisplay) sumaDisplay.innerText = "0 lei";
         container.innerHTML = '';
+        container.dataset._zfHash = '';
         const sVN = document.getElementById("data-start")?.value;
         const eVN = document.getElementById("data-end")?.value;
         const qN = document.getElementById("search-bi")?.value.toLowerCase();
@@ -4286,7 +4356,8 @@ function genereazaBI() {
     const endIdx = ZFlowStore.biPageSize === 0 ? filtrate.length : startIdx + ZFlowStore.biPageSize;
     const paginatedData = filtrate.slice(startIdx, endIdx);
 
-    const _html4264 = paginatedData.map((f) => {
+    const _clientHeader = ZFlowStore.filtruTipBI !== 'furnizori' ? `<div class="w-full flex items-center gap-3 mb-3"><div class="flex-1 h-px bg-blue-100"></div><span class="text-[9px] font-black text-blue-600 uppercase tracking-widest px-2 py-1 bg-blue-50 rounded-full">Clienți — Facturi de Încasat (${filtrate.length})</span><div class="flex-1 h-px bg-blue-100"></div></div>` : '';
+    const _html4264 = _clientHeader + paginatedData.map((f) => {
         try {
         const client = ZFlowStore.dateLocal.find((c) => String(c.id) === String(f.client_id));
         const isIncasat = f.status_plata === "Incasat";
@@ -5479,8 +5550,8 @@ function setFiltruStatusBI(status, btn) {
     const colNet = document.getElementById("bi-total-net-col");
     if (colClienti) colClienti.classList.toggle("hidden", status === 'Platit');
     if (colFurnizori) colFurnizori.classList.toggle("hidden", status === 'Neincasat' || status === 'Incasat');
-    // [v75.13] Coloana Diferență vizibilă pentru toate filtrele de status
-    if (colNet) colNet.classList.remove("hidden");
+    // Coloana Diferență vizibilă doar când filtrul „Toate" este activ
+    if (colNet) colNet.classList.toggle("hidden", status !== 'toate');
 
     updateAnalizaInstant();
 }
@@ -5552,6 +5623,8 @@ function setFiltruTipBI(tip, btn) {
         });
         const btnToate = document.querySelector(".bi-status-btn");
         if (btnToate) { btnToate.classList.remove("text-slate-500"); btnToate.classList.add("bg-white", "shadow-sm", "text-blue-900"); }
+        const colNetReset = document.getElementById("bi-total-net-col");
+        if (colNetReset) colNetReset.classList.remove("hidden");
     }
 
     calculeazaCashflow();
@@ -5699,6 +5772,15 @@ function deschideModal(id, targetId = null) {
     if (modalElement) {
         setTimeout(() => modalElement.classList.add("active"), 50);
     }
+    setTimeout(() => {
+        const _activeModal = document.querySelector('.modal-sheet.active');
+        if (_activeModal) {
+            const _firstInput = _activeModal.querySelector(
+                'input:not([type="hidden"]):not([type="checkbox"]):not([disabled]), select:not([disabled])'
+            );
+            if (_firstInput) _firstInput.focus();
+        }
+    }, 50);
 }
 
 /**
@@ -5921,6 +6003,15 @@ function deschideModalDirectFactura() {
     } else {
         showNotification("Nu am putut identifica clientul pentru această factură.", "error");
     }
+    setTimeout(() => {
+        const _activeModal = document.querySelector('.modal-sheet.active');
+        if (_activeModal) {
+            const _firstInput = _activeModal.querySelector(
+                'input:not([type="hidden"]):not([type="checkbox"]):not([disabled]), select:not([disabled])'
+            );
+            if (_firstInput) _firstInput.focus();
+        }
+    }, 50);
 }
 
 // → crud.js (CRUD + Modal confirmare, extrase în Runda 9)
@@ -6648,14 +6739,13 @@ async function exportaPDF() {
             luniMap[luna].furnizori += Number(f.valoare) || 0;
         });
 
-        // 3) Contribuții: pe lună raportată, doar dacă sunt incluse în analiză
+        // 3) Contribuții: pe lună raportată, fără filtru de dată — datorii cumulate
+        //    (comportament identic cu calculeazaCashflow — nu se filtrează după intervalul selectat)
         if (ZFlowStore.includeContributiiInAnaliza) {
             (ZFlowStore.dateContributii || []).forEach(c => {
                 if (c.achitat) return;
                 const luna = String(c.luna || '').substring(0, 7);
                 if (!/^\d{4}-\d{2}$/.test(luna)) return;
-                const d = new Date(luna + '-01T12:00:00');
-                if (!_dataInRange(d)) return;
                 _markLuna(luna);
                 luniMap[luna].contributii += Number(c.suma) || 0;
             });
@@ -8530,6 +8620,24 @@ document.addEventListener('DOMContentLoaded', function initializeV2Modules() {
     
     ZFlowLogger.debug('app', '📦 Acces rapid disponibil prin: ZF.Utils, ZF.Auth, ZF.UI, etc.');
     ZFlowLogger.debug('app', '📖 Documentație: js/modules/index.js');
+    document.querySelectorAll('.zf-search-input').forEach(inp => {
+        inp.addEventListener('input', function() {
+            const btn = this.parentElement?.querySelector('.zf-search-clear');
+            if (btn) btn.classList.toggle('visible', this.value.length > 0);
+        });
+    });
+    document.querySelectorAll('textarea[maxlength]').forEach(ta => {
+        const counter = ta.parentElement && ta.parentElement.querySelector('.zf-char-counter');
+        if (!counter) return;
+        const max = parseInt(ta.getAttribute('maxlength'), 10);
+        const update = () => {
+            const rem = max - ta.value.length;
+            counter.textContent = rem + ' / ' + max + ' caractere rămase';
+            counter.style.color = rem < 20 ? '#ef4444' : rem < 50 ? '#f59e0b' : '';
+        };
+        ta.addEventListener('input', update);
+        update();
+    });
 });
 
 // ==========================================
