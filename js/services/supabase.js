@@ -41,7 +41,7 @@ async function withRetry(fn, maxRetries = 3, baseDelay = 1000) {
             lastError = error;
             // Erorile definitive nu se reîncarcă
             const status = error?.status ?? error?.response?.status;
-            if (status === 401 || status === 403 || error?.code === '23505') throw error;
+            if ([400, 401, 403, 404, 409, 422].includes(status) || error?.code === '23505') throw error;
             if (attempt < maxRetries) {
                 const delay = baseDelay * Math.pow(2, attempt); // 1s → 2s → 4s
                 ZFlowLogger.warn('supabase', `[Retry] Tentativa ${attempt + 1}/${maxRetries} eșuată. Reîncerc în ${delay}ms:`, error?.message || error);

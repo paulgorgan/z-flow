@@ -47,6 +47,8 @@ function formateazaDataZFlow(dataString) {
     const zi = String(d.getDate()).padStart(2, "0");
     const luna = String(d.getMonth() + 1).padStart(2, "0");
     const an = d.getFullYear(); // [BUG1-FIX] an complet 4 cifre; era: .slice(-2)
+    // [DEPRECATED-GUARD] Dacă versiunea din app.js s-a încărcat deja, delegă spre ea
+    if (window._formateazaDataZFlowV2) return window._formateazaDataZFlowV2(dataString);
     return `${zi}/${luna}/${an}`;
 }
 
@@ -82,7 +84,7 @@ function parseDataZFlow(dateStr) {
         const zi = parseInt(parts[0], 10);
         const luna = parseInt(parts[1], 10) - 1;
         const an = parseInt(parts[2], 10);
-        const anComplet = an < 50 ? 2000 + an : 1900 + an;
+        const anComplet = (() => { const cy = new Date().getFullYear() % 100; return an <= (cy + 10) ? 2000 + an : 1900 + an; })();
         return new Date(anComplet, luna, zi);
     }
     
@@ -122,11 +124,17 @@ function diferentaZile(data1, data2) {
  * @returns {string}
  */
 function generateUUID() {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-        const r = Math.random() * 16 | 0;
-        const v = c === 'x' ? r : (r & 0x3 | 0x8);
-        return v.toString(16);
-    });
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+        return crypto.randomUUID();
+    }
+    // Fallback securizat cu crypto.getRandomValues
+    const arr = new Uint8Array(16);
+    crypto.getRandomValues(arr);
+    arr[6] = (arr[6] & 0x0f) | 0x40;
+    arr[8] = (arr[8] & 0x3f) | 0x80;
+    return [...arr].map((b, i) =>
+        ([4, 6, 8, 10].includes(i) ? '-' : '') + b.toString(16).padStart(2, '0')
+    ).join('');
 }
 
 /**
@@ -189,10 +197,13 @@ function validareIBAN(iban) {
  * @returns {string}
  */
 function escapeHTML(str) {
-    if (!str) return '';
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#x27;');
 }
 
 /**
@@ -201,6 +212,7 @@ function escapeHTML(str) {
  * @returns {Object}
  */
 function deepClone(obj) {
+    if (typeof structuredClone === 'function') return structuredClone(obj);
     return JSON.parse(JSON.stringify(obj));
 }
 
@@ -285,3 +297,10 @@ window.pagineaza    = (l, ps, cp) => window.ZFlowUtils.pagineaza(l, ps, cp);
 // Export individual pentru compatibilitate cu codul existent
 window.debounce = debounce;
 window.formateazaDataZFlow = formateazaDataZFlow;
+
+// [NAMESPACE-NOTE] Exporturile individuale de mai sus sunt menținute pentru
+// compatibilitate retroactivă. Cod nou ar trebui să folosească:
+//   window.ZFlowUtils.escapeHtml()   în loc de window.escapeHTML / escapeHtml
+//   window.ZFlowUtils.debounce()     în loc de window.debounce
+//   window.ZFlowUtils.pagineaza()    în loc de window.pagineaza
+// La un refactor major, înlocuiește apelurile și elimină exporturile individuale.

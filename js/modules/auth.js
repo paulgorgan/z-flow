@@ -19,8 +19,12 @@ const ZFlowAuth = {
      * @returns {boolean}
      */
     isBlocked() {
+        const stored = (() => { try { return JSON.parse(localStorage.getItem('zflow_rl') || '{}'); } catch(e) { return {}; } })();
+        if (stored.lockedUntil) {
+            this.rateLimitConfig.lockedUntil = stored.lockedUntil;
+            this.rateLimitConfig.attempts    = stored.attempts || 0;
+        }
         if (!this.rateLimitConfig.lockedUntil) return false;
-        
         const now = Date.now();
         if (now >= this.rateLimitConfig.lockedUntil) {
             this.resetAttempts();
@@ -45,12 +49,12 @@ const ZFlowAuth = {
     recordFailedAttempt() {
         this.rateLimitConfig.attempts++;
         ZFlowLogger.debug('auth', `⚠️ Încercare eșuată: ${this.rateLimitConfig.attempts}/${this.rateLimitConfig.maxAttempts}`);
-        
         if (this.rateLimitConfig.attempts >= this.rateLimitConfig.maxAttempts) {
             this.rateLimitConfig.lockedUntil = Date.now() + this.rateLimitConfig.lockoutDuration;
             const minutes = Math.ceil(this.rateLimitConfig.lockoutDuration / 60000);
             ZFlowLogger.debug('auth', `🔒 Cont blocat pentru ${minutes} minute`);
         }
+        try { localStorage.setItem('zflow_rl', JSON.stringify({ attempts: this.rateLimitConfig.attempts, lockedUntil: this.rateLimitConfig.lockedUntil })); } catch(e) {}
     },
 
     /**
@@ -59,6 +63,7 @@ const ZFlowAuth = {
     resetAttempts() {
         this.rateLimitConfig.attempts = 0;
         this.rateLimitConfig.lockedUntil = null;
+        try { localStorage.removeItem('zflow_rl'); } catch(e) {}
     },
 
     /**
@@ -119,8 +124,11 @@ const ZFlowAuth = {
      * @returns {Object} - { valid: boolean, message: string }
      */
     validatePassword(password) {
-        if (!password || password.length < 6) {
-            return { valid: false, message: "Parola trebuie să aibă cel puțin 6 caractere" };
+        if (!password || password.length < 8) {
+            return { valid: false, message: "Parola trebuie să aibă cel puțin 8 caractere" };
+        }
+        if (!/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
+            return { valid: false, message: "Parola trebuie să conțină cel puțin o literă mare și o cifră" };
         }
         return { valid: true, message: "" };
     },

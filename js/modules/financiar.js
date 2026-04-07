@@ -57,18 +57,21 @@ function _sortFacturiDueClosestFin(a, b, azi, paidStatus) {
  * @param {string} cui
  * @returns {boolean}
  */
+let _cuiSetCache = null;
+function _invalidateCuiCache() { _cuiSetCache = null; }
 function esteSiClientSiFurnizor(cui) {
     if (!cui) return false;
+    if (!_cuiSetCache) {
+        _cuiSetCache = {
+            clienti:  new Set((window.ZFlowStore?.dateLocal   || []).map(c => String(c.cui  || '').trim().toUpperCase().replace(/^RO/i, ''))),
+            furnizori: new Set((window.ZFlowStore?.dateFurnizori || []).map(f => String(f.cui || '').trim().toUpperCase().replace(/^RO/i, '')))
+        };
+    }
     const cuiNorm = String(cui).trim().toUpperCase().replace(/^RO/i, '');
-    const inClienti = (window.ZFlowStore?.dateLocal || []).some(c =>
-        String(c.cui || '').trim().toUpperCase().replace(/^RO/i, '') === cuiNorm
-    );
-    const inFurnizori = (window.ZFlowStore?.dateFurnizori || []).some(f =>
-        String(f.cui || '').trim().toUpperCase().replace(/^RO/i, '') === cuiNorm
-    );
-    return inClienti && inFurnizori;
+    return _cuiSetCache.clienti.has(cuiNorm) && _cuiSetCache.furnizori.has(cuiNorm);
 }
 window.esteSiClientSiFurnizor = esteSiClientSiFurnizor;
+window._invalidateCuiCache = _invalidateCuiCache;
 
 function renderMainThrottled() {
     if (_renderThrottle.main) return; // render deja programat pentru acest frame

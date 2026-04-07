@@ -11,6 +11,15 @@
  * - notifications.js, attachments.js, mobile.js, bulk.js, anaf.js
  */
 
+/**
+ * Z-FLOW app.js — index de navigare
+ * renderMain()          → linia ~3200  (clienți BI)
+ * renderFurnizoriBI()   → linia ~4312  (furnizori BI)
+ * renderListaContributii() → linia ~2807
+ * renderFiltruCategorieBtns() → linia ~3002
+ * TODO: extrage render* în financiar.js pentru a reduce dimensiunea acestui fișier
+ */
+
 // ==========================================
 // MOD MENTENANȚĂ → js/modules/maintenance.js
 // Funcțiile getMaintenanceState, checkAndApplyMaintenanceMode,
@@ -29,6 +38,8 @@ let pendingPDFFiles = []; // #23 - multiple attachments
 /**
  * Formatează data în format ZZ/LL/AA
  */
+// Marchează versiunea corectă pentru guard-ul din utils.js
+window._formateazaDataZFlowV2 = null; // va fi setat după definiție
 function formateazaDataZFlow(dataString) {
     if (!dataString) return "";
     // T12:00:00 evită decalajul de fus orar care ar putea afișa ziua anterioară
@@ -39,6 +50,7 @@ function formateazaDataZFlow(dataString) {
     const an = d.getFullYear();
     return `${zi}/${luna}/${an}`;
 }
+window._formateazaDataZFlowV2 = formateazaDataZFlow;
 
 /**
  * Setează loader global
@@ -2929,7 +2941,11 @@ function renderListaContributii() {
            </div>`
         : '';
 
+    const _hash2932 = (sumarHTML + rows + paginareHTML + perPageHTML).length + '|' + (sumarHTML||'').slice(0,32);
+    if (container.dataset._zfHash === _hash2932) { /* skip */ } else {
+    container.dataset._zfHash = _hash2932;
     container.innerHTML = sumarHTML + rows + paginareHTML + perPageHTML;
+    }
 }
 
 /** Avansează pagina contribuțiilor */
@@ -3449,20 +3465,29 @@ function genereazaCardFactura(fac, client, azi) {
                         </div>`;
                     }
                 })()}
-                <button onclick="event.stopPropagation(); trimiteEmailDebitor('${escapeHtml(f.contact_email)}', '${escapeHtml(fac.numar_factura)}', '${fac.valoare}')"
-                        class="h-11 ${esteScadenta ? 'bg-red-600 text-white animate-pulse hover:bg-red-700' : 'bg-indigo-50 text-indigo-400 hover:bg-indigo-100 hover:text-indigo-600'} rounded-xl flex items-center justify-center transition-all"
-                        title="Trimite Email">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0l-9.75 6.75-9.75-6.75m19.5 0l-9.75-6.75" /></svg>
+                <button data-action="email-debitor"
+                        data-email="${escapeHtml(f.contact_email)}"
+                        data-nr="${escapeHtml(fac.numar_factura)}"
+                        data-val="${escapeHtml(String(fac.valoare))}"
+                        onclick="(function(b){event.stopPropagation();trimiteEmailDebitor(b.dataset.email,b.dataset.nr,b.dataset.val);})(this)"
+                        class="h-11 flex-1 bg-blue-50 text-blue-700 rounded-xl text-[9px] font-black uppercase flex items-center justify-center gap-1 hover:bg-blue-100 transition-all">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>Email
                 </button>
-                <button onclick="event.stopPropagation(); trimiteWhatsAppReminder('${escapeHtml(f.telefon || '')}', '${escapeHtml(f.nume_firma || '')}', '${escapeHtml(fac.numar_factura)}', '${fac.valoare}', '${fac.data_scadenta || ''}')"
-                        class="h-11 ${esteScadenta ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700'} rounded-xl flex items-center justify-center transition-all"
-                        title="Trimite WhatsApp">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                <button data-action="whatsapp-debitor"
+                        data-tel="${escapeHtml(f.telefon || '')}"
+                        data-firma="${escapeHtml(f.nume_firma || '')}"
+                        data-nr="${escapeHtml(fac.numar_factura)}"
+                        data-val="${escapeHtml(String(fac.valoare))}"
+                        data-scad="${escapeHtml(fac.data_scadenta || '')}"
+                        onclick="(function(b){event.stopPropagation();trimiteWhatsAppReminder(b.dataset.tel,b.dataset.firma,b.dataset.nr,b.dataset.val,b.dataset.scad);})(this)"
+                        class="h-11 flex-1 bg-green-50 text-green-700 rounded-xl text-[9px] font-black uppercase flex items-center justify-center gap-1 hover:bg-green-100 transition-all">
+                  <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.987-1.418A9.955 9.955 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2z"/></svg>WhatsApp
                 </button>
-                <button onclick="event.stopPropagation(); trimiteShareFactura('${fac.id}')"
-                        class="h-11 bg-sky-50 text-sky-500 rounded-xl flex items-center justify-center border border-sky-100 hover:bg-sky-100 hover:text-sky-600 hover:border-sky-200 transition-all"
-                        title="Partajează">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" /></svg>
+                <button data-action="share-factura"
+                        data-id="${escapeHtml(fac.id)}"
+                        onclick="(function(b){event.stopPropagation();trimiteShareFactura(b.dataset.id);})(this)"
+                        class="h-11 flex-1 bg-slate-50 text-slate-600 rounded-xl text-[9px] font-black uppercase flex items-center justify-center gap-1 hover:bg-slate-100 transition-all">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>Share
                 </button>
                 <button onclick="stergeFactura('${fac.id}')"
                         class="h-11 bg-red-50 text-red-500 rounded-xl flex items-center justify-center border border-red-100 hover:bg-red-100 hover:text-red-600 hover:border-red-200 transition-all">
@@ -4261,7 +4286,7 @@ function genereazaBI() {
     const endIdx = ZFlowStore.biPageSize === 0 ? filtrate.length : startIdx + ZFlowStore.biPageSize;
     const paginatedData = filtrate.slice(startIdx, endIdx);
 
-    container.innerHTML = paginatedData.map((f) => {
+    const _html4264 = paginatedData.map((f) => {
         try {
         const client = ZFlowStore.dateLocal.find((c) => String(c.id) === String(f.client_id));
         const isIncasat = f.status_plata === "Incasat";
@@ -4295,6 +4320,8 @@ function genereazaBI() {
             return `<div class="text-xs text-red-400 px-3 py-2 bg-red-50 rounded-xl mb-1">Eroare afișare factură #${f?.numar_factura || '?'}</div>`;
         }
     }).join("") + '<div id="bi-pagination" class="mt-1"></div>';
+    const _hash4264 = _html4264.length + '|' + _html4264.slice(0,32);
+    if (container.dataset._zfHash !== _hash4264) { container.dataset._zfHash = _hash4264; container.innerHTML = _html4264; }
     _renderBIPagination(filtrate.length);
 
     // Append furnizori doar în modul TOATE
@@ -4346,7 +4373,9 @@ function renderFurnizoriBI() {
     const fbiEnd   = fbiPS === 0 ? filtrate.length : fbiStart + fbiPS;
     const paginated = filtrate.slice(fbiStart, fbiEnd);
 
-    container.innerHTML = _htmlFurnizoriRows(paginated, azi) + '<div id="bi-pagination-furnizori" class="mt-1"></div>';
+    const _html4349 = _htmlFurnizoriRows(paginated, azi) + '<div id="bi-pagination-furnizori" class="mt-1"></div>';
+    const _hash4349 = _html4349.length + '|' + _html4349.slice(0,32);
+    if (container.dataset._zfHash !== _hash4349) { container.dataset._zfHash = _hash4349; container.innerHTML = _html4349; }
     _renderFurnizoriBIPagination(filtrate.length);
     calculeazaCashflow();
 }
@@ -8265,7 +8294,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!navigator.onLine) setOfflineUI(true);
 
     window.addEventListener('offline', () => setOfflineUI(true));
-    window.addEventListener('online', () => setOfflineUI(false));
+    window.addEventListener('online', () => {
+        setOfflineUI(false);
+        // Flush operații offline pending după reconectare
+        if (typeof idbGetAll === 'function') {
+            idbGetAll('pending_ops').then(ops => {
+                if (!ops || ops.length === 0) return;
+                ZFlowLogger.info && ZFlowLogger.info('sync', `[Sync] ${ops.length} operații pending de sincronizat`);
+                showNotification(`Reconectat. ${ops.length} operație(i) offline în așteptare — reîncarcă pentru sync complet.`, 'info', 5000);
+            }).catch(() => {});
+        }
+    });
 
     // ── PWA Back Button Handler ──────────────────────────────────────────
     // Intrare inițială în history fără hash (URL curat)
