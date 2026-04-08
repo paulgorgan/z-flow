@@ -913,6 +913,7 @@ async function verificaAuth() {
         ZFlowStore.dateVehicule = [];
         ZFlowStore.dateComenziTransport = [];
         ZFlowStore.userProfile = null;
+        window.ZFlowUserProfile = null; // [v75.31] evită hijacking nume firmă la schimbare user
 
         const mainContent = document.querySelector('main');
         const header = document.querySelector('header');
@@ -1120,6 +1121,7 @@ async function logout() {
         ZFlowStore.dateVehicule = [];
         ZFlowStore.dateComenziTransport = [];
         ZFlowStore.userProfile = null;
+        window.ZFlowUserProfile = null; // [v75.31] evită hijacking nume firmă la schimbare user
 
         // [R5-FIX 3] NU ștergăm IDB-ul la logout — datele rămân ca cache pentru
         // re-login rapid. IDB-ul e per-browser, nu conține date sensibile că sunt
@@ -2184,7 +2186,8 @@ function _getDashboardHash() {
     const neplatitFp  = fp.filter(f => f.status_plata !== 'Platit').length;
     const restCli  = dl.filter(c => (c.facturi || []).some(f => f.status_plata !== 'Incasat' && f.data_scadenta)).length;
     const restFurn = df.filter(f => (f.sumaScadenta || 0) > 0).length;
-    return `${fi.length}|${fp.length}|${sumFi | 0}|${sumFp | 0}|${neincasatFi}|${neplatitFp}|${restCli}|${restFurn}|${new Date().toDateString()}`;
+    const ctbAchitate = (ZFlowStore.dateContributii || []).filter(c => c.achitat).length;
+    return `${fi.length}|${fp.length}|${sumFi | 0}|${sumFp | 0}|${neincasatFi}|${neplatitFp}|${restCli}|${restFurn}|${ctbAchitate}|${new Date().toDateString()}`;
 }
 
 /**
@@ -2232,10 +2235,19 @@ function incarcaDashboard() {
     const neincasat = facturiIncasat30Efectiv.reduce((s, f) => s + (Number(f.valoare) || 0), 0);
     // KPI 3: De PLĂTIT — neplătit furnizori, primit în ultimele 30 zile
     const neplatit = facturiPlatit30.filter(f => f.status_plata !== "Platit").reduce((s, f) => s + (Number(f.valoare) || 0), 0);
-    // KPI 4: Cashflow NET 30 zile = încasat efectiv - plătit efectiv
+    // KPI 4: Cashflow NET 30 zile = încasat efectiv - plătit efectiv - contribuții achitate
     const incasat30Efectiv = neincasat;
     const platit30Efectiv  = facturiPlatit30.filter(f => f.status_plata === "Platit").reduce((s, f) => s + (Number(f.valoare) || 0), 0);
-    const net = incasat30Efectiv - platit30Efectiv;
+    // Fereastra contribuții: luna precedentă + luna curentă (scadența e pe 25 din luna următoare lunii raportate)
+    const _ctbLunaStart = new Date(azi.getFullYear(), azi.getMonth() - 1, 1);
+    const _ctbLunaEnd   = new Date(azi.getFullYear(), azi.getMonth() + 1, 1);
+    const contributiiAchitate30 = (ZFlowStore.dateContributii || []).filter(c => {
+        if (!c.achitat) return false;
+        if (!c.luna) return false;
+        const d = new Date(c.luna.substring(0, 7) + '-01T00:00:00');
+        return d && !isNaN(d.getTime()) && d >= _ctbLunaStart && d < _ctbLunaEnd;
+    }).reduce((s, c) => s + (Number(c.suma) || 0), 0);
+    const net = incasat30Efectiv - platit30Efectiv - contributiiAchitate30;
 
     const fmt = (v) => new Intl.NumberFormat("ro-RO", { style: "currency", currency: "RON", maximumFractionDigits: 0 }).format(v);
 
@@ -2256,8 +2268,11 @@ function incarcaDashboard() {
     // [FIX B4] Net 30 breakdown: afișează componentele de incasat și de plătit
     const elNetBreakdown = document.getElementById("home-kpi-net-breakdown");
     if (elNetBreakdown) {
-        if (incasat30Efectiv > 0 || platit30Efectiv > 0) {
-            elNetBreakdown.innerText = `Încasat ${Math.round(incasat30Efectiv).toLocaleString()} · Plătit ${Math.round(platit30Efectiv).toLocaleString()} lei`;
+        if (incasat30Efectiv > 0 || platit30Efectiv > 0 || contributiiAchitate30 > 0) {
+            const parts = [`Încasat ${Math.round(incasat30Efectiv).toLocaleString()}`];
+            if (platit30Efectiv > 0) parts.push(`Furnizori ${Math.round(platit30Efectiv).toLocaleString()}`);
+            if (contributiiAchitate30 > 0) parts.push(`Contrib. ${Math.round(contributiiAchitate30).toLocaleString()}`);
+            elNetBreakdown.innerText = parts.join(' · ') + ' lei';
         } else {
             elNetBreakdown.innerText = 'Net total';
         }
@@ -2352,7 +2367,7 @@ function incarcaDashboard() {
             alerteList.innerHTML = `
                 <button onclick="schimbaTab('financiar', document.getElementById('nav-btn-fin'))" class="w-full text-left bg-red-50 border border-red-200 rounded-2xl p-4 hover:bg-red-100 active:bg-red-200 transition-all">
                   <div class="flex items-center justify-between mb-2">
-                    <p class="text-xs font-black text-red-700 uppercase flex items-center gap-1.5">
+                    <p class="text-[10px] font-black text-red-700 uppercase flex items-center gap-1.5">
                       <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
                       Alerte scadențe
                     </p>
@@ -2713,7 +2728,13 @@ function deschideModalFacturaPlatit(furnizorId, facturaId) {
             if (_fpCotaEdit) _fpCotaEdit.value = String(fac.cota_tva ?? window.ZFlowStore?.userProfile?.cota_tva_default ?? 21);
         }
         if (title) title.innerText = "Editare Factură";
-        if (btnSterge) btnSterge.classList.remove("hidden");
+        if (btnSterge) {
+            if (fac && fac.is_imported) {
+                btnSterge.classList.add("hidden");
+            } else {
+                btnSterge.classList.remove("hidden");
+            }
+        }
     } else {
         if (title) title.innerText = "Factură de Plătit";
         if (btnSterge) btnSterge.classList.add("hidden");
@@ -3053,6 +3074,7 @@ async function toggleAchitatContributie(id) {
         ctb.achitat = newVal; // update optimist în store
         invalidateCashflowCache();
         calculeazaCashflow();
+        if (typeof incarcaDashboard === 'function') incarcaDashboard();
         if (typeof updateFurnizoriKPI === 'function') updateFurnizoriKPI();
         renderListaContributii();
     } catch (err) {
@@ -3539,8 +3561,9 @@ function genereazaCardFactura(fac, client, azi) {
                         data-nr="${escapeHtml(fac.numar_factura)}"
                         data-val="${escapeHtml(String(fac.valoare))}"
                         onclick="(function(b){event.stopPropagation();trimiteEmailDebitor(b.dataset.email,b.dataset.nr,b.dataset.val);})(this)"
-                        class="h-11 flex-1 bg-blue-50 text-blue-700 rounded-xl text-[9px] font-black uppercase flex items-center justify-center gap-1 hover:bg-blue-100 transition-all">
-                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>Email
+                        title="Email"
+                        class="h-11 bg-blue-50 text-blue-700 rounded-xl flex items-center justify-center hover:bg-blue-100 transition-all">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
                 </button>
                 <button data-action="whatsapp-debitor"
                         data-tel="${escapeHtml(f.telefon || '')}"
@@ -3549,14 +3572,16 @@ function genereazaCardFactura(fac, client, azi) {
                         data-val="${escapeHtml(String(fac.valoare))}"
                         data-scad="${escapeHtml(fac.data_scadenta || '')}"
                         onclick="(function(b){event.stopPropagation();trimiteWhatsAppReminder(b.dataset.tel,b.dataset.firma,b.dataset.nr,b.dataset.val,b.dataset.scad);})(this)"
-                        class="h-11 flex-1 bg-green-50 text-green-700 rounded-xl text-[9px] font-black uppercase flex items-center justify-center gap-1 hover:bg-green-100 transition-all">
-                  <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.987-1.418A9.955 9.955 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2z"/></svg>WhatsApp
+                        title="WhatsApp"
+                        class="h-11 bg-green-50 text-green-700 rounded-xl flex items-center justify-center hover:bg-green-100 transition-all">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
                 </button>
                 <button data-action="share-factura"
                         data-id="${escapeHtml(fac.id)}"
                         onclick="(function(b){event.stopPropagation();trimiteShareFactura(b.dataset.id);})(this)"
-                        class="h-11 flex-1 bg-slate-50 text-slate-600 rounded-xl text-[9px] font-black uppercase flex items-center justify-center gap-1 hover:bg-slate-100 transition-all">
-                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>Share
+                        title="Share"
+                        class="h-11 bg-slate-50 text-slate-600 rounded-xl flex items-center justify-center hover:bg-slate-100 transition-all">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
                 </button>
                 <button onclick="stergeFactura('${fac.id}')"
                         class="h-11 bg-red-50 text-red-500 rounded-xl flex items-center justify-center border border-red-100 hover:bg-red-100 hover:text-red-600 hover:border-red-200 transition-all">
@@ -3993,7 +4018,7 @@ function populeazaBridgeUI() {
 
     // Aplica vizibilitate seciuni SI coloane totale conform filtruTipBI curent
     const clientiSection = document.getElementById("bi-clienti-section");
-    const furnizoriSection = document.getElementById("bi-furnizori-section");
+    const furnizoriSection = document.getElementById("bi-furnizori-left-panel");
     if (clientiSection) clientiSection.classList.toggle("hidden", ZFlowStore.filtruTipBI === "furnizori");
     if (furnizoriSection) furnizoriSection.classList.toggle("hidden", ZFlowStore.filtruTipBI === "clienti");
 
@@ -4041,7 +4066,7 @@ function toggleContributiiInAnaliza(checked) {
  */
 function toggleToateBI(status) {
     const clientiSection = document.getElementById("bi-clienti-section");
-    const furnizoriSection = document.getElementById("bi-furnizori-section");
+    const furnizoriSection = document.getElementById("bi-furnizori-left-panel");
     if (clientiSection && !clientiSection.classList.contains("hidden")) {
         clientiSection.querySelectorAll("input[type=checkbox]").forEach(c => c.checked = status);
     }
@@ -4478,15 +4503,21 @@ function appendFurnizoriBI(container, startDate, endDate, q) {
     const fbiEnd   = fbiPS === 0 ? filtrate.length : fbiStart + fbiPS;
     const paginated = filtrate.slice(fbiStart, fbiEnd);
 
+    // Elimină secțiunea furnizori existentă înainte de re-inserare (previne duplicare la re-render)
+    const _existingFurnizoriSection = document.getElementById('bi-furnizori-section');
+    if (_existingFurnizoriSection) _existingFurnizoriSection.remove();
+
     // Separator + furnizori rows (paginate)
     container.insertAdjacentHTML('beforeend', `
+<div id="bi-furnizori-section">
 <div class="w-full flex items-center gap-3 my-4">
   <div class="flex-1 h-px bg-red-100"></div>
   <span class="text-[9px] font-black text-red-600 uppercase tracking-widest px-2 py-1 bg-red-50 rounded-full">Furnizori — Facturi de Plătit (${filtrate.length})</span>
   <div class="flex-1 h-px bg-red-100"></div>
 </div>
 ${_htmlFurnizoriRows(paginated, azi)}
-<div id="bi-pagination-furnizori" class="mt-1"></div>`);
+<div id="bi-pagination-furnizori" class="mt-1"></div>
+</div>`);
 
     _renderFurnizoriBIPagination(filtrate.length);
 }
@@ -5583,7 +5614,7 @@ function setFiltruTipBI(tip, btn) {
 
     // Show/hide sections
     const clientiSection = document.getElementById("bi-clienti-section");
-    const furnizoriSection = document.getElementById("bi-furnizori-section");
+    const furnizoriSection = document.getElementById("bi-furnizori-left-panel");
     if (clientiSection) clientiSection.classList.toggle("hidden", tip === "furnizori");
     if (furnizoriSection) furnizoriSection.classList.toggle("hidden", tip === "clienti");
 

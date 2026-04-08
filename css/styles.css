@@ -2920,6 +2920,18 @@ button.bg-blue-700.text-white {
   line-height: 28px !important;
 }
 
+/* [v75.27] Home tab — reduce bottom padding la mini-map pentru a elimina spațiul alb înainte de bara nav */
+#home.tab-content {
+  padding-bottom: 75px !important;
+}
+@supports (padding: env(safe-area-inset-bottom)) {
+  @media (max-width: 1023px) {
+    #home.tab-content {
+      padding-bottom: calc(72px + env(safe-area-inset-bottom)) !important;
+    }
+  }
+}
+
 /* Depozit produs — span status badge font size */
 #depozit-lista-produse div.flex.items-center.gap-2 > span {
   font-size: 9px !important;

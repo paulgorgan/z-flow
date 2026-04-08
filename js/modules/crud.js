@@ -563,6 +563,11 @@ async function stergeFacturaPlatit(id) {
         id = document.getElementById("in-fp-id")?.value;
         if (!id) return;
     }
+    const _facImportCheck = (ZFlowStore.dateFacturiPlatit || []).find(f => String(f.id) === String(id));
+    if (_facImportCheck && _facImportCheck.is_imported) {
+        showNotification("Factura este importată din SAGA/ANAF și nu poate fi ștearsă din aplicație", "warning");
+        return;
+    }
     if (!hasPermission('canDelete')) {
         showNotification("Nu ai permisiunea de a șterge facturi", "error");
         return;

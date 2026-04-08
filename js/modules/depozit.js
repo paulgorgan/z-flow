@@ -8,19 +8,18 @@ let _filtruAlerteActiv = false;
 
 // [R6-FIX 3] Navighează la tab Depozit > Produse și activează filtrul de alerte
 function navigaLaAlerteStoc() {
-    // Activează filtrul alerte
-    _filtruAlerteActiv = true;
-
     // Asigură-te că suntem pe tab-ul Depozit
     if (typeof schimbaTab === 'function') {
         schimbaTab('depozit', document.querySelector('[data-tab="depozit"]') ||
             document.querySelector('[onclick*="depozit"]'));
     }
-    // Comută la sub-view Produse
+    // Comută la sub-view Produse PRIMA — schimbaViewDepozit() resetează _filtruAlerteActiv=false
     if (typeof schimbaViewDepozit === 'function') {
         schimbaViewDepozit('produse');
     }
-    // Re-render cu filtrul activ (apelat deja de schimbaViewDepozit, dar for safety)
+    // Activează filtrul DUPĂ schimbaViewDepozit (altfel e resetat de schimbaViewDepozit)
+    _filtruAlerteActiv = true;
+    // Re-render cu filtrul activ
     renderProduse();
 
     // Feedback vizual — highlight pe search box dacă există
