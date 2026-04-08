@@ -584,7 +584,6 @@ input, select, button {
 #map {
   height: 320px;
   position: relative; /* pentru overlay-ul info vehicule */
-  z-index: 0;
   border-radius: 24px;
   z-index: 10;
   border: 4px solid white;
@@ -1573,7 +1572,7 @@ input, select, button {
     border-radius: 14px !important;
   }
 
-  /* Compensare: header (~68px) + nav (~58px) = 126px */
+  /* Header sticky: 68px (natural flow) + nav fixat la top:68px înălțime ~58px → main începe la 126px */
   main {
     margin-top: 58px !important;
     padding-top: 20px !important;
@@ -1655,6 +1654,7 @@ input, select, button {
     gap: 24px !important;
   }
 
+  #card-detaliu,
   #card-detaliu-furnizor,
   #istoric-plati-furnizor {
     max-width: 900px !important;
@@ -1939,6 +1939,11 @@ input[type="date"] {
   .nav-item span {
     font-size: 8px !important;
   }
+
+  /* Valoare stoc depozit — evita trunchiere pe ecrane <380px */
+  #depozit-kpi-valoare {
+    font-size: clamp(0.65rem, 3.5vw, 1rem) !important;
+  }
 }
 
 /* ============================================
@@ -2061,6 +2066,13 @@ input[type="date"] {
 .custom-scroll::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 4px;
+}
+
+.dark .custom-scroll {
+  scrollbar-color: #475569 transparent;
+}
+.dark .custom-scroll::-webkit-scrollbar-thumb {
+  background: #475569;
 }
 
 /* Prevent text selection on interactive elements */
@@ -2310,7 +2322,7 @@ input {
 
   .bottom-nav {
     max-width: 700px;
-    padding: 16px 24px 28px 24px;
+    padding: 16px 24px !important;
   }
 
   .nav-item svg {
@@ -2579,6 +2591,15 @@ button.bg-blue-700.text-white {
 .dark .pill-nav { background-color: #1e293b !important; }
 .dark .pill-btn { color: #94a3b8 !important; }
 .dark .pill-btn.active { background-color: #334155 !important; color: #e2e8f0 !important; }
+
+@media (max-width: 640px) {
+  .dark #financiar .pill-nav,
+  .dark #logistic .pill-nav,
+  .dark #depozit .pill-nav {
+    background-color: #1e293b !important;
+    border: 1px solid #334155;
+  }
+}
 
 /* KPI Home boxes */
 .dark .bg-white.rounded-2xl { background-color: #1e293b !important; }
@@ -2905,9 +2926,12 @@ button.bg-blue-700.text-white {
 
 /* Fix inaltime fixa KPI Cashflow — egalizeaza cu celelalte 3 carduri */
 #home-kpi-net {
-  height: 28px !important;
+  height: auto !important;
   min-height: 28px !important;
-  line-height: 28px !important;
+  line-height: 1.2 !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* [v75.27] Home tab — reduce bottom padding la mini-map pentru a elimina spațiul alb înainte de bara nav */
