@@ -163,6 +163,8 @@ const ZFlowBulk = {
         this.clearSelection();
         if (window.ZFlowStore) ZFlowStore.bulkMode = false; // [V3-FIX 4]
         this.updateUI();
+        if (typeof renderMain === 'function') renderMain();
+        if (ZFlowStore?.selectedClientId && typeof arataDetalii === 'function') arataDetalii(ZFlowStore.selectedClientId);
         if (typeof setLoader === 'function') setLoader(false);
 
         window.ZFlowUI?.showNotification(

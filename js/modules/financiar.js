@@ -856,6 +856,53 @@ function deschideModalFurnizor(id) {
     modal.classList.add("active");
 }
 
+async function _doSalveazaFurnizor(id, numeFirma, cui, ibanFurn) {
+    const _saveBtn = document.querySelector('[data-action="salveazaFurnizor"]');
+    const payload = {
+        cui: cui || null,
+        nume_firma: numeFirma || null,
+        adresa: document.getElementById("in-furn-adresa")?.value.trim() || null,
+        persoana_contact: document.getElementById("in-furn-contact")?.value.trim() || null,
+        telefon: document.getElementById("in-furn-tel")?.value.trim() || null,
+        contact_email: document.getElementById("in-furn-email")?.value.trim() || null,
+        iban: document.getElementById("in-furn-iban")?.value.trim() || null,
+        oras: document.getElementById("in-furn-oras")?.value.trim() || null,
+        note: document.getElementById("in-furn-note")?.value.trim() || null,
+        eticheta: document.getElementById("in-furn-eticheta")?.value.trim() || null,
+        categorie: document.getElementById("in-furn-categorie")?.value.trim() || null,
+        updated_at: new Date().toISOString()
+    };
+    setLoader(true);
+    try {
+        if (id) {
+            await ZFlowDB.updateFurnizor(id, payload);
+            const fIdx = ZFlowStore.dateFurnizori.findIndex(f => String(f.id) === String(id));
+            if (fIdx !== -1) ZFlowStore.dateFurnizori[fIdx] = { ...ZFlowStore.dateFurnizori[fIdx], ...payload };
+            showNotification("Furnizor actualizat!", "success");
+            if (typeof ZFlowMobile !== 'undefined') ZFlowMobile.vibrate(30);
+        } else {
+            const newId = await ZFlowDB.insertFurnizor(payload);
+            ZFlowStore.dateFurnizori = [
+                { ...payload, id: newId, facturi: [], sold: 0, sumaScadenta: 0, created_at: new Date().toISOString() },
+                ...ZFlowStore.dateFurnizori
+            ];
+            showNotification("Furnizor adăugat!", "success");
+            if (typeof ZFlowMobile !== 'undefined') ZFlowMobile.vibrate(30);
+        }
+        inchideModal("modal-furnizor");
+        renderFurnizoriThrottled();
+        updateFurnizoriKPI();
+        invalidateCashflowCache();
+        incarcaDashboard();
+        if (id && ZFlowStore.selectedFurnizorId === id) arataDetaliiFurnizor(id);
+    } catch (err) {
+        showNotification("Eroare: " + err.message, "error");
+    } finally {
+        setLoader(false);
+        if (typeof ZFlowUI !== 'undefined') ZFlowUI.setButtonLoading(_saveBtn, false);
+    }
+}
+
 /**
  * Salvează furnizor (insert sau update)
  */
@@ -874,7 +921,10 @@ async function salveazaFurnizor() {
 
     // Validare CUI + IBAN
     if (cui && typeof validareCUI === 'function' && !validareCUI(cui)) {
-        if (!confirm("CUI-ul furnizorului nu trece validarea cifrei de control ANAF. Continuați oricum?")) {
+        if (typeof showConfirmModal === 'function') {
+            showConfirmModal("CUI-ul furnizorului nu trece validarea cifrei de control ANAF. Continuați oricum?", async () => {
+                await _doSalveazaFurnizor(id, numeFirma, cui, null);
+            });
             if (typeof ZFlowUI !== 'undefined') ZFlowUI.setButtonLoading(_saveBtn, false);
             return;
         }
@@ -895,8 +945,10 @@ async function salveazaFurnizor() {
             (numeNormF && (f.nume_firma || '').toLowerCase().trim() === numeNormF)
         );
         if (existentF) {
-            const continuaF = confirm(`Furnizorul "${existentF.nume_firma}" (CUI: ${existentF.cui || '—'}) există deja!\n\nApăsați OK pentru a adăuga oricum sau Anulați.`);
-            if (!continuaF) {
+            if (typeof showConfirmModal === 'function') {
+                showConfirmModal(`Furnizorul "${existentF.nume_firma}" (CUI: ${existentF.cui || '—'}) există deja! Adaugi oricum?`, async () => {
+                    await _doSalveazaFurnizor(id, numeFirma, cui, ibanFurn);
+                });
                 if (typeof ZFlowUI !== 'undefined') ZFlowUI.setButtonLoading(_saveBtn, false);
                 return;
             }
@@ -1481,3 +1533,18 @@ window.ZFlowFinanciar = {
      */
     recomputeFurnizoriData: _recomputeFurnizoriData
 };
+
+window.toggleStatusPlatit        = toggleStatusPlatit;
+window.updateFurnizoriKPI        = updateFurnizoriKPI;
+window.deschideModalFurnizor     = deschideModalFurnizor;
+window.salveazaFurnizor          = salveazaFurnizor;
+window.stergeFurnizorModal       = stergeFurnizorModal;
+window.stergeFurnizorDirect      = stergeFurnizorDirect;
+window.populeazaSelectFurnizori  = populeazaSelectFurnizori;
+window.deschideFirmaNou          = deschideFirmaNou;
+window.selectTipFirmaNou         = selectTipFirmaNou;
+window.autoCautareCUIFirmaNou    = autoCautareCUIFirmaNou;
+window.salveazaFirmaNou          = salveazaFirmaNou;
+window.deschideFacturaNou        = deschideFacturaNou;
+window.comutaTipFacturaNou       = comutaTipFacturaNou;
+window.salveazaFacturaNou        = salveazaFacturaNou;

@@ -2432,7 +2432,7 @@ function incarcaDashboard() {
         const _bdgDep = document.getElementById('nav-badge-depozit');
         if (_bdgDep) {
             const _subMinim = (ZFlowStore.dateProduse || []).filter(
-                p => p.stoc_curent !== undefined && p.stoc_minim !== undefined && p.stoc_curent <= p.stoc_minim
+                p => p.stoc_min && (typeof calcStocCurent === 'function' ? calcStocCurent(p.id) : 0) < Number(p.stoc_min)
             ).length;
             if (_subMinim > 0) { _bdgDep.innerText = _subMinim; _bdgDep.classList.remove('hidden'); }
             else _bdgDep.classList.add('hidden');

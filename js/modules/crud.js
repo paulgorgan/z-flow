@@ -518,7 +518,9 @@ async function salveazaFacturaPlatit() {
             data_emiterii: document.getElementById("in-fp-emisie")?.value || null,
             data_scadenta: document.getElementById("in-fp-scad")?.value || null,
             note: document.getElementById("in-fp-note")?.value.trim() || null,
-            status_plata: "Neplatit",
+            status_plata: id
+                ? ((ZFlowStore.dateFacturiPlatit || []).find(f => String(f.id) === String(id))?.status_plata || 'Neplatit')
+                : 'Neplatit',
             updated_at: new Date().toISOString()
         };
 
