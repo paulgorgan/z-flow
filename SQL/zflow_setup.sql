@@ -50,6 +50,7 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS subscription_token      TEX
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS onboarding_done         BOOLEAN DEFAULT FALSE;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS platitor_tva            BOOLEAN DEFAULT FALSE; -- [v74.4] Plătitor de TVA
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS cota_tva_default       INTEGER DEFAULT 21;    -- [v75.0] Cotă TVA implicită (21=standard, 11=redusă, 0=scutit)
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS email_alerte           TEXT;                  -- [v75.36] Email dedicat alertelor săptămânale scadențe (opțional; fallback pe câmpul email)
 -- Sincronizeaza user_id = id pentru randurile vechi
 UPDATE public.profiles SET user_id = id WHERE user_id IS NULL;
 
@@ -475,6 +476,13 @@ DROP POLICY IF EXISTS "users_update_own_profile" ON public.profiles;
 DROP POLICY IF EXISTS "users_insert_own_profile" ON public.profiles;
 CREATE POLICY "profiles_owner_all" ON public.profiles
     USING (auth.uid() = id) WITH CHECK (auth.uid() = id);
+
+-- ── Coloane adăugate post-inițial (compatibilitate upgrade) ──────
+-- Câmpuri utilizate de import SAGA/WinMentor — nu erau în schema inițială
+ALTER TABLE public.facturi        ADD COLUMN IF NOT EXISTS is_imported  BOOLEAN DEFAULT FALSE; -- [v71.x] marcat la import CSV/XML
+ALTER TABLE public.facturi        ADD COLUMN IF NOT EXISTS note         TEXT;                  -- [v71.x] note import/manuale
+ALTER TABLE public.facturi_platit ADD COLUMN IF NOT EXISTS is_imported  BOOLEAN DEFAULT FALSE; -- [v71.x]
+ALTER TABLE public.facturi_platit ADD COLUMN IF NOT EXISTS note         TEXT;                  -- [v71.x]
 
 -- ── clienti ───────────────────────────────────────────────────────
 ALTER TABLE public.clienti ENABLE ROW LEVEL SECURITY;
