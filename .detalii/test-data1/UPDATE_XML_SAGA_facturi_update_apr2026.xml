@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- XML SAGA - facturi NOI emise de firma noastră (FurnizorCIF = RO99887766) -->
+<!-- Testează: sincronizare BI panel + Home KPIs + cashflow după import XML  -->
+<!-- Perioada: Martie-Aprilie 2026 (ultimele 30 zile) -->
+<Facturi>
+  <Factura>
+    <FurnizorCIF>RO99887766</FurnizorCIF>
+    <FurnizorNume>FIRMA MEA SRL</FurnizorNume>
+    <ClientCIF>RO10203040</ClientCIF>
+    <ClientNume>CONSTRUCTII PREMIUM SRL</ClientNume>
+    <FacturaNumar>FC-XML-010</FacturaNumar>
+    <FacturaData>2026-04-08</FacturaData>
+    <FacturaScadenta>2026-06-08</FacturaScadenta>
+    <TotalValoare>78000.00</TotalValoare>
+    <StatusPlata>Neincasat</StatusPlata>
+  </Factura>
+  <Factura>
+    <FurnizorCIF>RO99887766</FurnizorCIF>
+    <FurnizorNume>FIRMA MEA SRL</FurnizorNume>
+    <ClientCIF>RO34567890</ClientCIF>
+    <ClientNume>METAL GRUP SRL</ClientNume>
+    <FacturaNumar>FC-XML-011</FacturaNumar>
+    <FacturaData>2026-04-01</FacturaData>
+    <FacturaScadenta>2026-05-01</FacturaScadenta>
+    <TotalValoare>34000.00</TotalValoare>
+    <StatusPlata>Neincasat</StatusPlata>
+  </Factura>
+  <Factura>
+    <FurnizorCIF>RO99887766</FurnizorCIF>
+    <FurnizorNume>FIRMA MEA SRL</FurnizorNume>
+    <ClientCIF>RO56789012</ClientCIF>
+    <ClientNume>SMART IT SOLUTIONS SRL</ClientNume>
+    <FacturaNumar>FC-XML-012</FacturaNumar>
+    <FacturaData>2026-03-28</FacturaData>
+    <FacturaScadenta>2026-04-28</FacturaScadenta>
+    <TotalValoare>19200.00</TotalValoare>
+    <StatusPlata>Neincasat</StatusPlata>
+  </Factura>
+  <Factura>
+    <FurnizorCIF>RO99887766</FurnizorCIF>
+    <FurnizorNume>FIRMA MEA SRL</FurnizorNume>
+    <ClientCIF>RO90123456</ClientCIF>
+    <ClientNume>MEDICA FARM SRL</ClientNume>
+    <FacturaNumar>FC-XML-013</FacturaNumar>
+    <FacturaData>2026-04-03</FacturaData>
+    <FacturaScadenta>2026-05-03</FacturaScadenta>
+    <TotalValoare>27500.00</TotalValoare>
+    <StatusPlata>Neincasat</StatusPlata>
+  </Factura>
+  <Factura>
+    <FurnizorCIF>RO99887766</FurnizorCIF>
+    <FurnizorNume>FIRMA MEA SRL</FurnizorNume>
+    <ClientCIF>RO67890123</ClientCIF>
+    <ClientNume>EUROCOM TRADING SRL</ClientNume>
+    <FacturaNumar>FC-XML-014</FacturaNumar>
+    <FacturaData>2026-04-05</FacturaData>
+    <FacturaScadenta>2026-05-05</FacturaScadenta>
+    <TotalValoare>42000.00</TotalValoare>
+    <StatusPlata>Neincasat</StatusPlata>
+  </Factura>
+</Facturi>

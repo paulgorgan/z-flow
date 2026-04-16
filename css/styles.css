@@ -871,6 +871,12 @@ input, select, button {
   /* [v75.2] Etichete nav bottom mai lizibile pe full mobile */
   .nav-item span { font-size: 12px !important; }
 
+  /* [v75.36] Fix: #multifirma-switcher-btn — limitat pe mobile ca sa nu acopere alte elemente din header */
+  #multifirma-switcher-btn {
+    max-width: calc(50vw - 60px) !important;
+    flex-shrink: 1 !important;
+  }
+
   /* Fix: bara butoane din Logistic si Depozit nu iese din container pe mobile complet */
   #logistic-view-comenzi > .flex.gap-2,
   #depozit-view-produse > .flex.gap-2 {

@@ -1539,6 +1539,8 @@ async function deschideProfilFirma() {
             if (f('pf-banca'))  f('pf-banca').value  = profileToLoad.banca || '';
             if (f('pf-tel'))    f('pf-tel').value    = profileToLoad.telefon || '';
             if (f('pf-email'))  f('pf-email').value  = profileToLoad.email || '';
+            // [v75.36] încarcă email alerte scadențe
+            if (f('pf-email-alerte')) f('pf-email-alerte').value = profileToLoad.email_alerte || '';
             // [v74.4] încarcă statut TVA
             if (f('pf-platitor-tva')) f('pf-platitor-tva').checked = !!profileToLoad.platitor_tva;
             // [v74.8] încarcă cotă TVA implicită
@@ -1813,6 +1815,7 @@ async function salveazaProfilFirma() {
             banca:      document.getElementById('pf-banca')?.value.trim()  || null,
             telefon:    document.getElementById('pf-tel')?.value.trim()    || null,
             email:      document.getElementById('pf-email')?.value.trim()  || null,
+            email_alerte: document.getElementById('pf-email-alerte')?.value.trim() || null, // [v75.36]
             platitor_tva: !!document.getElementById('pf-platitor-tva')?.checked, // [v74.4]
             cota_tva_default: parseInt(document.getElementById('pf-cota-tva-default')?.value ?? 21), // [v74.8]
             onboarding_done: true
@@ -2226,8 +2229,11 @@ function incarcaDashboard() {
 
     // Facturile din ultimele 30 zile
     const facturiIncasat30 = facturiIncasat.filter(f => inUltimele30(f.data_emiterii));
-    const facturiIncasat30Efectiv = facturiIncasat.filter(f => f.status_plata === "Incasat" && inUltimele30(f.data_plata || f.data_emiterii));
-    const facturiPlatit30  = facturiPlatit.filter(f => inUltimele30(f.data_emiterii || f.data_plata));
+    // [v75.38] Cash real: pentru încasări folosim doar data încasării/plății, fără fallback pe emitere/updated_at
+    const facturiIncasat30Efectiv = facturiIncasat.filter(
+        f => f.status_plata === "Incasat" && inUltimele30(f.data_plata || f.data_incasarii)
+    );
+    const facturiPlatit30  = facturiPlatit.filter(f => inUltimele30(f.data_plata || f.data_emiterii));
 
     // KPI 1: Total FACTURAT în ultimele 30 zile (clienți — toate statusurile)
     const totalFacturat = facturiIncasat30.reduce((s, f) => s + (Number(f.valoare) || 0), 0);
@@ -2503,7 +2509,7 @@ function incarcaDashboard() {
     const prevIncasat30Ef = facturiIncasat
         .filter(f => {
             if (f.status_plata !== 'Incasat') return false;
-            const d = parseDataFactura(f.data_plata || f.data_emiterii);
+            const d = parseDataFactura(f.data_plata || f.data_incasarii);
             return d && d >= _acum60 && d <= _acum31;
         })
         .reduce((s, f) => s + (Number(f.valoare)||0), 0);
@@ -2541,6 +2547,7 @@ function incarcaDashboard() {
     _updateHomeMiniDepozit();
     _updateHomeMiniLogistic();
     _updateHomeMiniCashflow();
+    _updateHomeAIForecast();
     _updateHomeAlerteSummary(clientiRestanti, furnizoriRestanti, totalScadenteClientVal, totalScadenteFurnizorVal, contributiiScadente, totalCtbScadenta);
 }
 
@@ -2620,6 +2627,243 @@ function _updateHomeMiniCashflow() {
         ? 'text-[9px] font-bold text-emerald-500 mt-0.5'
         : 'text-[9px] font-bold text-rose-500 mt-0.5';
     if (typeof verificaAlertaCashflow === 'function') verificaAlertaCashflow(soldInitial);
+}
+
+// [v75.45] Inovație SME: AI Financial Pulse (scorecard), distinct de proiecția cashflow
+function _updateHomeAIForecast() {
+    const elNet = document.getElementById('home-ai-forecast-net');
+    const elScoreBar = document.getElementById('home-ai-forecast-score-bar');
+    const elConfidence = document.getElementById('home-ai-forecast-confidence');
+    const elAction = document.getElementById('home-ai-forecast-action');
+    if (!elNet || !elConfidence || !elAction) return;
+
+    const factCli = ZFlowStore.dateFacturiBI || [];
+    const factFurn = ZFlowStore.dateFacturiPlatit || [];
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const d30 = new Date(now); d30.setDate(d30.getDate() - 30);
+    const d60 = new Date(now); d60.setDate(d60.getDate() - 60);
+    const d31 = new Date(now); d31.setDate(d31.getDate() - 30);
+    d31.setHours(23, 59, 59, 999);
+    const d90 = new Date(now); d90.setDate(d90.getDate() - 90);
+
+    const parseDate = (v) => {
+        if (!v) return null;
+        const s = String(v).trim();
+        if (!s) return null;
+        const d = new Date(s.includes('T') ? s : (s + 'T12:00:00'));
+        if (isNaN(d.getTime())) return null;
+        d.setHours(0, 0, 0, 0);
+        return d;
+    };
+
+    const sum = (arr, fn) => arr.reduce((acc, x) => acc + (Number(fn(x)) || 0), 0);
+
+    const incasari30 = sum(
+        factCli.filter(f => {
+            if (f.status_plata !== 'Incasat') return false;
+            const d = parseDate(f.data_plata || f.data_incasarii);
+            return d && d >= d30 && d <= now;
+        }),
+        f => f.valoare
+    );
+
+    const plati30 = sum(
+        factFurn.filter(f => {
+            if (f.status_plata !== 'Platit') return false;
+            const d = parseDate(f.data_plata);
+            return d && d >= d30 && d <= now;
+        }),
+        f => f.valoare
+    );
+
+    const incasariPrev30 = sum(
+        factCli.filter(f => {
+            if (f.status_plata !== 'Incasat') return false;
+            const d = parseDate(f.data_plata || f.data_incasarii);
+            return d && d >= d60 && d <= d31;
+        }),
+        f => f.valoare
+    );
+
+    const platiPrev30 = sum(
+        factFurn.filter(f => {
+            if (f.status_plata !== 'Platit') return false;
+            const d = parseDate(f.data_plata);
+            return d && d >= d60 && d <= d31;
+        }),
+        f => f.valoare
+    );
+
+    const due90 = factCli.filter(f => {
+        const d = parseDate(f.data_scadenta || f.data_emiterii);
+        return d && d >= d90 && d <= now;
+    });
+    const due90Paid = due90.filter(f => f.status_plata === 'Incasat').length;
+    const colectarePct = due90.length > 0 ? Math.round((due90Paid / due90.length) * 100) : 65;
+
+    const net30 = incasari30 - plati30;
+    const prevNet30 = incasariPrev30 - platiPrev30;
+    const coverage = plati30 > 0 ? (incasari30 / plati30) : (incasari30 > 0 ? 2 : 1);
+
+    // Scor 0..100 din trei componente: colectare, acoperire plăți, cash net
+    const scoreColectare = Math.min(45, Math.max(0, colectarePct * 0.45));
+    const scoreCoverage = Math.min(35, Math.max(0, coverage * 20));
+    const scoreNet = net30 >= 0
+        ? 20
+        : Math.max(0, 20 + Math.round((net30 / Math.max(incasari30, 1)) * 20));
+    const score = Math.max(0, Math.min(100, Math.round(scoreColectare + scoreCoverage + scoreNet)));
+
+    let trendText = '—';
+    if (prevNet30 !== 0) {
+        const pct = Math.round(((net30 - prevNet30) / Math.abs(prevNet30)) * 100);
+        trendText = pct > 0 ? `↑ ${pct}%` : (pct < 0 ? `↓ ${Math.abs(pct)}%` : '0%');
+    }
+
+    elNet.textContent = `Scor financiar: ${score}/100`;
+    if (score >= 75) {
+        elNet.className = 'text-[14px] font-black text-emerald-700 mt-0.5';
+        elAction.textContent = `Cash net 30z: +${Math.round(net30).toLocaleString('ro-RO')} lei · vs 30z anterior: ${trendText}`;
+        elAction.className = 'text-[8px] font-semibold text-emerald-700 mt-1';
+    } else if (score >= 50) {
+        elNet.className = 'text-[14px] font-black text-amber-700 mt-0.5';
+        elAction.textContent = `Cash net 30z: ${Math.round(net30).toLocaleString('ro-RO')} lei · vs 30z anterior: ${trendText}`;
+        elAction.className = 'text-[8px] font-semibold text-amber-700 mt-1';
+    } else {
+        elNet.className = 'text-[14px] font-black text-rose-700 mt-0.5';
+        elAction.textContent = `Alertă lichiditate: net 30z ${Math.round(net30).toLocaleString('ro-RO')} lei · recomandat follow-up clienți`;
+        elAction.className = 'text-[8px] font-semibold text-rose-700 mt-1';
+    }
+
+    if (elScoreBar) {
+        elScoreBar.style.width = `${score}%`;
+        elScoreBar.className = `h-full rounded-full ${score >= 75 ? 'bg-emerald-500' : score >= 50 ? 'bg-amber-500' : 'bg-rose-500'}`;
+    }
+
+    const coverageTxt = coverage >= 9 ? '9.00+' : coverage.toFixed(2);
+    elConfidence.textContent = `Rată colectare 90z: ${colectarePct}% · Acoperire plăți: ${coverageTxt}x`;
+}
+
+// [v75.46] Helper: Indicatori Financiari — Current Ratio, DSO, CCC (inspirat FRY Dashboard)
+// [v75.47] Indicatori Financiari — statistici contextuale în Analiză (mutate din Home)
+function _updateAnalizaRatios() {
+    const factCli = ZFlowStore.dateFacturiBI || [];
+    const factFurn = ZFlowStore.dateFacturiPlatit || [];
+    const now = new Date();
+    const anCurent = now.getFullYear();
+    const d90 = new Date(now); d90.setDate(d90.getDate() - 90); d90.setHours(0,0,0,0);
+
+    const parseDate = (v) => {
+        if (!v) return null;
+        const s = String(v).trim();
+        if (!s) return null;
+        const d = new Date(s.includes('T') ? s : (s + 'T12:00:00'));
+        return isNaN(d.getTime()) ? null : d;
+    };
+
+    // 1. Cifra Afaceri an curent + trend vs an trecut
+    const caAnCurent = factCli
+        .filter(f => new Date(f.data_emiterii || f.created_at).getFullYear() === anCurent)
+        .reduce((s, f) => s + (Number(f.valoare) || 0), 0);
+    const caAnTrecut = factCli
+        .filter(f => new Date(f.data_emiterii || f.created_at).getFullYear() === anCurent - 1)
+        .reduce((s, f) => s + (Number(f.valoare) || 0), 0);
+    const elCA = document.getElementById('bi-ratio-ca');
+    const elCASub = document.getElementById('bi-ratio-ca-sub');
+    if (elCA) {
+        const fmtShort = (v) => {
+            if (v >= 1e6) return (v / 1e6).toFixed(1).replace('.', ',') + ' M';
+            if (v >= 1e3) return Math.round(v / 1e3).toLocaleString('ro-RO') + ' K';
+            return Math.round(v).toLocaleString('ro-RO');
+        };
+        elCA.textContent = fmtShort(caAnCurent) + ' lei';
+    }
+    if (elCASub) {
+        if (caAnTrecut > 0) {
+            const pct = Math.round(((caAnCurent - caAnTrecut) / caAnTrecut) * 100);
+            const arrow = pct > 0 ? '↑' : (pct < 0 ? '↓' : '');
+            elCASub.textContent = `${arrow} ${Math.abs(pct)}% vs ${anCurent - 1}`;
+            elCASub.className = `text-[8px] font-bold ${pct > 0 ? 'text-emerald-600' : (pct < 0 ? 'text-rose-600' : 'text-slate-400')}`;
+        } else {
+            elCASub.textContent = `An ${anCurent}`;
+        }
+    }
+
+    // 2. Current Ratio (proxy): de încasat / de plătit
+    const receivables = factCli
+        .filter(f => f.status_plata !== 'Incasat' && f.status_plata !== 'Anulat')
+        .reduce((s, f) => s + (Number(f.valoare) || 0), 0);
+    const payables = factFurn
+        .filter(f => f.status_plata !== 'Platit' && f.status_plata !== 'Anulat')
+        .reduce((s, f) => s + (Number(f.valoare) || 0), 0);
+    const elCR = document.getElementById('bi-ratio-current');
+    const elCRSub = document.getElementById('bi-ratio-current-sub');
+    if (elCR) {
+        const crValue = payables > 0 ? (receivables / payables) : (receivables > 0 ? 9.99 : 1);
+        const crDisplay = crValue >= 9.99 ? '9.99+' : crValue.toFixed(2);
+        elCR.textContent = crDisplay + '×';
+        let label, cls;
+        if (crValue >= 1.5) { label = 'Bun'; cls = 'text-emerald-700'; }
+        else if (crValue >= 1.0) { label = 'Acceptabil'; cls = 'text-amber-700'; }
+        else { label = 'Atenție'; cls = 'text-rose-700'; }
+        elCR.className = `text-[13px] font-black tabular-nums truncate mt-0.5 ${cls}`;
+        if (elCRSub) elCRSub.textContent = `Prag optim: >1.5× · ${label}`;
+    }
+
+    // 3. DSO (Days Sales Outstanding) — zile medii de încasare (ultimele 90z)
+    const paidCli90 = factCli.filter(f => {
+        if (f.status_plata !== 'Incasat') return false;
+        const dp = parseDate(f.data_plata);
+        return dp && dp >= d90;
+    });
+    let dso = 0;
+    if (paidCli90.length > 0) {
+        const totalDays = paidCli90.reduce((s, f) => {
+            const de = parseDate(f.data_emiterii);
+            const dp = parseDate(f.data_plata);
+            if (de && dp) return s + Math.max(0, Math.round((dp - de) / 86400000));
+            return s;
+        }, 0);
+        dso = Math.round(totalDays / paidCli90.length);
+    }
+    const elDSO = document.getElementById('bi-ratio-dso');
+    const elDSOSub = document.getElementById('bi-ratio-dso-sub');
+    if (elDSO) {
+        elDSO.textContent = dso + ' zile';
+        let dsoLabel;
+        if (dso <= 30) { dsoLabel = 'Excelent'; elDSO.className = 'text-[13px] font-black tabular-nums truncate mt-0.5 text-emerald-700'; }
+        else if (dso <= 60) { dsoLabel = 'Normal'; elDSO.className = 'text-[13px] font-black tabular-nums truncate mt-0.5 text-amber-700'; }
+        else { dsoLabel = 'Lent'; elDSO.className = 'text-[13px] font-black tabular-nums truncate mt-0.5 text-rose-700'; }
+        if (elDSOSub) elDSOSub.textContent = `Viteză încasare · ${dsoLabel}`;
+    }
+
+    // 4. CCC (Cash Conversion Cycle) = DSO − DPO
+    const paidFurn90 = factFurn.filter(f => {
+        if (f.status_plata !== 'Platit') return false;
+        const dp = parseDate(f.data_plata);
+        return dp && dp >= d90;
+    });
+    let dpo = 0;
+    if (paidFurn90.length > 0) {
+        const totalDays = paidFurn90.reduce((s, f) => {
+            const de = parseDate(f.data_emiterii);
+            const dp = parseDate(f.data_plata);
+            if (de && dp) return s + Math.max(0, Math.round((dp - de) / 86400000));
+            return s;
+        }, 0);
+        dpo = Math.round(totalDays / paidFurn90.length);
+    }
+    const ccc = dso - dpo;
+    const elCCC = document.getElementById('bi-ratio-ccc');
+    const elCCCSub = document.getElementById('bi-ratio-ccc-sub');
+    if (elCCC) {
+        elCCC.textContent = (ccc >= 0 ? '+' : '') + ccc + ' zile';
+        let cccLabel;
+        if (ccc <= 0) { cccLabel = 'Excelent'; elCCC.className = 'text-[13px] font-black tabular-nums truncate mt-0.5 text-emerald-700'; }
+        else if (ccc <= 30) { cccLabel = 'Normal'; elCCC.className = 'text-[13px] font-black tabular-nums truncate mt-0.5 text-amber-700'; }
+        else { cccLabel = 'Atenție'; elCCC.className = 'text-[13px] font-black tabular-nums truncate mt-0.5 text-rose-700'; }
+        if (elCCCSub) elCCCSub.textContent = `DSO ${dso}z − DPO ${dpo}z · ${cccLabel}`;
+    }
 }
 
 // [P1-B v74.7] Mini bar chart CSS-only cashflow net 30 zile în Home
@@ -4293,8 +4537,11 @@ function genereazaBI() {
     }
 
     const filtrate = (ZFlowStore.dateFacturiBI || []).filter((f) => {
-        // Folosim data_emiterii pentru filtrare, cu fallback la created_at
-        const dataFactura = f.data_emiterii || f.created_at || "";
+        // [v75.38] Aliniere BI cu Home KPI: pentru "Incasat" filtrăm pe data cash reală
+        const useCashDate = ZFlowStore.filtruStatusBI === "Incasat" || ZFlowStore.filtruStatusBI === "Incasat Partial";
+        const dataFactura = useCashDate
+            ? (f.data_plata || f.data_incasarii || "")
+            : (f.data_emiterii || f.created_at || "");
         
         // Parsăm data - suportăm mai multe formate
         let facturaDate = null;
@@ -4324,6 +4571,10 @@ function genereazaBI() {
         }
         if (endDate && dateValid) {
             matchData = matchData && facturaDate <= endDate;
+        }
+        // Pentru filtre cash (Incasat/Incasat Partial), fără dată cash validă => exclude
+        if (useCashDate && !dateValid) {
+            matchData = false;
         }
         
         // 'Platit' (Neplătite) filtrează furnizori, nu clienți — clienții apar toți
@@ -4427,6 +4678,7 @@ function genereazaBI() {
 
     // Actualizează cardul cashflow
     calculeazaCashflow();
+    _updateAnalizaRatios();
 }
 
 /**
@@ -4812,7 +5064,9 @@ function furnizoriFacturiSetPerPage(n) {
 function _detectaStatusPlata(csvFact, isFurnizori) {
     const statusCSV = (csvFact.status_plata || '').trim().toLowerCase();
     // Explicit paid
-    const platitKeywords = ['incasat', 'platit', 'achitat', 'paid', 'yes', 'da', '1'];
+    const platitKeywords = isFurnizori
+        ? ['platit', 'achitat', 'paid', 'yes', 'da', '1', 'p']
+        : ['incasat', 'platit', 'achitat', 'paid', 'yes', 'da', '1', 'i', 'p'];
     if (platitKeywords.includes(statusCSV)) {
         return isFurnizori ? 'Platit' : 'Incasat';
     }
@@ -5335,19 +5589,19 @@ async function bulkMarkPaid() {
             try {
                 await ZFlowDB.updateFactura(facturaId, { 
                     status_plata: "Incasat",
-                    data_incasarii: new Date().toISOString().split('T')[0]
+                    data_plata: new Date().toISOString().split('T')[0]
                 });
                 
                 // Update local — caută în ambele colecții (clienti + furnizori)
                 const facturaClient = ZFlowStore.dateFacturiBI.find(f => String(f.id) === String(facturaId));
                 if (facturaClient) {
                     facturaClient.status_plata = "Incasat";
-                    facturaClient.data_incasarii = new Date().toISOString().split('T')[0];
+                    facturaClient.data_plata = new Date().toISOString().split('T')[0];
                 }
                 const facturaFurnizor = (ZFlowStore.dateFacturiPlatit || []).find(f => String(f.id) === String(facturaId));
                 if (facturaFurnizor) {
-                    facturaFurnizor.status_plata = "Incasat";
-                    facturaFurnizor.data_incasarii = new Date().toISOString().split('T')[0];
+                    facturaFurnizor.status_plata = "Platit";
+                    facturaFurnizor.data_plata = new Date().toISOString().split('T')[0];
                 }
                 success++;
             } catch (err) {
@@ -6294,6 +6548,16 @@ async function importaDateSaga(tipImport = 'clienti') {
                             // Factură existentă — verificăm dacă statusul sau nota s-a schimbat
                             const newStatus = _detectaStatusPlata(csvFact, isFurnizori);
                             const isPaidNow = isFurnizori ? (newStatus === 'Platit') : (newStatus === 'Incasat');
+                            const cashDateFromImport = csvFact.data_plata
+                                ? String(csvFact.data_plata).split('T')[0]
+                                : new Date().toISOString().split('T')[0];
+                            const existingCashDateRaw = isFurnizori
+                                ? (existingFact.data_plata || '')
+                                : (existingFact.data_plata || existingFact.data_incasarii || '');
+                            const existingCashDate = String(existingCashDateRaw || '').split('T')[0];
+                            const hasCashDateInImport = !!(csvFact.data_plata);
+                            const shouldBackfillCashDate = isPaidNow && hasCashDateInImport && !existingCashDate;
+                            const shouldSyncCashDate = isPaidNow && hasCashDateInImport && !!existingCashDate && existingCashDate !== cashDateFromImport;
                             const wasUnpaid = isFurnizori
                                 ? (existingFact.status_plata !== 'Platit')
                                 : (existingFact.status_plata !== 'Incasat');
@@ -6301,11 +6565,17 @@ async function importaDateSaga(tipImport = 'clienti') {
                             const noteChanged = newNote && newNote !== (existingFact.note || '').trim();
                             const valoareNou = Number(csvFact.suma || csvFact.valoare || 0);
                             const valoareChanged = valoareNou > 0 && valoareNou !== Number(existingFact.valoare || 0); // [v75.9]
-                            if ((isPaidNow && wasUnpaid) || noteChanged || valoareChanged) {
+                            if ((isPaidNow && wasUnpaid) || shouldBackfillCashDate || shouldSyncCashDate || noteChanged || valoareChanged) {
                                 // Status schimbat spre plătit SAU nota actualizată → upsert
                                 try {
                                     const updatePayload = {};
-                                    if (isPaidNow && wasUnpaid) updatePayload.status_plata = newStatus;
+                                    if (isPaidNow && wasUnpaid) {
+                                        updatePayload.status_plata = newStatus;
+                                    }
+                                    if (isPaidNow && (wasUnpaid || shouldBackfillCashDate || shouldSyncCashDate)) {
+                                        if (isFurnizori) updatePayload.data_plata = cashDateFromImport;
+                                        else updatePayload.data_plata = cashDateFromImport;
+                                    }
                                     if (noteChanged) updatePayload.note = newNote;
                                     if (valoareChanged) updatePayload.valoare = valoareNou; // [v75.9]
                                     if (isFurnizori) {
@@ -6334,6 +6604,9 @@ async function importaDateSaga(tipImport = 'clienti') {
                                     data_emiterii: csvFact.data_emitere,
                                     data_scadenta: csvFact.data_scadenta,
                                     status_plata: autoStatusFurn,
+                                    data_plata: autoStatusFurn === 'Platit'
+                                        ? (csvFact.data_plata ? String(csvFact.data_plata).split('T')[0] : new Date().toISOString().split('T')[0])
+                                        : null,
                                     is_imported: true,
                                     note: csvFact.descriere || ''
                                 }, true);
@@ -6346,6 +6619,9 @@ async function importaDateSaga(tipImport = 'clienti') {
                                     data_emiterii: csvFact.data_emitere,
                                     data_scadenta: csvFact.data_scadenta,
                                     status_plata: autoStatusClient,
+                                    data_plata: autoStatusClient === 'Incasat'
+                                        ? (csvFact.data_plata ? String(csvFact.data_plata).split('T')[0] : new Date().toISOString().split('T')[0])
+                                        : null,
                                     is_imported: true,
                                     note: csvFact.descriere || ''
                                 }, true);
@@ -8302,7 +8578,11 @@ async function markIncasatPartial(facturaId, sumaIncasata, clientId) {
     try {
         if (valoare > 0 && suma >= valoare) {
             // Plată integrală — reutilizează fluxul existent
-            await ZFlowDB.updateFactura(facturaId, { status_plata: 'Incasat', valoare_incasata: valoare });
+            await ZFlowDB.updateFactura(facturaId, {
+                status_plata: 'Incasat',
+                valoare_incasata: valoare,
+                data_plata: new Date().toISOString().split('T')[0]
+            });
             showNotification('Factură marcată ca Incasat complet', 'success');
         } else {
             const soldRamas = valoare > 0 ? (valoare - suma) : 0;
@@ -8318,6 +8598,7 @@ async function markIncasatPartial(facturaId, sumaIncasata, clientId) {
         if (idx !== -1) {
             ZFlowStore.dateFacturiBI[idx].status_plata = suma >= valoare ? 'Incasat' : 'Incasat Partial';
             ZFlowStore.dateFacturiBI[idx].valoare_incasata = suma;
+            if (suma >= valoare) ZFlowStore.dateFacturiBI[idx].data_plata = new Date().toISOString().split('T')[0];
         }
         if (typeof renderMainThrottled === 'function') renderMainThrottled();
     } catch (e) {

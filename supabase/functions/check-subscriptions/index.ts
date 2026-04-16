@@ -122,13 +122,13 @@ Deno.serve(async (_req) => {
       // neq('is_active', false) = include și profiluri cu is_active NULL
       const { data: profiluri } = await supabase
         .from('profiles')
-        .select('user_id, email, display_name')
+        .select('user_id, email, email_alerte, display_name')
         .in('user_id', remindUserIds)
         .neq('is_active', false)
 
       for (const profil of profiluri || []) {
         const uid   = profil.user_id as string
-        const email = profil.email as string
+        const email = (profil.email_alerte as string) || (profil.email as string) // [v75.36] prefer email_alerte
         const data  = reminderMap[uid]
         if (!email || !data) continue
 

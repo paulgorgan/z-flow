@@ -1,0 +1,8 @@
+DENUMIRE;CUI;NR. FACTURA;DATA EMITERE;DATA SCADENTA;VALOARE;STATUS;NOTE
+CONSTRUCTII PREMIUM SRL;RO10203040;FC-2026-015;27/02/2026;18/04/2026;95000.00;Incasat;[A] data_emitere=27feb INAINTE de 30z - contat DOAR prin updated_at (fix v75.37)
+EUROCOM TRADING SRL;RO67890123;FC-2026-012;09/03/2026;02/04/2026;38500.00;Incasat;[A] data_emitere=09mar INAINTE de 30z - contat DOAR prin updated_at (fix v75.37)
+CONSTRUCTII PREMIUM SRL;RO10203040;FC-2026-016;09/03/2026;18/04/2026;45000.00;Incasat;[A] data_emitere=09mar INAINTE de 30z - contat DOAR prin updated_at (fix v75.37)
+LOGISTICA RAPIDA SRL;RO20304050;FC-2026-018;19/03/2026;18/04/2026;9800.00;Incasat;[B] data_emitere=19mar IN fereastra 30z - contat si inainte si dupa fix
+TEHNO CONSTRUCT SRL;RO12345678;FC-2026-021;18/03/2026;18/04/2026;21500.00;Incasat;[B] data_emitere=18mar IN fereastra 30z - contat si inainte si dupa fix
+AGRO PRODUSE SA;RO23456789;FC-2026-023;25/03/2026;25/04/2026;7200.00;Incasat;[B] data_emitere=25mar IN fereastra 30z - contat si inainte si dupa fix
+TRANSPORT EXPRESS SRL;RO45678901;FC-2026-026;20/03/2026;20/04/2026;6700.00;Incasat;[B] data_emitere=20mar IN fereastra 30z - contat si inainte si dupa fix

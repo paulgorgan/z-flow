@@ -322,6 +322,22 @@ CREATE TRIGGER profiles_updated_at
     BEFORE UPDATE ON public.profiles
     FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 
+-- [v75.37] Migrare: adauga updated_at pe facturi si facturi_platit daca lipseste
+-- (CREATE TABLE IF NOT EXISTS nu adauga coloane noi pe tabele existente)
+ALTER TABLE public.facturi       ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
+ALTER TABLE public.facturi_platit ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
+
+-- [v75.37] Triggere updated_at pentru facturi si facturi_platit
+DROP TRIGGER IF EXISTS facturi_updated_at ON public.facturi;
+CREATE TRIGGER facturi_updated_at
+    BEFORE UPDATE ON public.facturi
+    FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
+DROP TRIGGER IF EXISTS facturi_platit_updated_at ON public.facturi_platit;
+CREATE TRIGGER facturi_platit_updated_at
+    BEFORE UPDATE ON public.facturi_platit
+    FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
 -- ── handle_new_user: creeaza profil automat la signup ─────────────
 -- Versiunea completa v2: insereaza id, user_id, email, created_at, updated_at
 CREATE OR REPLACE FUNCTION public.handle_new_user()

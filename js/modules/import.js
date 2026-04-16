@@ -157,6 +157,12 @@ const ZFlowImport = {
                     'DATA SCAD.', 'data_scad', 'Data scad',
                     'TERMEN PLATA', 'termen_plata', 'Termen plata',
                     'SCAD.', 'scad', 'Scad.'));
+                // [v75.39] Data cash real (încasare/plată) pentru KPI-uri și BI pe cash
+                const dataPlata = this.parseDataSAGA(_col(row,
+                    'DATA PLATA', 'data_plata', 'Data plata',
+                    'DATA ÎNCASARE', 'data_incasare', 'Data incasare',
+                    'DATA ACHITARE', 'data_achitare', 'Data achitare',
+                    'ACHITAT LA', 'achitat_la', 'INCASAT LA', 'incasat_la'));
                 // SAGA poate exporta sume în coloane separate: RULAJ D (debit), RULAJ C (credit), SOLD
                 const sumaRaw = _col(row,
                     'VALOARE', 'valoare', 'Valoare',
@@ -213,6 +219,7 @@ const ZFlowImport = {
                         nr_factura: nrFactura,
                         data_emitere: dataEmitere,
                         data_scadenta: dataScadenta,
+                        data_plata: dataPlata ? dataPlata.split('T')[0] : null,
                         valoare: suma,               // [BUG5-FIX] camp canonic citit de financiar/analytics
                         suma: suma,                  // pastrat pentru compatibilitate
                         status_plata: statusPlata,   // din CSV sau default per tip
