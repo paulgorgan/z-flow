@@ -55,6 +55,8 @@ async function salveazaClient() {
             } else {
                 await ZFlowDB.insertClient(dateFirma);
             }
+            // [BUG-A2 FIX v75.37] Invalidează cache-ul "Client+Furnizor" după modificare CUI
+            if (typeof _invalidateCuiCache === 'function') _invalidateCuiCache();
             inchideModal("modal-client");
             await init(false);
             if (id) arataDetalii(id);
@@ -322,6 +324,8 @@ async function stergeFirma(id) {
     showConfirmModal("Ștergi clientul definitiv? Toate facturile asociate vor fi orfane.", async () => {
         const _backupPtUndo = { ...(ZFlowStore.dateLocal?.find(x => String(x.id) === String(id)) || {}) };
         await ZFlowDB.deleteClient(id);
+        // [BUG-A2 FIX v75.37] Invalidează cache-ul badge "Client+Furnizor" după ștergere client
+        if (typeof _invalidateCuiCache === 'function') _invalidateCuiCache();
         init(false);
         comutaVedereFin("firme");
         if (typeof showNotificationWithUndo === 'function') showNotificationWithUndo('Client șters.', () => { if (_backupPtUndo.id) ZFlowDB.insertClient(_backupPtUndo).then(() => init(false)).catch(() => {}); });

@@ -2,7 +2,7 @@
   "name": "Z-FLOW Enterprise V2",
   "short_name": "Z-FLOW V2",
   "description": "Enterprise Business Support App - Refactored Modular Version",
-  "version": "72.7",
+  "version": "75.50",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f1f5f9",

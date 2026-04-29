@@ -203,6 +203,11 @@ const ZFlowUI = {
                 ${icons[type] || icons.default}
                 <h3 class="text-base font-bold text-slate-600 mb-1">${title}</h3>
                 <p class="text-xs text-slate-400">${text}</p>
+                ${type === 'clients' ? `<button data-action="deschideFirmaNouSaga"
+                    onclick="if(typeof deschideFirmaNou==='function')deschideFirmaNou()"
+                    class="mt-4 px-6 py-3 bg-blue-900 text-white text-[11px] font-black uppercase rounded-2xl shadow hover:bg-blue-800 transition-all">
+                    + Adaugă primul client
+                </button>` : ''}
             </div>`;
     },
 

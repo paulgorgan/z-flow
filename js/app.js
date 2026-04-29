@@ -288,19 +288,23 @@ function showSkeletonLoader(container, count = 5, type = "client") {
     container.innerHTML = "";
 
     const skeletonTypes = {
-        // Skeleton pentru carduri clienți
+        // Skeleton pentru carduri clienți — structură fidelă card client [UX10]
         client: `
-            <div class="skeleton-card">
-                <div class="flex items-center gap-4 mb-3">
-                    <div class="skeleton skeleton-avatar"></div>
+            <div class="card-flow p-5 mb-3 animate-pulse">
+                <div class="flex justify-between items-start">
                     <div class="flex-1">
-                        <div class="skeleton skeleton-text lg w-3/4 mb-2"></div>
-                        <div class="skeleton skeleton-text sm w-1/2"></div>
+                        <div class="h-4 bg-slate-200 rounded-lg w-3/5 mb-2"></div>
+                        <div class="h-2.5 bg-slate-100 rounded w-1/3"></div>
+                    </div>
+                    <div class="text-right">
+                        <div class="h-6 bg-slate-200 rounded-lg w-20 mb-1"></div>
+                        <div class="h-2 bg-slate-100 rounded w-12 ml-auto"></div>
                     </div>
                 </div>
-                <div class="flex justify-between items-center">
-                    <div class="skeleton skeleton-text md w-1/3"></div>
-                    <div class="skeleton skeleton-text xl w-1/4"></div>
+                <div class="flex gap-2 mt-4">
+                    <div class="flex-1 h-10 bg-blue-50 rounded-xl"></div>
+                    <div class="flex-1 h-10 bg-slate-50 rounded-xl"></div>
+                    <div class="w-10 h-10 bg-red-50 rounded-xl"></div>
                 </div>
             </div>`,
         
@@ -3731,7 +3735,7 @@ function genereazaCardFactura(fac, client, azi) {
         <!-- Card Content -->
         <div class="card-flow flex flex-col gap-2 p-3 mb-2 ${isIncasat ? 'bg-white' : 'bg-red-50/40 border-red-100'} border rounded-2xl">
             <div class="grid grid-cols-2 gap-2">
-                <div class="flex items-center gap-2 ${fac.status_anaf === 'validated' ? 'bg-slate-50 border-slate-100' : 'bg-amber-50 border-amber-200 animate-pulse'} border px-2 py-2 rounded-xl">
+                <div class="flex items-center gap-2 ${fac.status_anaf === 'validated' ? 'bg-slate-50 border-slate-100' : 'bg-amber-50 border-amber-200'} border px-2 py-2 rounded-xl">
                     <span class="flex h-2 w-2 relative">
                         <span class="relative inline-flex rounded-full h-2 w-2 ${fac.status_anaf === 'validated' ? 'bg-emerald-500' : 'bg-amber-500'}"></span>
                     </span>
@@ -3750,7 +3754,7 @@ function genereazaCardFactura(fac, client, azi) {
                         <p class="text-[11px] font-black text-slate-800 uppercase">${serie ? escapeHtml(serie) + ' ' : ''}#${escapeHtml(fac.numar_factura) || '—'}</p>
                         <p class="text-[8px] font-bold text-slate-400 uppercase">Emis: ${formateazaDataZFlow(fac.data_emiterii)}</p>
                         <p class="text-[8px] font-bold ${esteScadenta ? 'text-red-400' : esteIminent ? 'text-amber-400' : 'text-slate-400'} uppercase">Scad: ${fac.data_scadenta ? formateazaDataZFlow(fac.data_scadenta) : '—'}</p>
-                        ${esteScadenta ? '<span class="inline-block mt-0.5 bg-red-100 text-red-600 text-[8px] font-black px-2 py-0.5 rounded-full uppercase animate-pulse">Depășit</span>' : esteIminent ? '<span class="inline-block mt-0.5 bg-amber-100 text-amber-600 text-[8px] font-black px-2 py-0.5 rounded-full uppercase animate-pulse">Iminent</span>' : ''}
+                        ${esteScadenta ? '<span class="inline-block mt-0.5 bg-red-100 text-red-600 text-[8px] font-black px-2 py-0.5 rounded-full uppercase alerta-scadenta-pulse">Depășit</span>' : esteIminent ? '<span class="inline-block mt-0.5 bg-amber-100 text-amber-600 text-[8px] font-black px-2 py-0.5 rounded-full uppercase alerta-scadenta-pulse">Iminent</span>' : ''}
                     </div>
                 </div>
                 <div class="text-right">
@@ -3874,7 +3878,7 @@ function arataDetalii(id) {
             ${f.iban ? `<div class="col-span-2"><p class="text-blue-300 text-[9px] uppercase font-bold">IBAN</p><div class="flex items-center gap-2"><p class="font-semibold font-mono text-xs flex-1">${escapeHtml(f.iban)}</p><button onclick="navigator.clipboard.writeText('${escapeHtml(f.iban)}').then(()=>showNotification('IBAN copiat','success',1500))" class="text-blue-300 hover:text-white transition-colors flex-shrink-0" title="Copiază IBAN"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg></button></div></div>` : ""}
         </div>
         ${areScadenta ? `
-        <div class="mt-4 py-3 px-4 bg-red-500/20 rounded-2xl border border-red-400/50 flex justify-between items-center animate-pulse">
+        <div class="mt-4 py-3 px-4 bg-red-500/20 rounded-2xl border border-red-400/50 flex justify-between items-center alerta-scadenta-pulse">
             <div class="flex items-center gap-2">
                 <svg class="w-4 h-4 text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
                 <p class="text-[8px] font-black text-red-300 uppercase tracking-widest">Facturi Depășite</p>
@@ -7990,20 +7994,8 @@ window.resetCompletDateUser = resetCompletDateUser;
 // ==========================================
 // HELPER: firmă duplicată (client + furnizor)
 // ==========================================
-
-/**
- * Returnează true dacă CUI-ul apare atât în clienți cât și în furnizori
- * @param {string} cui
- * @returns {boolean}
- */
-function esteSiClientSiFurnizor(cui) {
-    if (!cui) return false;
-    const cuiCurat = String(cui).replace(/\D/g, '').toLowerCase();
-    const inClienti   = (ZFlowStore.dateLocal || []).some(c => String(c.cui||'').replace(/\D/g,'').toLowerCase() === cuiCurat);
-    const inFurnizori = (ZFlowStore.dateFurnizori || []).some(f => String(f.cui||'').replace(/\D/g,'').toLowerCase() === cuiCurat);
-    return inClienti && inFurnizori;
-}
-window.esteSiClientSiFurnizor = esteSiClientSiFurnizor;
+// [BUG1-FIX] Funcția autorativă cu cache Set-uri este definită în financiar.js.
+// Versiunea O(n) de mai jos a fost eliminată pentru a evita suprascrierea accidentală.
 
 /**
  * Exportă toate datele contului admin ca fișier JSON descărcabil.
@@ -9240,6 +9232,17 @@ document.addEventListener('keydown', function(e) {
         } else if (tab === 'depozit')  searchEl = document.getElementById('depozit-search-produse');
         else if (tab === 'logistic')   searchEl = document.querySelector('#logistic input[type="text"]');
         if (searchEl) { e.preventDefault(); searchEl.focus(); searchEl.select(); }
+    }
+
+    // [UX7] Ctrl+K / Cmd+K → focus căutare clienți (global search shortcut)
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        const searchFirme = document.getElementById('search-firme');
+        if (searchFirme) {
+            if (typeof schimbaTab === 'function') schimbaTab('financiar', document.getElementById('nav-btn-fin'));
+            searchFirme.focus();
+            searchFirme.select();
+        }
     }
 });
 

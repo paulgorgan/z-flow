@@ -871,12 +871,6 @@ input, select, button {
   /* [v75.2] Etichete nav bottom mai lizibile pe full mobile */
   .nav-item span { font-size: 12px !important; }
 
-  /* [v75.36] Fix: #multifirma-switcher-btn — limitat pe mobile ca sa nu acopere alte elemente din header */
-  #multifirma-switcher-btn {
-    max-width: calc(50vw - 60px) !important;
-    flex-shrink: 1 !important;
-  }
-
   /* Fix: bara butoane din Logistic si Depozit nu iese din container pe mobile complet */
   #logistic-view-comenzi > .flex.gap-2,
   #depozit-view-produse > .flex.gap-2 {
@@ -2990,4 +2984,54 @@ button.bg-blue-700.text-white {
   span.text-\[7px\], p.text-\[7px\] {
     font-size: 9px !important;
   }
+}
+
+/* ============================================================
+   BUG A6 FIX + UX B6, B9 — v75.37
+   ============================================================ */
+
+/* [BUG-A6 / UX-B6] Alertă scadentă: pulsare 3 cicluri, nu infinit */
+@keyframes zf-pulse-3x {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.55; }
+}
+.alerta-scadenta-pulse {
+  animation: zf-pulse-3x 1.5s ease-in-out 3;
+}
+
+/* [UX-B6] Confirmare incasat — checkmark pop */
+@keyframes zf-checkmark-pop {
+  0%   { transform: scale(0.5); opacity: 0; }
+  60%  { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1);   opacity: 1; }
+}
+.card-incasat-confirm {
+  animation: zf-checkmark-pop 0.35s ease forwards;
+}
+
+/* [UX-B9] Dark mode — carduri client/furnizor: border mai subtil, hover albastru */
+.dark .card-flow {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+.dark .card-flow:hover {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15) !important;
+}
+
+/* [UX-B3] Progress bar import SAGA */
+#import-progress-bar {
+  height: 4px;
+  background: #e2e8f0;
+  border-radius: 2px;
+  overflow: hidden;
+  transition: opacity 0.3s;
+  margin-top: 8px;
+}
+#import-progress-bar .bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6, #06b6d4);
+  border-radius: 2px;
+  transition: width 0.2s ease;
+  width: 0%;
 }

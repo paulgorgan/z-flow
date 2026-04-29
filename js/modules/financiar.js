@@ -139,7 +139,14 @@ function renderMain(lista = null) {
     const azi = new Date();
     azi.setHours(0, 0, 0, 0);
 
-    // Sortare: entitățile cu scadența cea mai apropiată de azi primele
+    // Sortare: [UX5] respectă ZFlowStore.sortareClienti
+    const _sortMode = ZFlowStore.sortareClienti || 'scadenta';
+    if (_sortMode === 'alfa') {
+        sursa.sort((a, b) => (a.nume_firma || a.cui || '').localeCompare(b.nume_firma || b.cui || '', 'ro'));
+    } else if (_sortMode === 'sold') {
+        sursa.sort((a, b) => (b.sold || 0) - (a.sold || 0));
+    } else {
+        // Default: scadenta — entitățile cu scadența cea mai apropiată de azi primele
     sursa.sort((a, b) => {
         const distA = _closestOpenDueForEntity(a.facturi, 'Incasat', azi);
         const distB = _closestOpenDueForEntity(b.facturi, 'Incasat', azi);
@@ -164,6 +171,7 @@ function renderMain(lista = null) {
         if (bScad !== aScad) return bScad - aScad;
         return (b.sold || 0) - (a.sold || 0);
     });
+    }
 
     // Filtrare după categorie
     const filtruCat = (ZFlowStore.filtruCategorieClienti || '').trim().toLowerCase();
@@ -213,7 +221,7 @@ function renderMain(lista = null) {
             ${f.categorie ? `<span class="inline-block text-[7px] font-bold uppercase px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600">${_esc(f.categorie)}</span>` : ''}
             </div>
             <div class="flex items-center gap-1.5 mt-1.5">
-                <span class="w-2 h-2 rounded-full ${areRestante ? "bg-red-400" : areIminent ? "bg-amber-400" : "bg-emerald-400"}"></span>
+                <span class="w-2 h-2 rounded-full ${areRestante ? "bg-red-400" : areIminent ? "bg-amber-400" : "bg-emerald-400"}" title="${areRestante ? 'Scadențe depășite' : areIminent ? 'Scadențe în 5 zile' : 'Toate încasate'}"></span>
                 <p class="text-[10px] font-semibold text-slate-400">${_esc(f.oras || "—")}</p>
             </div>
         </div>
@@ -233,7 +241,7 @@ function renderMain(lista = null) {
     <div class="mt-3 py-2.5 px-3 bg-amber-50 rounded-xl border border-amber-100 flex justify-between items-center">
         <div class="flex items-center gap-2">
             <svg class="w-3.5 h-3.5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg>
-            <p class="text-[9px] font-bold text-amber-600 uppercase animate-pulse">Scadent în 5 zile</p>
+            <p class="text-[9px] font-bold text-amber-600 uppercase alerta-scadenta-pulse">Scadent în 5 zile</p>
         </div>
         <p class="text-amber-600 font-black text-[13px] leading-none">${Math.round(sumaIminent5Zile).toLocaleString()} lei</p>
     </div>` : ""}
@@ -282,7 +290,7 @@ function renderMain(lista = null) {
             , 0);
             alertaFin.classList.remove("hidden");
             alertaFin.innerHTML = `
-<div class="flex items-center justify-between bg-red-50 border border-red-200 rounded-2xl px-4 py-3 mb-1 animate-pulse">
+<div class="flex items-center justify-between bg-red-50 border border-red-200 rounded-2xl px-4 py-3 mb-1 alerta-scadenta-pulse">
     <div class="flex items-center gap-2">
         <svg class="w-4 h-4 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
         <p class="text-[11px] font-bold text-red-700">${clientiRestanti.length} client${clientiRestanti.length > 1 ? "i cu" : " cu"} scadențe depășite</p>
@@ -404,7 +412,7 @@ function renderFurnizori(lista) {
             ${f.categorie ? `<span class="inline-block text-[7px] font-bold uppercase px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600">${_esc(f.categorie)}</span>` : ''}
             </div>
             <div class="flex items-center gap-1.5 mt-1.5">
-                <span class="w-2 h-2 rounded-full ${areRestante ? "bg-red-400" : areIminent ? "bg-amber-400" : "bg-emerald-400"}"></span>
+                <span class="w-2 h-2 rounded-full ${areRestante ? "bg-red-400" : areIminent ? "bg-amber-400" : "bg-emerald-400"}" title="${areRestante ? 'Scadențe depășite' : areIminent ? 'Scadențe în 5 zile' : 'Toate plătite'}"></span>
                 <p class="text-[10px] font-semibold text-slate-400">${_esc(f.oras || "—")}</p>
             </div>
         </div>
@@ -424,7 +432,7 @@ function renderFurnizori(lista) {
     <div class="mt-3 py-2.5 px-3 bg-amber-50 rounded-xl border border-amber-100 flex justify-between items-center">
         <div class="flex items-center gap-2">
             <svg class="w-3.5 h-3.5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg>
-            <p class="text-[9px] font-bold text-amber-600 uppercase animate-pulse">Scadent în 5 zile</p>
+            <p class="text-[9px] font-bold text-amber-600 uppercase alerta-scadenta-pulse">Scadent în 5 zile</p>
         </div>
         <p class="text-amber-600 font-black text-[13px] leading-none">${Math.round(f.sumaIminent5Zile || 0).toLocaleString()} lei</p>
     </div>` : ""}
@@ -460,7 +468,7 @@ function renderFurnizori(lista) {
             const totalRestant = furnizoriRestanti.reduce((sum, f) => sum + (f.sumaScadenta || 0), 0);
             alertaFinF.classList.remove("hidden");
             alertaFinF.innerHTML = `
-<div class="flex items-center justify-between bg-red-50 border border-red-200 rounded-2xl px-4 py-3 mb-1 animate-pulse">
+<div class="flex items-center justify-between bg-red-50 border border-red-200 rounded-2xl px-4 py-3 mb-1 alerta-scadenta-pulse">
     <div class="flex items-center gap-2">
         <svg class="w-4 h-4 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
         <p class="text-[11px] font-bold text-red-700">${furnizoriRestanti.length} furnizor${furnizoriRestanti.length > 1 ? "i cu" : " cu"} scadențe depășite</p>
@@ -530,7 +538,7 @@ function arataDetaliiFurnizor(id) {
                 ${furnizor.iban ? `<div class="col-span-2"><p class="text-red-300 text-[9px] uppercase font-bold">IBAN</p><div class="flex items-center gap-2"><p class="font-semibold font-mono text-xs flex-1">${_esc(furnizor.iban)}</p><button onclick="navigator.clipboard.writeText('${_esc(furnizor.iban)}').then(()=>showNotification('IBAN copiat','success',1500))" class="text-red-300 hover:text-white transition-colors flex-shrink-0" title="Copiaz\u0103 IBAN"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg></button></div></div>` : ""}
             </div>
             ${sumaScadenta > 0 ? `
-            <div class="mt-4 py-3 px-4 bg-red-500/20 rounded-2xl border border-red-400/50 flex justify-between items-center animate-pulse">
+            <div class="mt-4 py-3 px-4 bg-red-500/20 rounded-2xl border border-red-400/50 flex justify-between items-center alerta-scadenta-pulse">
                 <div class="flex items-center gap-2">
                     <svg class="w-4 h-4 text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
                     <p class="text-[8px] font-black text-red-300 uppercase tracking-widest">Facturi Depășite</p>
@@ -649,7 +657,7 @@ function arataDetaliiFurnizor(id) {
                 const isDepasit = !isPlatit && fac.data_scadenta && new Date(fac.data_scadenta).setHours(0,0,0,0) < azi;
                 const isIminent = !isPlatit && !isDepasit && fac.data_scadenta && (() => { const d = new Date(fac.data_scadenta); d.setHours(0,0,0,0); return d >= azi && d <= new Date(+azi + 5*86400000); })();
                 const isImported = fac.is_imported === true || fac.is_imported === 1;
-                const spvClass = isImported ? 'bg-slate-50 border-slate-100' : (isPlatit ? 'bg-emerald-50 border-emerald-100' : 'bg-amber-50 border-amber-200 animate-pulse');
+                const spvClass = isImported ? 'bg-slate-50 border-slate-100' : (isPlatit ? 'bg-emerald-50 border-emerald-100' : 'bg-amber-50 border-amber-200');
                 const spvDotClass = isImported ? 'bg-slate-400' : (isPlatit ? 'bg-emerald-500' : 'bg-amber-500');
                 const spvTextClass = isImported ? 'text-slate-500' : (isPlatit ? 'text-emerald-700' : 'text-amber-700');
                 const spvLabel = isImported ? 'SPV IMPORTAT' : (isPlatit ? 'SPV VERIFICAT' : 'SPV AȘTEPTARE');
@@ -677,7 +685,7 @@ function arataDetaliiFurnizor(id) {
                 <p class="text-[11px] font-black text-slate-800 uppercase">${fac.serie ? escapeHtml(fac.serie) + ' ' : ''}#${fac.numar_factura || "—"}${isImported ? ' <span class="text-[8px] font-bold text-slate-300 normal-case">SAGA</span>' : ''}</p>
                 <p class="text-[8px] font-bold text-slate-400 uppercase">Emis: ${formateazaDataZFlow(fac.data_emiterii)}</p>
                 <p class="text-[8px] font-bold ${isDepasit ? 'text-red-400' : isIminent ? 'text-amber-400' : 'text-slate-400'} uppercase">Scad: ${fac.data_scadenta ? formateazaDataZFlow(fac.data_scadenta) : "—"}</p>
-                ${isDepasit ? '<span class="inline-block mt-0.5 bg-red-100 text-red-600 text-[8px] font-black px-2 py-0.5 rounded-full uppercase animate-pulse">⚠ DEPĂȘIT</span>' : isIminent ? '<span class="inline-block mt-0.5 bg-amber-100 text-amber-600 text-[8px] font-black px-2 py-0.5 rounded-full uppercase animate-pulse">⚡ IMINENT</span>' : ''}
+                ${isDepasit ? '<span class="inline-block mt-0.5 bg-red-100 text-red-600 text-[8px] font-black px-2 py-0.5 rounded-full uppercase alerta-scadenta-pulse">⚠ DEPĂȘIT</span>' : isIminent ? '<span class="inline-block mt-0.5 bg-amber-100 text-amber-600 text-[8px] font-black px-2 py-0.5 rounded-full uppercase alerta-scadenta-pulse">⚡ IMINENT</span>' : ''}
             </div>
         </div>
         <div class="flex items-center gap-3">
@@ -889,6 +897,8 @@ async function _doSalveazaFurnizor(id, numeFirma, cui, ibanFurn) {
             showNotification("Furnizor adăugat!", "success");
             if (typeof ZFlowMobile !== 'undefined') ZFlowMobile.vibrate(30);
         }
+        // [BUG-A2 FIX] Invalidează cache-ul badge "Client+Furnizor" după salvare furnizor
+        if (typeof _invalidateCuiCache === 'function') _invalidateCuiCache();
         inchideModal("modal-furnizor");
         renderFurnizoriThrottled();
         updateFurnizoriKPI();
@@ -990,6 +1000,8 @@ async function salveazaFurnizor() {
             if (typeof ZFlowMobile !== 'undefined') ZFlowMobile.vibrate(30);
         }
 
+        // [BUG-A2 FIX] Invalidează cache-ul badge "Client+Furnizor" după salvare furnizor
+        if (typeof _invalidateCuiCache === 'function') _invalidateCuiCache();
         inchideModal("modal-furnizor");
         renderFurnizoriThrottled();
         updateFurnizoriKPI();
@@ -1018,6 +1030,8 @@ function stergeFurnizorModal() {
                 const _backupPtUndo = { ...(ZFlowStore.dateFurnizori.find(f => String(f.id) === String(id)) || {}) };
                 await ZFlowDB.deleteFurnizor(id);
                 inchideModal("modal-furnizor");
+                // [BUG-A2 FIX v75.37] Invalidează cache-ul badge "Client+Furnizor" după ștergere furnizor
+                if (typeof _invalidateCuiCache === 'function') _invalidateCuiCache();
                 // [QUALITY-FIX] FIX 6 — ștergere optimistă din store, fără re-fetch din DB
                 ZFlowStore.dateFurnizori = ZFlowStore.dateFurnizori.filter(f => String(f.id) !== String(id));
                 ZFlowStore.dateFacturiPlatit = (ZFlowStore.dateFacturiPlatit || []).filter(fp2 => String(fp2.furnizor_id) !== String(id));
@@ -1048,6 +1062,8 @@ function stergeFurnizorDirect(id) {
         try {
             const _backupPtUndo = { ...(ZFlowStore.dateFurnizori.find(f => String(f.id) === String(id)) || {}) };
             await ZFlowDB.deleteFurnizor(id);
+            // [BUG-A2 FIX v75.37] Invalidează cache-ul badge "Client+Furnizor" după ștergere furnizor
+            if (typeof _invalidateCuiCache === 'function') _invalidateCuiCache();
             // [QUALITY-FIX] FIX 6 — ștergere optimistă din store, fără re-fetch din DB
             ZFlowStore.dateFurnizori = ZFlowStore.dateFurnizori.filter(f => String(f.id) !== String(id));
             ZFlowStore.dateFacturiPlatit = (ZFlowStore.dateFacturiPlatit || []).filter(fp2 => String(fp2.furnizor_id) !== String(id));
@@ -1194,6 +1210,8 @@ async function salveazaFirmaNou() {
         inchideModal("modal-firma-nou");
         const label = tipActiv === "ambele" ? "Client + Furnizor adăugat!" : tipActiv === "client" ? "Client adăugat!" : "Furnizor adăugat!";
         showNotification("" + label, "success");
+        // [BUG-A2 FIX] Invalidează cache-ul badge "Client+Furnizor" înainte de re-render
+        if (typeof _invalidateCuiCache === 'function') _invalidateCuiCache();
         await init(false);
     } catch (e) {
         showNotification("Eroare: " + e.message, "error");
@@ -1548,3 +1566,21 @@ window.salveazaFirmaNou          = salveazaFirmaNou;
 window.deschideFacturaNou        = deschideFacturaNou;
 window.comutaTipFacturaNou       = comutaTipFacturaNou;
 window.salveazaFacturaNou        = salveazaFacturaNou;
+
+// [UX5] Sortare manuală listă clienți
+function setSortareClienti(tip) {
+    ZFlowStore.sortareClienti = tip;
+    document.querySelectorAll('.sort-btn-clienti').forEach(btn => {
+        btn.classList.remove('active', 'bg-blue-100', 'text-blue-700');
+        btn.classList.add('bg-slate-100', 'text-slate-500');
+    });
+    const activeMap = { scadenta: 0, sold: 1, alfa: 2 };
+    const btns = document.querySelectorAll('.sort-btn-clienti');
+    const idx = activeMap[tip] ?? 0;
+    if (btns[idx]) {
+        btns[idx].classList.add('active', 'bg-blue-100', 'text-blue-700');
+        btns[idx].classList.remove('bg-slate-100', 'text-slate-500');
+    }
+    if (typeof renderMainThrottled === 'function') renderMainThrottled();
+}
+window.setSortareClienti = setSortareClienti;

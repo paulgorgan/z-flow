@@ -31,6 +31,7 @@ const ZFlowStore = Vue.reactive({
     currentTab: 'financiar',
     currentView: 'firme', // firme | analiza | detalii
     selectedClientId: null,
+    sortareClienti: 'scadenta', // [UX5] 'scadenta' | 'sold' | 'alfa'
     
     // Filtre BI
     filtruStatusBI: 'toate',
